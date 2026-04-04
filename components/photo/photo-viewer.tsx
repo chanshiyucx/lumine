@@ -3,8 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
-import { cn } from '@/lib/utils'
-import { BlurhashCanvas } from './blurhash-canvas'
+import { cn } from '@/lib/utils/style'
+import { BlurhashCanvas } from '../blurhash-canvas'
 
 type LoadedAssetKind = 'original' | 'thumbnail' | null
 
@@ -68,7 +68,7 @@ interface PhotoLightboxProps {
   onChange: (index: number) => void
 }
 
-export function PhotoLightbox({
+export function PhotoViewer({
   photos,
   activeIndex,
   onClose,
