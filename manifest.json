@@ -1,0 +1,654 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-04T17:17:14.897287Z",
+  "photos": [
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC02890.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 12656640,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC02890.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 430642,
+        "mime": "image/webp"
+      },
+      "blurhash": "LlGJ20DN%hRP%hr;WYozM|fORjoz",
+      "title": "DSC02890"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC02915.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 13242368,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC02915.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 559486,
+        "mime": "image/webp"
+      },
+      "blurhash": "LUHoB|M{~WW?x^x]JEt7AzSODiNH",
+      "title": "DSC02915"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03013.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 12398592,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03013.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 464008,
+        "mime": "image/webp"
+      },
+      "blurhash": "LrA.7pZ}OHofTOWYa$bxN#o$skWA",
+      "title": "DSC03013"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03196.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 10199040,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03196.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 417670,
+        "mime": "image/webp"
+      },
+      "blurhash": "L@C*eKRkV@j[t:R+aea}W@j]kCkC",
+      "title": "DSC03196"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03219.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 9867264,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03219.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 356226,
+        "mime": "image/webp"
+      },
+      "blurhash": "LQ9]v=XoE=xvEDoJwYRno*WYVqoI",
+      "title": "DSC03219"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03229.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 8929280,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03229.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 418582,
+        "mime": "image/webp"
+      },
+      "blurhash": "LnJILrt7tRof.ToeWDkCTLj[Rjj[",
+      "title": "DSC03229"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03238.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 12218368,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03238.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 502462,
+        "mime": "image/webp"
+      },
+      "blurhash": "LZGHb?$~0;Ir5bR*t7WrI@R-$wxY",
+      "title": "DSC03238"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03257.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16502784,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03257.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 567098,
+        "mime": "image/webp"
+      },
+      "blurhash": "LDE_meS5xa~A0LIoI;t7xtE2IVob",
+      "title": "DSC03257"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03260.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16568320,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03260.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 585018,
+        "mime": "image/webp"
+      },
+      "blurhash": "LBDR=,589{~T^*E3SibbX9-o%LNH",
+      "title": "DSC03260"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03410.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 10977280,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03410.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 425540,
+        "mime": "image/webp"
+      },
+      "blurhash": "L~Ddu8ozkCoglCt6j[bISjj]jYaz",
+      "title": "DSC03410"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03421.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 9535488,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03421.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 369814,
+        "mime": "image/webp"
+      },
+      "blurhash": "L+H38WD%t7V@?wWARjofNGs:RPj[",
+      "title": "DSC03421"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03473.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 10674176,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03473.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 365688,
+        "mime": "image/webp"
+      },
+      "blurhash": "LIHxpQWq0KRi8^j?%NRjIVs:n#Rj",
+      "title": "DSC03473"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03519.HIF",
+        "width": 4128,
+        "height": 6192,
+        "bytes": 16855040,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03519.webp",
+        "width": 640,
+        "height": 960,
+        "bytes": 1473798,
+        "mime": "image/webp"
+      },
+      "blurhash": "LVK0M}R59wxt}=Rk%0oI9bozWUR+",
+      "title": "DSC03519"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03571.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 14635008,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03571.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 526936,
+        "mime": "image/webp"
+      },
+      "blurhash": "LVHxmD00yERi%MM{-payD%xuoeof",
+      "title": "DSC03571"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03606.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 11104256,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03606.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 374516,
+        "mime": "image/webp"
+      },
+      "blurhash": "L?J[3Rof%Mof~qofofof-;j[WBj[",
+      "title": "DSC03606"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03618.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 15933440,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03618.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 517034,
+        "mime": "image/webp"
+      },
+      "blurhash": "LMEL+--;~qtRIooJskj[RQayR+of",
+      "title": "DSC03618"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03631.HIF",
+        "width": 4128,
+        "height": 6192,
+        "bytes": 14237696,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03631.webp",
+        "width": 640,
+        "height": 960,
+        "bytes": 1155424,
+        "mime": "image/webp"
+      },
+      "blurhash": "LHEB+]-:9uog57t7xus:0LR*xuRk",
+      "title": "DSC03631"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03636.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 13852672,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03636.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 454478,
+        "mime": "image/webp"
+      },
+      "blurhash": "LTDvTGt3ITt6~pWBIUoe%MoeWAoe",
+      "title": "DSC03636"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03661.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 15056896,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03661.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 544368,
+        "mime": "image/webp"
+      },
+      "blurhash": "LCBWJL$~0LWET0t6RPkDR4t7%foe",
+      "title": "DSC03661"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03664.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16150528,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03664.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 545798,
+        "mime": "image/webp"
+      },
+      "blurhash": "LCC6fNx^0itS?cS%J;xu%2W?XTt7",
+      "title": "DSC03664"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03716.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 12697600,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03716.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 499638,
+        "mime": "image/webp"
+      },
+      "blurhash": "LOHLPZ9FE8f,9,%Lxvof0TxaE2j]",
+      "title": "DSC03716"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03731.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 14581760,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03731.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 559458,
+        "mime": "image/webp"
+      },
+      "blurhash": "LAGR-fx]0h%L^Qt6jDa$01jEIVRk",
+      "title": "DSC03731"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03734.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 10379264,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03734.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 394556,
+        "mime": "image/webp"
+      },
+      "blurhash": "L-CRd4VrXUWEpfozWCkDR:kXn$j[",
+      "title": "DSC03734"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03742.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 11141120,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03742.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 459534,
+        "mime": "image/webp"
+      },
+      "blurhash": "L$FsV}%LjYkC%%xtjYkCpKofj?of",
+      "title": "DSC03742"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03770.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 11919360,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03770.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 448614,
+        "mime": "image/webp"
+      },
+      "blurhash": "L78NObWC0LEO?bM}ROkD-;Rk9Zt7",
+      "title": "DSC03770"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03808.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 12144640,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03808.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 480754,
+        "mime": "image/webp"
+      },
+      "blurhash": "L=HewsxZO[SPPXWCbIflOHRkrpoc",
+      "title": "DSC03808"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03811.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 8859648,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03811.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 371610,
+        "mime": "image/webp"
+      },
+      "blurhash": "L]I=S--;Rjt7~q%MWBt7%Mj[WBt6",
+      "title": "DSC03811"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03856.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16822272,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03856.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 640304,
+        "mime": "image/webp"
+      },
+      "blurhash": "LTHw#js:0NxZ-loKM}oLIqjsa_ay",
+      "title": "DSC03856"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03860.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16007168,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03860.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 606700,
+        "mime": "image/webp"
+      },
+      "blurhash": "LQHURUDi_2Mx~oIB^%V@?ZoMNGof",
+      "title": "DSC03860"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03861.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 15962112,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03861.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 602780,
+        "mime": "image/webp"
+      },
+      "blurhash": "LTIXQl02~A?G%0%2IVxss:-.E2od",
+      "title": "DSC03861"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03867.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16031744,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03867.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 594894,
+        "mime": "image/webp"
+      },
+      "blurhash": "LPFhY1t68|WB^OofxZWB~Uof9aWB",
+      "title": "DSC03867"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03872.HIF",
+        "width": 4128,
+        "height": 6192,
+        "bytes": 13639680,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03872.webp",
+        "width": 640,
+        "height": 960,
+        "bytes": 168742,
+        "mime": "image/webp"
+      },
+      "blurhash": "LZF#T^s.0hWEnhj[R+f69bWC%1oK",
+      "title": "DSC03872"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03887.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 14155776,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03887.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 538082,
+        "mime": "image/webp"
+      },
+      "blurhash": "LTHnThIn0MS*?FbIM|M}9GW?%LRi",
+      "title": "DSC03887"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03888.HIF",
+        "width": 4128,
+        "height": 6192,
+        "bytes": 15466496,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03888.webp",
+        "width": 640,
+        "height": 960,
+        "bytes": 1314774,
+        "mime": "image/webp"
+      },
+      "blurhash": "LPJ7N#=_El?axZRkNGa}0MR.jYM{",
+      "title": "DSC03888"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03898.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 14491648,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03898.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 545558,
+        "mime": "image/webp"
+      },
+      "blurhash": "LWIDz0NaD*XS-5xakCs.0LaLtRRj",
+      "title": "DSC03898"
+    },
+    {
+      "original": {
+        "url": "gallery/20241229-Roma/DSC03930.HIF",
+        "width": 6192,
+        "height": 4128,
+        "bytes": 16646144,
+        "mime": "image/heif"
+      },
+      "thumbnail": {
+        "url": ".thumbnails/20241229-Roma/DSC03930.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 623696,
+        "mime": "image/webp"
+      },
+      "blurhash": "L9J@Bf?v.TNL?Gt8W?tQD--:I]?F",
+      "title": "DSC03930"
+    }
+  ]
+}

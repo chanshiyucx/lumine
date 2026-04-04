@@ -1,17 +1,23 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Cormorant_Garamond, Geist_Mono, Manrope } from 'next/font/google'
 import { siteConfig } from '@/lib/site-config'
 import { cn } from '@/lib/utils'
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const manrope = Manrope({
+  variable: '--font-manrope',
   subsets: ['latin'],
 })
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+})
+
+const cormorant = Cormorant_Garamond({
+  variable: '--font-cormorant',
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -28,12 +34,17 @@ export default function RootLayout({
     <html
       lang={siteConfig.locale}
       className={cn(
-        geistSans.variable,
+        manrope.variable,
         geistMono.variable,
+        cormorant.variable,
         'h-full antialiased',
       )}
     >
-      <body className={cn('flex min-h-full flex-col')}>{children}</body>
+      <body
+        className={cn('bg-background text-foreground flex min-h-full flex-col')}
+      >
+        {children}
+      </body>
     </html>
   )
 }
