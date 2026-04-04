@@ -1,11 +1,8 @@
 'use client'
 
-/* eslint-disable @next/next/no-img-element */
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
-import { siteConfig } from '@/lib/site-config'
-import { cn } from '@/lib/utils'
-import { PhotoLightbox } from './photo-lightbox'
+import { cn } from '@/lib/utils/style'
 
 interface PositionedPhoto {
   photo: GalleryPhoto
@@ -94,19 +91,7 @@ function getColumnConfig(width: number) {
   }
 }
 
-function formatPhotoCountLabel(count: number) {
-  return `${count} photographs`
-}
-
-function PhotoCard({
-  photo,
-  index,
-  onOpen,
-}: {
-  photo: GalleryPhoto
-  index: number
-  onOpen: (index: number) => void
-}) {
+function PhotoCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
   const imageRef = useRef<HTMLImageElement>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -115,7 +100,7 @@ function PhotoCard({
   const metaLabel = `${mimeLabel} • ${photo.original.width} × ${photo.original.height} • ${formatBytes(photo.original.bytes)}`
 
   const handleOpen = () => {
-    onOpen(index)
+    // onOpen(index)
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -124,7 +109,7 @@ function PhotoCard({
     }
 
     event.preventDefault()
-    onOpen(index)
+    // onOpen(index)
   }
 
   useEffect(() => {
@@ -220,14 +205,9 @@ function PhotoCard({
   )
 }
 
-export default function PhotoGallery({
-  albumLabel,
-  updatedAt,
-  photos,
-}: PhotoGalleryProps) {
+export function PhotoGallery({ photos }: PhotoGalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
-  const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const node = containerRef.current
@@ -254,11 +234,6 @@ export default function PhotoGallery({
       observer.disconnect()
     }
   }, [])
-
-  const formattedUpdatedAt = useMemo(
-    () => formatUpdatedAt(updatedAt),
-    [updatedAt],
-  )
 
   const { columns, gap } = useMemo(() => {
     if (photos.length === 0) {
@@ -310,80 +285,28 @@ export default function PhotoGallery({
   return (
     <>
       <div className="relative min-h-screen w-full max-w-full overflow-x-clip">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top_left,rgba(212,164,112,0.25),transparent_34%),radial-gradient(circle_at_top_right,rgba(99,120,110,0.18),transparent_28%)]" />
-        <div className="pointer-events-none absolute inset-x-0 top-[20rem] h-[28rem] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),transparent_40%)]" />
-
-        <header className="sticky top-0 z-20 h-12 w-full max-w-full border-b border-white/8 bg-black/40 backdrop-blur-2xl">
-          <div className="flex h-full w-full items-center justify-between gap-3 px-3 md:px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <p className="shrink-0 text-[0.62rem] tracking-[0.34em] text-white/42 uppercase">
-                {siteConfig.name}
-              </p>
-              <h1 className="shrink-0 font-serif text-xl tracking-[0.08em] text-white/96 md:text-2xl">
-                Still Frames
-              </h1>
-              <p className="hidden truncate text-xs text-white/56 sm:block">
-                {albumLabel}
-              </p>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2 text-[11px] text-white/62">
-              <div className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1">
-                {formatPhotoCountLabel(photos.length)}
+        <main className="w-full max-w-full overflow-x-clip">
+          <div
+            ref={containerRef}
+            role="grid"
+            aria-label="Photo gallery"
+            className="flex w-full max-w-full items-start"
+            style={{ gap }}
+          >
+            {columns.map((column, columnIndex) => (
+              <div
+                key={columnIndex}
+                className="flex min-w-0 flex-1 flex-col"
+                style={{ gap }}
+              >
+                {column.map(({ photo, index }) => (
+                  <PhotoCard key={photo.id} photo={photo} index={index} />
+                ))}
               </div>
-              {formattedUpdatedAt ? (
-                <div className="hidden rounded-full border border-white/8 bg-white/6 px-2.5 py-1 md:block">
-                  Updated {formattedUpdatedAt}
-                </div>
-              ) : null}
-            </div>
+            ))}
           </div>
-        </header>
-
-        <main className="w-full max-w-full overflow-x-clip px-1 pt-1 pb-1 md:px-4 md:pt-4 md:pb-4">
-          {photos.length > 0 ? (
-            <div
-              ref={containerRef}
-              role="grid"
-              aria-label="Photo gallery"
-              className="flex w-full max-w-full items-start"
-              style={{ gap }}
-            >
-              {columns.map((column, columnIndex) => (
-                <div
-                  key={columnIndex}
-                  className="flex min-w-0 flex-1 flex-col"
-                  style={{ gap }}
-                >
-                  {column.map(({ photo, index }) => (
-                    <PhotoCard
-                      key={photo.id}
-                      photo={photo}
-                      index={index}
-                      onOpen={setActiveIndex}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex min-h-[60vh] items-center justify-center">
-              <div className="rounded-[2rem] border border-white/10 bg-white/6 px-8 py-6 text-center text-white/62">
-                No photos were found in the current manifest.
-              </div>
-            </div>
-          )}
         </main>
       </div>
-
-      {activeIndex !== null ? (
-        <PhotoLightbox
-          photos={photos}
-          activeIndex={activeIndex}
-          onClose={() => setActiveIndex(null)}
-          onChange={setActiveIndex}
-        />
-      ) : null}
     </>
   )
 }

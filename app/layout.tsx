@@ -1,11 +1,12 @@
-import type { Metadata } from 'next'
-import { Cormorant_Garamond, Geist_Mono, Manrope } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { siteConfig } from '@/lib/site-config'
-import { cn } from '@/lib/utils'
-import './globals.css'
+import { cn } from '@/lib/utils/style'
+import '@/styles/globals.css'
+import { Header } from '@/components/header'
 
-const manrope = Manrope({
-  variable: '--font-manrope',
+const geist = Geist({
+  variable: '--font-geist',
   subsets: ['latin'],
 })
 
@@ -14,11 +15,15 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-const cormorant = Cormorant_Garamond({
-  variable: '--font-cormorant',
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-})
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#232136' },
+    { media: '(prefers-color-scheme: light)', color: '#faf4ed' },
+  ],
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata: Metadata = {
   title: siteConfig.title,
@@ -32,17 +37,12 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang={siteConfig.locale}
-      className={cn(
-        manrope.variable,
-        geistMono.variable,
-        cormorant.variable,
-        'h-full antialiased',
-      )}
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={cn(geist.variable, geistMono.variable)}
     >
-      <body
-        className={cn('bg-background text-foreground flex min-h-full flex-col')}
-      >
+      <body>
+        <Header />
         {children}
       </body>
     </html>

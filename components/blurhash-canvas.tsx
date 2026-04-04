@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { decodeBlurhash } from '@/lib/blurhash'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/style'
 
 interface BlurhashCanvasProps {
   hash: string
