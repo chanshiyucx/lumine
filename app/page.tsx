@@ -1,6 +1,5 @@
-import { PhotoGallery } from '@/components/photo/photo-gallery'
-import { photoCollection } from '@/lib/photos'
+import { PhotoGalleryPage } from '@/components/photo/photo-gallery-page'
 
 export default function Page() {
-  return <PhotoGallery {...photoCollection} />
+  return <PhotoGalleryPage />
 }

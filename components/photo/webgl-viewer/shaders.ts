@@ -1,0 +1,43 @@
+export const VERTEX_SHADER_SOURCE = `
+  attribute vec2 a_position;
+  attribute vec2 a_texCoord;
+
+  uniform mat3 u_matrix;
+
+  varying vec2 v_texCoord;
+
+  void main() {
+    vec3 position = u_matrix * vec3(a_position, 1.0);
+    gl_Position = vec4(position.xy, 0, 1);
+    v_texCoord = a_texCoord;
+  }
+`
+
+export const FRAGMENT_SHADER_SOURCE = `
+  precision mediump float;
+
+  uniform sampler2D u_image;
+  varying vec2 v_texCoord;
+
+  void main() {
+    gl_FragColor = texture2D(u_image, v_texCoord);
+  }
+`
+
+export function createShader(
+  gl: WebGLRenderingContext,
+  type: number,
+  source: string,
+): WebGLShader {
+  const shader = gl.createShader(type)!
+  gl.shaderSource(shader, source)
+  gl.compileShader(shader)
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const error = gl.getShaderInfoLog(shader)
+    gl.deleteShader(shader)
+    throw new Error(`Shader compilation failed: ${error}`)
+  }
+
+  return shader
+}
