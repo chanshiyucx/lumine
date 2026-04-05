@@ -1,29 +1,24 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/utils/style'
 import { BlurhashCanvas } from '../blurhash-canvas'
+import { formatBytes } from './photo-masonry.utils'
+import { PhotoProgressiveView } from './photo-progressive-view'
 
-type LoadedAssetKind = 'original' | 'thumbnail' | null
-
-interface ImageState {
-  photoId: string
-  source: string | null
-  kind: LoadedAssetKind
-  failed: boolean
-}
-
-function preloadImage(source: string) {
-  return new Promise<void>((resolve, reject) => {
-    const image = new window.Image()
-
-    image.decoding = 'async'
-    image.onload = () => resolve()
-    image.onerror = () => reject(new Error(`Failed to load image: ${source}`))
-    image.src = source
-  })
+interface HoverPreviewState {
+  index: number
+  left: number
+  width: number
 }
 
 function ArrowIcon({ direction }: { direction: 'left' | 'right' }) {
@@ -61,7 +56,36 @@ function CloseIcon() {
   )
 }
 
-interface PhotoLightboxProps {
+function PanelIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="3.5" y="4.5" width="17" height="15" rx="0" />
+      {collapsed ? (
+        <path d="M15 8l4 0M15 12l4 0M15 16l4 0" />
+      ) : (
+        <>
+          <path d="M14 4.5v15" />
+          <path d="M17 9l-3 3 3 3" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+interface PhotoViewerProps {
   photos: GalleryPhoto[]
   activeIndex: number
   onClose: () => void
@@ -73,27 +97,23 @@ export function PhotoViewer({
   activeIndex,
   onClose,
   onChange,
-}: PhotoLightboxProps) {
-  const [imageState, setImageState] = useState<ImageState>({
-    photoId: '',
-    source: null,
-    kind: null,
-    failed: false,
-  })
+}: PhotoViewerProps) {
   const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const railViewportRef = useRef<HTMLDivElement>(null)
+  const railShellRef = useRef<HTMLDivElement>(null)
+  const [hoverPreview, setHoverPreview] = useState<HoverPreviewState | null>(
+    null,
+  )
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(true)
 
   const currentPhoto = photos[activeIndex]
   const canGoPrevious = activeIndex > 0
   const canGoNext = activeIndex < photos.length - 1
-  const isCurrentImageResolved = imageState.photoId === currentPhoto.id
-  const loadedSource = isCurrentImageResolved ? imageState.source : null
-  const loadedKind = isCurrentImageResolved ? imageState.kind : null
-  const hasLoadFailure = isCurrentImageResolved && imageState.failed
-  const isLoading = !isCurrentImageResolved
 
-  const metaLabel = useMemo(() => {
-    return `${currentPhoto.original.width} × ${currentPhoto.original.height} · ${currentPhoto.original.mime.replace('image/', '').toUpperCase()}`
+  const infoLabel = useMemo(() => {
+    return `${currentPhoto.original.width} × ${currentPhoto.original.height} · ${currentPhoto.original.mime.replace('image/', '').toUpperCase()} · ${formatBytes(currentPhoto.original.bytes)}`
   }, [
+    currentPhoto.original.bytes,
     currentPhoto.original.height,
     currentPhoto.original.mime,
     currentPhoto.original.width,
@@ -124,68 +144,6 @@ export function PhotoViewer({
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-
-    const candidates = [
-      { kind: 'original' as const, src: currentPhoto.original.url },
-      { kind: 'thumbnail' as const, src: currentPhoto.thumbnail.url },
-    ]
-
-    async function loadCurrentPhoto() {
-      for (const candidate of candidates) {
-        try {
-          await preloadImage(candidate.src)
-
-          if (!cancelled) {
-            setImageState({
-              photoId: currentPhoto.id,
-              source: candidate.src,
-              kind: candidate.kind,
-              failed: false,
-            })
-          }
-
-          return
-        } catch {}
-      }
-
-      if (!cancelled) {
-        setImageState({
-          photoId: currentPhoto.id,
-          source: null,
-          kind: null,
-          failed: true,
-        })
-      }
-    }
-
-    void loadCurrentPhoto()
-
-    return () => {
-      cancelled = true
-    }
-  }, [currentPhoto.id, currentPhoto.original.url, currentPhoto.thumbnail.url])
-
-  useEffect(() => {
-    const preloadNeighbor = async (index: number) => {
-      const photo = photos[index]
-
-      if (!photo) {
-        return
-      }
-
-      try {
-        await preloadImage(photo.original.url)
-      } catch {
-        await preloadImage(photo.thumbnail.url).catch(() => undefined)
-      }
-    }
-
-    void preloadNeighbor(activeIndex - 1)
-    void preloadNeighbor(activeIndex + 1)
-  }, [activeIndex, photos])
-
-  useEffect(() => {
     const currentThumbnail = thumbnailRefs.current[activeIndex]
 
     currentThumbnail?.scrollIntoView({
@@ -194,6 +152,29 @@ export function PhotoViewer({
       inline: 'center',
     })
   }, [activeIndex])
+
+  useEffect(() => {
+    const railViewport = railViewportRef.current
+
+    if (!railViewport) {
+      return
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+        return
+      }
+
+      event.preventDefault()
+      railViewport.scrollLeft += event.deltaY
+    }
+
+    railViewport.addEventListener('wheel', handleWheel, { passive: false })
+
+    return () => {
+      railViewport.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -220,16 +201,75 @@ export function PhotoViewer({
     }
   }, [activeIndex, goTo, onClose])
 
+  const updateHoverPreview = useCallback(
+    (index: number, button: HTMLButtonElement) => {
+      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        return
+      }
+
+      const railShell = railShellRef.current
+      const photo = photos[index]
+
+      if (!railShell || !photo) {
+        return
+      }
+
+      const shellRect = railShell.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      const previewHeight = clamp(
+        Math.round(window.innerHeight * 0.24),
+        180,
+        240,
+      )
+      const previewWidth = clamp(
+        Math.round(previewHeight * photo.aspectRatio),
+        220,
+        Math.max(220, Math.min(460, Math.floor(shellRect.width))),
+      )
+      const rawLeft =
+        buttonRect.left -
+        shellRect.left +
+        buttonRect.width / 2 -
+        previewWidth / 2
+      const maxLeft = Math.max(0, shellRect.width - previewWidth)
+
+      setHoverPreview({
+        index,
+        left: clamp(rawLeft, 0, maxLeft),
+        width: previewWidth,
+      })
+    },
+    [photos],
+  )
+
+  const handleThumbnailEnter = useCallback(
+    (index: number, event: MouseEvent<HTMLButtonElement>) => {
+      updateHoverPreview(index, event.currentTarget)
+    },
+    [updateHoverPreview],
+  )
+
+  const handleThumbnailMove = useCallback(
+    (index: number, event: MouseEvent<HTMLButtonElement>) => {
+      updateHoverPreview(index, event.currentTarget)
+    },
+    [updateHoverPreview],
+  )
+
+  const handleThumbnailLeave = useCallback(() => {
+    setHoverPreview(null)
+  }, [])
+
   return (
     <div
-      className="fixed inset-0 z-50 [animation:viewer-enter_220ms_cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
+      className="fixed inset-0 z-50 [animation:viewer-enter_220ms_cubic-bezier(0.16,1,0.3,1)] overflow-hidden bg-black"
       role="dialog"
       aria-modal="true"
       aria-label={`Preview ${currentPhoto.title}`}
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/82 backdrop-blur-2xl"
+        className="absolute inset-0 bg-black/94"
         onClick={onClose}
         aria-label="Close preview"
       />
@@ -239,104 +279,138 @@ export function PhotoViewer({
         className="pointer-events-none absolute inset-0 scale-110 opacity-35 blur-3xl"
       />
 
-      <div className="relative flex h-full flex-col px-3 py-3 md:px-6 md:py-5">
-        <header className="mb-3 flex items-start justify-between gap-3 md:mb-5">
-          <div className="min-w-0">
-            <p className="font-serif text-3xl tracking-[0.08em] text-white/96 md:text-4xl">
-              {currentPhoto.title}
-            </p>
-            <p className="mt-1 text-sm text-white/58">{metaLabel}</p>
-          </div>
+      <div className="relative flex h-full flex-col">
+        <div className="min-h-0 flex-1">
+          <div className="flex h-full min-h-0">
+            <section className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-black">
+              <div className="absolute top-0 right-0 z-40 flex">
+                <button
+                  type="button"
+                  className="hidden h-10 w-10 items-center justify-center border-b border-l border-white/10 bg-black/58 text-white/82 transition hover:bg-black/74 md:inline-flex"
+                  onClick={() => setIsInfoPanelOpen((current) => !current)}
+                  aria-label={
+                    isInfoPanelOpen
+                      ? 'Collapse information panel'
+                      : 'Expand information panel'
+                  }
+                >
+                  <PanelIcon collapsed={!isInfoPanelOpen} />
+                </button>
 
-          <div className="flex items-center gap-2">
-            <div className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-sm text-white/70">
-              {activeIndex + 1} / {photos.length}
-            </div>
-            {loadedKind === 'thumbnail' ? (
-              <div className="rounded-full border border-amber-200/20 bg-amber-300/12 px-3 py-1.5 text-sm text-amber-100/90">
-                Fallback preview
+                <button
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center border-b border-l border-white/10 bg-black/58 text-white/82 transition hover:bg-black/74"
+                  onClick={onClose}
+                >
+                  <span className="sr-only">Close preview</span>
+                  <CloseIcon />
+                </button>
               </div>
-            ) : null}
-            <button
-              type="button"
-              className="inline-flex size-11 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white transition hover:bg-white/14"
-              onClick={onClose}
-            >
-              <span className="sr-only">Close preview</span>
-              <CloseIcon />
-            </button>
-          </div>
-        </header>
 
-        <div className="relative min-h-0 flex-1">
-          <div className="relative flex h-full items-center justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 shadow-[0_28px_120px_rgba(0,0,0,0.45)]">
-            <BlurhashCanvas
-              hash={currentPhoto.blurhash}
-              className="absolute inset-0 scale-110 blur-2xl"
-            />
-
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08),transparent_62%)]" />
-
-            {loadedSource ? (
-              <img
-                key={loadedSource}
-                src={loadedSource}
-                alt={currentPhoto.alt}
-                className="relative z-10 max-h-full max-w-full [animation:gallery-reveal_380ms_cubic-bezier(0.16,1,0.3,1)] object-contain"
-                draggable={false}
+              <PhotoProgressiveView
+                photo={currentPhoto}
+                className="absolute inset-0"
               />
-            ) : null}
 
-            {isLoading ? (
-              <div className="absolute inset-0 z-20 flex items-center justify-center">
-                <div className="rounded-full border border-white/12 bg-black/18 px-4 py-2 text-sm tracking-[0.16em] text-white/72 uppercase">
-                  Loading frame
-                </div>
-              </div>
-            ) : null}
+              <button
+                type="button"
+                className={cn(
+                  'absolute top-1/2 left-0 z-40 inline-flex h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-r border-white/10 bg-black/52 text-white/82 transition hover:bg-black/72',
+                  !canGoPrevious && 'pointer-events-none opacity-30',
+                )}
+                onClick={() => goTo(activeIndex - 1)}
+                aria-label="Previous photo"
+              >
+                <ArrowIcon direction="left" />
+              </button>
 
-            {!isLoading && hasLoadFailure ? (
-              <div className="absolute inset-0 z-20 flex items-center justify-center">
-                <div className="rounded-[1.5rem] border border-white/12 bg-black/20 px-6 py-4 text-center text-sm text-white/68">
-                  This frame could not be loaded.
+              <button
+                type="button"
+                className={cn(
+                  'absolute top-1/2 right-0 z-40 inline-flex h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-l border-white/10 bg-black/52 text-white/82 transition hover:bg-black/72',
+                  !canGoNext && 'pointer-events-none opacity-30',
+                )}
+                onClick={() => goTo(activeIndex + 1)}
+                aria-label="Next photo"
+              >
+                <ArrowIcon direction="right" />
+              </button>
+            </section>
+
+            {isInfoPanelOpen ? (
+              <aside className="hidden w-[320px] shrink-0 border-l border-white/10 bg-black/82 md:flex md:flex-col">
+                <div className="border-b border-white/10 px-6 py-5">
+                  <p className="text-[11px] tracking-[0.18em] text-white/42 uppercase">
+                    Original frame
+                  </p>
+                  <h2 className="mt-3 text-2xl text-white/96">
+                    {currentPhoto.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-white/54">
+                    {infoLabel}
+                  </p>
                 </div>
-              </div>
+
+                <div className="flex-1 px-6 py-5">
+                  <div className="h-full border border-dashed border-white/8 bg-white/[0.02]" />
+                </div>
+              </aside>
             ) : null}
           </div>
-
-          <button
-            type="button"
-            className={cn(
-              'absolute top-1/2 left-3 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/26 text-white transition hover:bg-black/38 md:left-5',
-              !canGoPrevious && 'pointer-events-none opacity-40',
-            )}
-            onClick={() => goTo(activeIndex - 1)}
-            aria-label="Previous photo"
-          >
-            <ArrowIcon direction="left" />
-          </button>
-
-          <button
-            type="button"
-            className={cn(
-              'absolute top-1/2 right-3 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/26 text-white transition hover:bg-black/38 md:right-5',
-              !canGoNext && 'pointer-events-none opacity-40',
-            )}
-            onClick={() => goTo(activeIndex + 1)}
-            aria-label="Next photo"
-          >
-            <ArrowIcon direction="right" />
-          </button>
         </div>
 
-        <div className="mt-3 rounded-[1.5rem] border border-white/10 bg-black/18 p-2 md:mt-5 md:p-3">
+        <div
+          ref={railShellRef}
+          className="relative h-[72px] shrink-0 border-t border-white/10 bg-black/88 md:h-[84px]"
+        >
+          {hoverPreview ? (
+            <div
+              className="pointer-events-none absolute bottom-full z-40 hidden border border-white/10 bg-black shadow-[0_24px_80px_rgba(0,0,0,0.5)] md:block"
+              style={{
+                left: hoverPreview.left,
+                width: hoverPreview.width,
+              }}
+            >
+              <div
+                className="relative w-full overflow-hidden"
+                style={{
+                  aspectRatio: `${photos[hoverPreview.index].thumbnail.width} / ${photos[hoverPreview.index].thumbnail.height}`,
+                }}
+              >
+                <img
+                  src={photos[hoverPreview.index].blurDataUrl}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <img
+                  src={photos[hoverPreview.index].thumbnail.url}
+                  alt={photos[hoverPreview.index].alt}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/72 to-transparent px-4 py-3">
+                  <p className="truncate text-sm text-white/96">
+                    {photos[hoverPreview.index].title}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div
-            className="overflow-x-auto [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)]"
+            ref={railViewportRef}
+            className="h-full overflow-x-auto overflow-y-hidden"
             aria-label="Preview thumbnails"
           >
-            <div className="flex min-w-max gap-2">
+            <div className="flex min-w-max items-end">
               {photos.map((photo, index) => {
                 const isActive = index === activeIndex
+                const isHovered = hoverPreview?.index === index
+                const thumbnailHeight = 84
+                const thumbnailWidth = Math.max(
+                  72,
+                  Math.round(thumbnailHeight * photo.aspectRatio),
+                )
 
                 return (
                   <button
@@ -346,28 +420,42 @@ export function PhotoViewer({
                     }}
                     type="button"
                     className={cn(
-                      'group relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border transition md:h-20 md:w-20',
+                      'group relative shrink-0 overflow-hidden transition-[filter,transform,opacity] duration-300 ease-out focus-visible:outline-none',
                       isActive
-                        ? 'border-white/70 shadow-[0_0_0_1px_rgba(255,255,255,0.1)]'
-                        : 'border-white/10 opacity-75 hover:opacity-100',
+                        ? 'z-10 grayscale-0'
+                        : isHovered
+                          ? 'grayscale-0'
+                          : 'grayscale',
                     )}
+                    style={{
+                      width: `${thumbnailWidth}px`,
+                      height: `${thumbnailHeight}px`,
+                    }}
                     onClick={() => goTo(index)}
+                    onMouseEnter={(event) => handleThumbnailEnter(index, event)}
+                    onMouseMove={(event) => handleThumbnailMove(index, event)}
+                    onMouseLeave={handleThumbnailLeave}
                     aria-label={`Open ${photo.title}`}
                   >
-                    <BlurhashCanvas
-                      hash={photo.blurhash}
-                      className="absolute inset-0 scale-125 blur-xl"
+                    <img
+                      src={photo.blurDataUrl}
+                      alt=""
+                      aria-hidden
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                     <img
                       src={photo.thumbnail.url}
                       alt=""
-                      className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover"
                       loading="lazy"
                     />
                     <div
                       className={cn(
-                        'absolute inset-0 bg-black/10 transition',
-                        isActive ? 'bg-transparent' : 'group-hover:bg-black/0',
+                        'absolute inset-0 transition duration-300',
+                        isHovered || isActive
+                          ? 'bg-transparent'
+                          : 'bg-black/26',
+                        isActive ? 'ring-1 ring-white/90 ring-inset' : '',
                       )}
                     />
                   </button>

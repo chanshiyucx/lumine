@@ -37,6 +37,7 @@ export interface GalleryPhotoAsset {
 export interface GalleryPhoto {
   id: string
   index: number
+  slug: string
   title: string
   alt: string
   albumKey: string
@@ -52,6 +53,22 @@ export interface PhotoCollection {
   updatedAt: string
   albumLabel: string
   photos: GalleryPhoto[]
+}
+
+export function createPhotoSlug(title: string) {
+  return title.trim().replaceAll(/\s+/g, '-').replaceAll('/', '-')
+}
+
+export function getPhotoPath(slug: string) {
+  return `/photos/${encodeURIComponent(slug)}`
+}
+
+export function getPhotoIndexBySlug(slug: string) {
+  return photoCollection.photos.findIndex((photo) => photo.slug === slug)
+}
+
+export function getPhotoBySlug(slug: string) {
+  return photoCollection.photos.find((photo) => photo.slug === slug)
 }
 
 function resolveAssetUrl(pathname: string) {
@@ -116,6 +133,7 @@ export const photoCollection: PhotoCollection = {
     return {
       id: photo.original.url,
       index,
+      slug: createPhotoSlug(photo.title),
       title: photo.title,
       alt: `${photo.title}, frame ${index + 1}`,
       albumKey: photo.original.url.split('/')[1] ?? 'gallery',
