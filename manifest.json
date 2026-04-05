@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-05T11:54:16.168742Z",
+  "updatedAt": "2026-04-05T18:19:54.490888Z",
   "photos": [
     {
       "original": {
         "url": "gallery/20240128-Changsha/DSC01999.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 2925235,
+        "bytes": 20731246,
         "mime": "image/avif"
       },
       "thumbnail": {
@@ -18,331 +18,825 @@
         "mime": "image/webp"
       },
       "blurhash": "LiGb-QMyxaxt~qawWBoNx]ofIUog",
-      "title": "DSC01999"
+      "title": "DSC01999",
+      "takenAt": "2024-03-30T13:28:53.159+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 51.0,
+        "focalLengthIn35mm": 76,
+        "aperture": 5.6,
+        "maxAperture": 4.99,
+        "shutter": "1/500",
+        "iso": 100,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 9.48
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": false,
+        "isLivePhoto": false,
+        "bitDepth": 8
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02390.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 3445189,
+        "bytes": 11346603,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02390.webp",
         "width": 640,
         "height": 427,
-        "bytes": 98034,
+        "bytes": 982,
         "mime": "image/webp"
       },
-      "blurhash": "LlH2WVkDogxu0MRlaxWBRij[jvjr",
-      "title": "DSC02390"
+      "blurhash": "L00JBca}j[j[WCazfQfQayfQf7fQ",
+      "title": "DSC02390",
+      "takenAt": "2024-11-16T18:09:04.743+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 93.0,
+        "focalLengthIn35mm": 139,
+        "aperture": 5.6,
+        "maxAperture": 5.6,
+        "shutter": "1/200",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 7.46
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02403.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 1722351,
+        "bytes": 7123401,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02403.webp",
         "width": 640,
         "height": 427,
-        "bytes": 33938,
+        "bytes": 874,
         "mime": "image/webp"
       },
-      "blurhash": "L~DnhctRRPog%%kCaykCbwWBkCay",
-      "title": "DSC02403"
+      "blurhash": "L00JBdj[ayj[ogfRfRfkfkayj@fQ",
+      "title": "DSC02403",
+      "takenAt": "2024-11-16T18:29:22.718+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 99.0,
+        "focalLengthIn35mm": 148,
+        "aperture": 5.6,
+        "maxAperture": 5.6,
+        "shutter": "1/1000",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 9.97
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02409.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 2515665,
+        "bytes": 9026057,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02409.webp",
         "width": 640,
         "height": 427,
-        "bytes": 39564,
+        "bytes": 984,
         "mime": "image/webp"
       },
-      "blurhash": "L|B};8tSWBoz%%ofa#j]o~WAaeaz",
-      "title": "DSC02409"
+      "blurhash": "L00J8Wj[a{j[ofj@fQfQj[ayfPfQ",
+      "title": "DSC02409",
+      "takenAt": "2024-11-16T18:33:35.395+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 53.0,
+        "focalLengthIn35mm": 79,
+        "aperture": 5.6,
+        "maxAperture": 4.99,
+        "shutter": "1/640",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 9.45
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02421.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 1741511,
+        "bytes": 7488495,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02421.webp",
         "width": 640,
         "height": 427,
-        "bytes": 38120,
+        "bytes": 1072,
         "mime": "image/webp"
       },
-      "blurhash": "L$D_K%R:V@kX?^S6WYj[.TRkazay",
-      "title": "DSC02421"
+      "blurhash": "L00JBda#ayj[offRfQfQofayfQfQ",
+      "title": "DSC02421",
+      "takenAt": "2024-11-16T18:43:30.901+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 30.0,
+        "focalLengthIn35mm": 45,
+        "aperture": 4.5,
+        "maxAperture": 4.49,
+        "shutter": "1/1000",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 9.78
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02426.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 2621645,
+        "bytes": 9785520,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02426.webp",
         "width": 640,
         "height": 427,
-        "bytes": 49666,
+        "bytes": 940,
         "mime": "image/webp"
       },
-      "blurhash": "L-Bh{Ba#RObJ*0WEV[fltSa~j@j[",
-      "title": "DSC02426"
+      "blurhash": "L00JBdfRayfRofaza|fQj[fQfQfQ",
+      "title": "DSC02426",
+      "takenAt": "2024-11-16T18:50:28.516+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 42.0,
+        "focalLengthIn35mm": 63,
+        "aperture": 5.0,
+        "maxAperture": 4.99,
+        "shutter": "1/1000",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 9.65
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02429.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 1189121,
+        "bytes": 6758715,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02429.webp",
         "width": 640,
         "height": 427,
-        "bytes": 18826,
+        "bytes": 962,
         "mime": "image/webp"
       },
-      "blurhash": "L~A{WNRmWAflyZWCa#fkWAj[j[j[",
-      "title": "DSC02429"
+      "blurhash": "L009m+bHayfRogaza|fQayfQfQfQ",
+      "title": "DSC02429",
+      "takenAt": "2024-11-16T18:51:55.636+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 33.0,
+        "focalLengthIn35mm": 49,
+        "aperture": 4.5,
+        "maxAperture": 4.49,
+        "shutter": "1/1600",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 10.21
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02453.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 1337433,
+        "bytes": 6819171,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02453.webp",
         "width": 640,
         "height": 427,
-        "bytes": 22882,
+        "bytes": 958,
         "mime": "image/webp"
       },
-      "blurhash": "LyCk[RNKjFbI.TS6azj]%iRka$j[",
-      "title": "DSC02453"
+      "blurhash": "L00JBda#fQfkoffRfQfjofazfQfQ",
+      "title": "DSC02453",
+      "takenAt": "2024-11-16T18:58:46.136+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 29.0,
+        "focalLengthIn35mm": 43,
+        "aperture": 4.5,
+        "maxAperture": 4.49,
+        "shutter": "1/1250",
+        "iso": 125,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 10.14
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241116-Barmsee/DSC02470.avif",
         "width": 4128,
         "height": 6192,
-        "bytes": 5607175,
+        "bytes": 13942369,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241116-Barmsee/DSC02470.webp",
         "width": 640,
         "height": 960,
-        "bytes": 313038,
+        "bytes": 2010,
         "mime": "image/webp"
       },
-      "blurhash": "LAEMRQ^+DPIo_LoIs?D+I;t7t2RP",
-      "title": "DSC02470"
+      "blurhash": "L00J8Vj[ayfkj[fQjtazayfQfQfP",
+      "title": "DSC02470",
+      "takenAt": "2024-11-16T19:20:38.84+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 84.0,
+        "focalLengthIn35mm": 126,
+        "aperture": 5.6,
+        "maxAperture": 5.6,
+        "shutter": "1/160",
+        "iso": 3200,
+        "exposureProgram": "normal program",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 2.63
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC02890.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 3386637,
+        "bytes": 9427431,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC02890.webp",
         "width": 640,
         "height": 427,
-        "bytes": 68208,
+        "bytes": 990,
         "mime": "image/webp"
       },
-      "blurhash": "LlGJ20DN%hRP%hr;WYozM|fORjoz",
-      "title": "DSC02890"
+      "blurhash": "L00Ss5aej[f6ofj?fQj[aya|ayfk",
+      "title": "DSC02890",
+      "takenAt": "2024-12-27T18:00:16.038+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 37.0,
+        "focalLengthIn35mm": 55,
+        "aperture": 4.5,
+        "maxAperture": 4.49,
+        "shutter": "1/640",
+        "iso": 125,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 8.62
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC02915.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 3025156,
+        "bytes": 10475094,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC02915.webp",
         "width": 640,
         "height": 427,
-        "bytes": 88174,
+        "bytes": 1004,
         "mime": "image/webp"
       },
-      "blurhash": "LUHo8?M{~WW?x^x]JYt7A|SODiNH",
-      "title": "DSC02915"
+      "blurhash": "L00Ss5fQoffRj]j[a}j[bIfQayf7",
+      "title": "DSC02915",
+      "takenAt": "2024-12-27T18:47:23.221+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 18.0,
+        "focalLengthIn35mm": 27,
+        "aperture": 4.0,
+        "maxAperture": 3.5,
+        "shutter": "1/800",
+        "iso": 125,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 9.22
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC02995.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 4036481,
+        "bytes": 12239965,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC02995.webp",
         "width": 640,
         "height": 427,
-        "bytes": 91138,
+        "bytes": 938,
         "mime": "image/webp"
       },
-      "blurhash": "LRG9g9NFk9Rk^-D+aKof~Dt1e?oe",
-      "title": "DSC02995"
+      "blurhash": "L00JBca|fQazoMazfQfjoLj@fRfQ",
+      "title": "DSC02995",
+      "takenAt": "2024-12-27T19:20:13.46+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 41.0,
+        "focalLengthIn35mm": 61,
+        "aperture": 5.0,
+        "maxAperture": 4.99,
+        "shutter": "1/160",
+        "iso": 125,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 7.01
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03013.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 2586530,
+        "bytes": 9787732,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03013.webp",
         "width": 640,
         "height": 427,
-        "bytes": 57360,
+        "bytes": 888,
         "mime": "image/webp"
       },
-      "blurhash": "LrA.7peROHofTOWYa$bxN#o$skWA",
-      "title": "DSC03013"
+      "blurhash": "L00J8WjZa}j[bIa|fRfka}fkjsay",
+      "title": "DSC03013",
+      "takenAt": "2024-12-27T19:28:32.896+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 36.0,
+        "focalLengthIn35mm": 54,
+        "aperture": 5.0,
+        "maxAperture": 4.49,
+        "shutter": "1/640",
+        "iso": 125,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 8.88
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03260.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 4687523,
+        "bytes": 13722941,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03260.webp",
         "width": 640,
         "height": 427,
-        "bytes": 107624,
+        "bytes": 1168,
         "mime": "image/webp"
       },
-      "blurhash": "LBDR=,589x~T^*E3OFbbbc-o%LNH",
-      "title": "DSC03260"
+      "blurhash": "L00J8Uayayj[j[aya|fQfRj[j[f7",
+      "title": "DSC03260",
+      "takenAt": "2024-12-27T23:45:25.826+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 18.0,
+        "focalLengthIn35mm": 27,
+        "aperture": 4.0,
+        "maxAperture": 3.5,
+        "shutter": "1/30",
+        "iso": 5000,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": -2.05
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03421.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 1968497,
+        "bytes": 6880724,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03421.webp",
         "width": 640,
         "height": 427,
-        "bytes": 40402,
+        "bytes": 834,
         "mime": "image/webp"
       },
-      "blurhash": "L+H35PD%t7V@?wWARjoeNGs:RPj[",
-      "title": "DSC03421"
+      "blurhash": "L00J8WWBfjayogf6ayfjayj[ayfk",
+      "title": "DSC03421",
+      "takenAt": "2024-12-28T22:42:25.283+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 70.0,
+        "focalLengthIn35mm": 105,
+        "aperture": 5.6,
+        "maxAperture": 5.6,
+        "shutter": "1/640",
+        "iso": 125,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 8.63
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03808.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 2473037,
+        "bytes": 9744477,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03808.webp",
         "width": 640,
         "height": 427,
-        "bytes": 60624,
+        "bytes": 1182,
         "mime": "image/webp"
       },
-      "blurhash": "L=HewsxZO[SPPXWCbJflOHRkrpoc",
-      "title": "DSC03808"
+      "blurhash": "L00Ss5j[bIfRbca|fRfQbHayjZjt",
+      "title": "DSC03808",
+      "takenAt": "2024-12-29T23:05:09.138+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 29.0,
+        "focalLengthIn35mm": 43,
+        "aperture": 6.3,
+        "maxAperture": 4.49,
+        "shutter": "1/200",
+        "iso": 125,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 8.47
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03860.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 4334375,
+        "bytes": 13390029,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03860.webp",
         "width": 640,
         "height": 427,
-        "bytes": 115618,
+        "bytes": 1096,
         "mime": "image/webp"
       },
-      "blurhash": "LPHK,%Di_2Mx~oD*^*V@?aoMNGof",
-      "title": "DSC03860"
+      "blurhash": "L00So{aykBjtoeayj[fQj[fRayfR",
+      "title": "DSC03860",
+      "takenAt": "2024-12-29T23:47:15.006+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 18.0,
+        "focalLengthIn35mm": 27,
+        "aperture": 6.3,
+        "maxAperture": 3.5,
+        "shutter": "1/25",
+        "iso": 6400,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": -1.04
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03861.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 4255874,
+        "bytes": 13247803,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03861.webp",
         "width": 640,
         "height": 427,
-        "bytes": 115430,
+        "bytes": 1128,
         "mime": "image/webp"
       },
-      "blurhash": "LTIXQl02~A?G%0%2IVxts:-.E2od",
-      "title": "DSC03861"
+      "blurhash": "L00So|aeofj[j[j[ayj@j[j[ayfQ",
+      "title": "DSC03861",
+      "takenAt": "2024-12-29T23:48:00.815+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 18.0,
+        "focalLengthIn35mm": 27,
+        "aperture": 6.3,
+        "maxAperture": 3.5,
+        "shutter": "1/30",
+        "iso": 5000,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": -0.2
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     },
     {
       "original": {
         "url": "gallery/20241229-Roma/DSC03930.avif",
         "width": 6192,
         "height": 4128,
-        "bytes": 4627338,
+        "bytes": 13665304,
         "mime": "image/avif"
       },
       "thumbnail": {
         "url": "thumbnails/20241229-Roma/DSC03930.webp",
         "width": 640,
         "height": 427,
-        "bytes": 122756,
+        "bytes": 1152,
         "mime": "image/webp"
       },
-      "blurhash": "L9J@8Y?v.TNM?Gt8W?t7D--:I]?F",
-      "title": "DSC03930"
+      "blurhash": "L00Ss4j[fkfQj[fQfQfQazj[f7j@",
+      "title": "DSC03930",
+      "takenAt": "2024-12-30T00:37:07.584+08:00",
+      "camera": {
+        "make": "SONY",
+        "model": "ILCE-6700",
+        "lens": "E 18-135mm F3.5-5.6 OSS",
+        "focalLengthMm": 23.0,
+        "focalLengthIn35mm": 34,
+        "aperture": 6.3,
+        "maxAperture": 4.0,
+        "shutter": "1/40",
+        "iso": 3200,
+        "exposureProgram": "aperture priority",
+        "exposureMode": "auto",
+        "meteringMode": "pattern",
+        "whiteBalance": "auto",
+        "flash": "off",
+        "sceneCaptureType": "standard",
+        "brightnessEv": 0.85
+      },
+      "image": {
+        "orientation": 1,
+        "colorSpace": "sRGB",
+        "hasHdr": true,
+        "isLivePhoto": false,
+        "bitDepth": 10
+      }
     }
   ]
 }

@@ -2,6 +2,26 @@ import { getPhotoBySlug } from '@/lib/photos'
 
 export const runtime = 'nodejs'
 
+async function fetchPhotoAsset(source: string, retries = 1) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(source, {
+        cache: 'no-store',
+      })
+
+      if (response.ok) {
+        return response
+      }
+    } catch {}
+
+    if (attempt < retries) {
+      await new Promise((resolve) => setTimeout(resolve, 150))
+    }
+  }
+
+  return null
+}
+
 export async function GET(
   _request: Request,
   context: RouteContext<'/api/photos/[photoId]'>,
@@ -13,9 +33,7 @@ export async function GET(
     return new Response('Photo not found', { status: 404 })
   }
 
-  const upstream = await fetch(photo.original.url, {
-    cache: 'force-cache',
-  }).catch(() => null)
+  const upstream = await fetchPhotoAsset(photo.original.url)
 
   if (!upstream?.ok) {
     return new Response('Unable to load photo asset', { status: 502 })
