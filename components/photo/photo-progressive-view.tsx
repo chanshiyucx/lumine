@@ -1,12 +1,13 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
+import { LoaderCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { WebGLImageViewer } from '@/components/webgl-viewer'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/utils/style'
 import { BlurhashCanvas } from '../blurhash-canvas'
 import { formatBytes } from './photo-masonry.utils'
-import { WebGLImageViewer } from './webgl-viewer'
 
 type RenderMode = 'loading' | 'webgl' | 'image' | 'thumbnail' | 'error'
 
@@ -127,7 +128,7 @@ export function PhotoProgressiveView({
       try {
         const response = await fetch(originalSource, {
           signal: controller.signal,
-          cache: 'force-cache',
+          cache: 'no-store',
         })
 
         if (!response.ok) {
@@ -281,22 +282,19 @@ export function PhotoProgressiveView({
       ) : null}
 
       {state.mode === 'loading' ? (
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 z-30 md:inset-x-auto md:right-5 md:bottom-5 md:w-72">
-          <div className="overflow-hidden rounded-2xl border border-white/12 bg-black/42 backdrop-blur-xl">
-            <div className="flex items-center justify-between px-4 pt-3 text-[11px] tracking-[0.18em] text-white/70 uppercase">
-              <span>Loading original</span>
-              <span>{progressLabel}</span>
-            </div>
-            <div className="px-4 pt-3 pb-4">
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-white/90 transition-[width] duration-200 ease-out"
-                  style={{
-                    width: `${Math.max(8, Math.round(state.progress ?? 12))}%`,
-                  }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-white/52">{bytesLabel}</p>
+        <div className="pointer-events-none absolute right-4 bottom-4 z-30 md:right-5 md:bottom-5">
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/72 px-3 py-2 backdrop-blur-xl">
+            <LoaderCircle
+              className="size-4 animate-spin text-white/78"
+              strokeWidth={1.8}
+            />
+            <div className="min-w-[88px]">
+              <p className="text-xs font-medium text-white tabular-nums">
+                {progressLabel}
+              </p>
+              <p className="mt-0.5 text-[11px] text-white/58 tabular-nums">
+                {bytesLabel}
+              </p>
             </div>
           </div>
         </div>
