@@ -1,14 +1,12 @@
 'use client'
 
-/* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
-import { cn } from '@/lib/utils/style'
-import {
-  formatAlbumChip,
-  formatBytes,
-  formatMimeLabel,
-} from './photo-masonry.utils'
+import { cn } from '@/lib/style'
+import { formatAlbumChip, formatBytes, formatMimeLabel } from './lib/formatters'
+import { getAvailableCaptureSettings } from './lib/viewer-metadata'
+import { PhotoCaptureSettingChip } from './photo-capture-setting-chip'
+import { PhotoThumbnailImage } from './photo-thumbnail-image'
 
 interface PhotoCardProps {
   photo: GalleryPhoto
@@ -22,6 +20,7 @@ export function PhotoCard({ photo, index, onOpen }: PhotoCardProps) {
   const [hasError, setHasError] = useState(false)
   const mimeLabel = formatMimeLabel(photo)
   const albumChip = formatAlbumChip(photo.albumKey)
+  const captureSettings = getAvailableCaptureSettings(photo)
   const metaLabel = `${mimeLabel} • ${photo.original.width} × ${photo.original.height} • ${formatBytes(photo.original.bytes)}`
 
   const handleOpen = () => {
@@ -78,21 +77,13 @@ export function PhotoCard({ photo, index, onOpen }: PhotoCardProps) {
         onKeyDown={handleKeyDown}
         aria-label={`Open ${photo.title}`}
       >
-        <img
-          src={photo.blurDataUrl}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 object-cover"
-        />
-
         {!hasError ? (
-          <img
-            ref={imageRef}
-            src={photo.thumbnail.url}
-            alt={photo.alt}
+          <PhotoThumbnailImage
+            photo={photo}
+            imageRef={imageRef}
             loading="lazy"
-            className={cn(
-              'absolute inset-0 origin-center object-cover transition-all duration-300',
+            imageClassName={cn(
+              'absolute inset-0 h-full w-full origin-center object-cover transition-all duration-300',
               isLoaded ? 'opacity-100' : 'opacity-0',
               'group-hover:scale-105',
             )}
@@ -100,26 +91,36 @@ export function PhotoCard({ photo, index, onOpen }: PhotoCardProps) {
             onError={() => setHasError(true)}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-sm">
+          <div className="text-muted absolute inset-0 flex items-center justify-center text-sm">
             Image unavailable
           </div>
         )}
 
         <div className="pointer-events-none">
-          <div className="from-base/80 via-base/20 pointer-events-none absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className="from-base/96 via-base/66 pointer-events-none absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           <div className="absolute inset-x-0 bottom-0 p-3 text-left">
-            <div className="space-y-1.5">
-              <h3 className="truncate text-sm font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="space-y-2">
+              <h3 className="text-text/96 truncate text-sm font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 {photo.title}
               </h3>
-              <div className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="text-text/82 flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 <span>{metaLabel}</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+                <span className="border-subtle/20 bg-overlay/78 text-text/88 rounded-full border px-2.5 py-1 text-xs opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
                   {albumChip}
                 </span>
               </div>
+              {captureSettings.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                  {captureSettings.map((setting) => (
+                    <PhotoCaptureSettingChip
+                      key={setting.key}
+                      setting={setting}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

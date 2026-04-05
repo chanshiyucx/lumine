@@ -1,7 +1,7 @@
 'use client'
 
 import { useLayoutEffect, useRef } from 'react'
-import { cn } from '@/lib/utils/style'
+import { cn } from '@/lib/style'
 import { Signature } from './signature'
 
 type SignatureBoxProps = {
