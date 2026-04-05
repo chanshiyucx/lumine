@@ -1,9 +1,5 @@
 import { notFound } from 'next/navigation'
-import {
-  getPhotoBySlug,
-  photoCollection,
-  type GalleryPhoto,
-} from '@/lib/photos'
+import { photoCollection, type GalleryPhoto } from '@/lib/photos'
 import { PhotoMasonry } from './photo-masonry'
 
 interface PhotoGalleryPageProps {
@@ -15,7 +11,10 @@ export function PhotoGalleryPage({
   initialPhotoSlug,
   photos = photoCollection.photos,
 }: PhotoGalleryPageProps) {
-  if (initialPhotoSlug && !getPhotoBySlug(initialPhotoSlug)) {
+  const hasInitialPhoto =
+    !initialPhotoSlug || photos.some((photo) => photo.slug === initialPhotoSlug)
+
+  if (!hasInitialPhoto) {
     notFound()
   }
 

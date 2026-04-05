@@ -1,3 +1,5 @@
-export { PhotoMasonry } from './photo-masonry'
 export { PhotoCard } from './photo-card'
+export { PhotoGalleryPage } from './photo-gallery-page'
+export { PhotoMasonry } from './photo-masonry'
+export { PhotoProgressiveView } from './photo-progressive-view'
 export { PhotoViewer } from './photo-viewer'

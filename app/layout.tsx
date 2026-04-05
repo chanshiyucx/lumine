@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { siteConfig } from '@/lib/site-config'
-import { cn } from '@/lib/utils/style'
+import { cn } from '@/lib/style'
 import '@/styles/globals.css'
 import { Header } from '@/components/header'
 
