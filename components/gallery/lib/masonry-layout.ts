@@ -25,23 +25,6 @@ export function getMasonryConfig(containerWidth: number): MasonryConfig {
     }
   }
 
-  const desktopColumnCount = Math.floor(
-    (containerWidth + MASONRY_GAP) / (DESKTOP_COLUMN_WIDTH + MASONRY_GAP),
-  )
-
-  if (desktopColumnCount > DESKTOP_MAX_COLUMNS) {
-    const columnWidth =
-      (containerWidth - (DESKTOP_MAX_COLUMNS - 1) * MASONRY_GAP) /
-      DESKTOP_MAX_COLUMNS
-
-    return {
-      columnGutter: MASONRY_GAP,
-      rowGutter: MASONRY_GAP,
-      columnWidth,
-      maxColumns: DESKTOP_MAX_COLUMNS,
-    }
-  }
-
   return {
     columnGutter: MASONRY_GAP,
     rowGutter: MASONRY_GAP,
