@@ -69,9 +69,13 @@ export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
             </span>
           </div>
           {captureSettings.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               {captureSettings.map((setting) => (
-                <PhotoCaptureSettingChip key={setting.key} setting={setting} />
+                <PhotoCaptureSettingChip
+                  key={setting.key}
+                  setting={setting}
+                  className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                />
               ))}
             </div>
           )}

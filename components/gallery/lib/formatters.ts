@@ -1,6 +1,6 @@
 import type { GalleryPhoto } from '@/lib/photos'
 
-export const NOT_AVAILABLE_LABEL = 'Not available'
+export const NOT_AVAILABLE_LABEL = 'Unknown'
 
 export function formatBytes(bytes: number) {
   if (bytes >= 1024 * 1024) {
