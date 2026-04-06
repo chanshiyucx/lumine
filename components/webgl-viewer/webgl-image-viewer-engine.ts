@@ -331,7 +331,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   ) {
     this.originalImageSrc = url
     this.isLoadingTexture = true
-    this.notifyLoadingStateChange(true, '图片加载中...')
+    this.notifyLoadingStateChange(true, 'Loading...')
 
     if (preknownWidth && preknownHeight) {
       this.imageWidth = preknownWidth
@@ -351,7 +351,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
             this.setupInitialScaling()
           }
 
-          this.notifyLoadingStateChange(true, '创建纹理中...')
+          this.notifyLoadingStateChange(true, 'Creating texture...')
           await this.createTexture(image)
 
           const imageBitmap = await createImageBitmap(image)

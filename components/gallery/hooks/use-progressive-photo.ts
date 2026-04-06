@@ -1,45 +1,54 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState, type RefObject } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
+import {
+  getCachedPhotoResource,
+  peekCachedPhotoResource,
+  setCachedPhotoResource,
+} from '../lib/progressive-photo-cache'
+import type { LoadingIndicatorRef } from '../loading-indicator'
 
-export type RenderMode = 'loading' | 'webgl' | 'image' | 'thumbnail' | 'error'
-
-export interface ProgressiveState {
-  photoId: string
-  mode: RenderMode
-  loadedBytes: number
-  totalBytes: number | null
-  progress: number | null
-  renderSource: string | null
+interface ProgressiveState {
+  blobSrc: string | null
+  highResLoaded: boolean
+  error: boolean
 }
 
-function supportsWebGL() {
-  const canvas = document.createElement('canvas')
-
-  return Boolean(canvas.getContext('webgl'))
+interface UseProgressivePhotoOptions {
+  isActive: boolean
+  loadingIndicatorRef: RefObject<LoadingIndicatorRef | null>
 }
 
-function preloadImage(source: string) {
-  return new Promise<void>((resolve, reject) => {
-    const image = new window.Image()
+function createInitialState(): ProgressiveState {
+  return {
+    blobSrc: null,
+    highResLoaded: false,
+    error: false,
+  }
+}
 
-    image.decoding = 'async'
-    image.onload = () => resolve()
-    image.onerror = () => reject(new Error(`Failed to load image: ${source}`))
-    image.src = source
-  })
+function createCachedState(objectUrl: string): ProgressiveState {
+  return {
+    blobSrc: objectUrl,
+    highResLoaded: true,
+    error: false,
+  }
 }
 
 async function readResponseAsBlob(
   response: Response,
   signal: AbortSignal,
   mimeType: string,
-  onProgress: (loadedBytes: number) => void,
+  onProgress: (loadedBytes: number, totalBytes: number | null) => void,
 ) {
+  const headerBytes = Number(response.headers.get('content-length') ?? '')
+  const totalBytes =
+    Number.isFinite(headerBytes) && headerBytes > 0 ? headerBytes : null
+
   if (!response.body) {
     const blob = await response.blob()
-    onProgress(blob.size)
+    onProgress(blob.size, totalBytes ?? blob.size)
     return blob
   }
 
@@ -63,9 +72,14 @@ async function readResponseAsBlob(
     }
 
     const chunk = Uint8Array.from(value)
-    chunks.push(chunk.buffer)
+    const chunkBuffer = chunk.buffer.slice(
+      chunk.byteOffset,
+      chunk.byteOffset + chunk.byteLength,
+    ) as ArrayBuffer
+
+    chunks.push(chunkBuffer)
     loadedBytes += value.byteLength
-    onProgress(loadedBytes)
+    onProgress(loadedBytes, totalBytes)
   }
 
   return new Blob(chunks, {
@@ -73,149 +87,119 @@ async function readResponseAsBlob(
   })
 }
 
-function createInitialState(
-  photoId: string,
-  originalBytes: number,
-): ProgressiveState {
-  return {
-    photoId,
-    mode: 'loading',
-    loadedBytes: 0,
-    totalBytes: originalBytes,
-    progress: 0,
-    renderSource: null,
-  }
-}
+export function useProgressivePhoto(
+  photo: GalleryPhoto,
+  { isActive, loadingIndicatorRef }: UseProgressivePhotoOptions,
+) {
+  const [state, setState] = useState<ProgressiveState>(() => {
+    const cachedResource = peekCachedPhotoResource(photo.original.url)
 
-export function useProgressivePhoto(photo: GalleryPhoto) {
-  const [isThumbnailLoaded, setIsThumbnailLoaded] = useState(false)
-  const [state, setState] = useState<ProgressiveState>(() =>
-    createInitialState(photo.id, photo.original.bytes),
-  )
-  const objectUrlRef = useRef<string | null>(null)
+    if (!cachedResource) {
+      return createInitialState()
+    }
+
+    return createCachedState(cachedResource.objectUrl)
+  })
 
   useEffect(() => {
-    const releaseResources = () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current)
-        objectUrlRef.current = null
-      }
+    if (!isActive || state.highResLoaded || state.error) {
+      return
     }
 
     const controller = new AbortController()
-    const webglSupported = supportsWebGL()
-    let cancelled = false
+    const loadingIndicator = loadingIndicatorRef.current
+    const cachedResource = getCachedPhotoResource(photo.original.url)
 
-    setIsThumbnailLoaded(false)
-    setState(createInitialState(photo.id, photo.original.bytes))
-    releaseResources()
+    if (cachedResource) {
+      setState(createCachedState(cachedResource.objectUrl))
+      loadingIndicator?.resetLoadingState()
+      return () => {
+        controller.abort()
+      }
+    }
 
-    const loadPhoto = async () => {
-      const originalSource = photo.original.url
+    loadingIndicator?.updateLoadingState({
+      isVisible: true,
+      isError: false,
+      isWebGLLoading: false,
+      loadingProgress: 0,
+      loadedBytes: 0,
+      totalBytes: photo.original.bytes,
+    })
 
+    const loadImage = async () => {
       try {
-        const response = await fetch(originalSource, {
+        const response = await fetch(photo.original.url, {
           signal: controller.signal,
-          cache: 'no-store',
         })
 
         if (!response.ok) {
           throw new Error(`Failed to fetch image: ${response.status}`)
         }
 
-        const headerBytes = Number(response.headers.get('content-length') ?? '')
-        const totalBytes =
-          Number.isFinite(headerBytes) && headerBytes > 0
-            ? headerBytes
-            : photo.original.bytes || null
-
         const blob = await readResponseAsBlob(
           response,
           controller.signal,
           photo.original.mime,
-          (loadedBytes) => {
-            if (cancelled) {
-              return
-            }
-
-            setState((current) => ({
-              ...current,
-              photoId: photo.id,
-              loadedBytes,
-              totalBytes,
-              progress:
+          (loadedBytes, totalBytes) => {
+            loadingIndicator?.updateLoadingState({
+              isVisible: true,
+              isError: false,
+              isWebGLLoading: false,
+              loadingProgress:
                 totalBytes && totalBytes > 0
                   ? Math.min(100, (loadedBytes / totalBytes) * 100)
-                  : null,
-            }))
+                  : 0,
+              loadedBytes,
+              totalBytes: totalBytes ?? photo.original.bytes,
+            })
           },
         )
 
-        if (cancelled) {
+        if (controller.signal.aborted) {
           return
         }
 
         const objectUrl = URL.createObjectURL(blob)
-        objectUrlRef.current = objectUrl
-        setState({
-          photoId: photo.id,
-          mode: webglSupported ? 'webgl' : 'image',
-          loadedBytes: totalBytes ?? blob.size,
-          totalBytes,
-          progress: 100,
-          renderSource: objectUrl,
+        setCachedPhotoResource(photo.original.url, {
+          objectUrl,
+          totalBytes: blob.size,
         })
-      } catch {
-        if (controller.signal.aborted || cancelled) {
+        setState(createCachedState(objectUrl))
+      } catch (error) {
+        if (controller.signal.aborted) {
           return
         }
 
-        try {
-          await preloadImage(photo.thumbnail.url)
-
-          if (!cancelled) {
-            setState({
-              photoId: photo.id,
-              mode: 'thumbnail',
-              loadedBytes: 0,
-              totalBytes: null,
-              progress: null,
-              renderSource: photo.thumbnail.url,
-            })
-          }
-        } catch {
-          if (!cancelled) {
-            setState({
-              photoId: photo.id,
-              mode: 'error',
-              loadedBytes: 0,
-              totalBytes: null,
-              progress: null,
-              renderSource: null,
-            })
-          }
-        }
+        console.error('Failed to load image:', error)
+        setState({
+          blobSrc: null,
+          highResLoaded: false,
+          error: true,
+        })
+        loadingIndicator?.updateLoadingState({
+          isVisible: true,
+          isError: true,
+          errorMessage: 'Failed to load image',
+        })
       }
     }
 
-    void loadPhoto()
+    void loadImage()
 
     return () => {
-      cancelled = true
       controller.abort()
-      releaseResources()
+      loadingIndicator?.resetLoadingState()
     }
   }, [
-    photo.id,
+    isActive,
+    loadingIndicatorRef,
     photo.original.bytes,
     photo.original.mime,
     photo.original.url,
-    photo.thumbnail.url,
+    state.error,
+    state.highResLoaded,
   ])
 
-  return {
-    isThumbnailLoaded,
-    handleThumbnailLoad: () => setIsThumbnailLoaded(true),
-    state,
-  }
+  return state
 }
