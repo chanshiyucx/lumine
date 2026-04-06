@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@tanstack/react-virtual": "^3.13.23",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "masonic": "^4.1.0",

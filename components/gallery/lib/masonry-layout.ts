@@ -1,12 +1,9 @@
 import type { GalleryPhoto } from '@/lib/photos'
 
-const MOBILE_BREAKPOINT = 768
+const MOBILE_BREAKPOINT = 1024
 export const MASONRY_GAP = 4
 const MOBILE_COLUMN_WIDTH = 150
 const DESKTOP_COLUMN_WIDTH = 250
-const MOBILE_MAX_COLUMN_WIDTH = 250
-const DESKTOP_MAX_COLUMN_WIDTH = 500
-const MOBILE_MAX_COLUMNS = 2
 const DESKTOP_MAX_COLUMNS = 8
 const FALLBACK_ESTIMATED_ASPECT_RATIO = 1.5
 
@@ -14,21 +11,42 @@ export interface MasonryConfig {
   columnGutter: number
   rowGutter: number
   columnWidth: number
-  maxColumns: number
-  maxColumnWidth: number
+  maxColumns?: number
 }
 
 export function getMasonryConfig(containerWidth: number): MasonryConfig {
   const isMobile = containerWidth > 0 && containerWidth < MOBILE_BREAKPOINT
 
+  if (isMobile) {
+    return {
+      columnGutter: MASONRY_GAP,
+      rowGutter: MASONRY_GAP,
+      columnWidth: MOBILE_COLUMN_WIDTH,
+    }
+  }
+
+  const desktopColumnCount = Math.floor(
+    (containerWidth + MASONRY_GAP) / (DESKTOP_COLUMN_WIDTH + MASONRY_GAP),
+  )
+
+  if (desktopColumnCount > DESKTOP_MAX_COLUMNS) {
+    const columnWidth =
+      (containerWidth - (DESKTOP_MAX_COLUMNS - 1) * MASONRY_GAP) /
+      DESKTOP_MAX_COLUMNS
+
+    return {
+      columnGutter: MASONRY_GAP,
+      rowGutter: MASONRY_GAP,
+      columnWidth,
+      maxColumns: DESKTOP_MAX_COLUMNS,
+    }
+  }
+
   return {
     columnGutter: MASONRY_GAP,
     rowGutter: MASONRY_GAP,
-    columnWidth: isMobile ? MOBILE_COLUMN_WIDTH : DESKTOP_COLUMN_WIDTH,
-    maxColumns: isMobile ? MOBILE_MAX_COLUMNS : DESKTOP_MAX_COLUMNS,
-    maxColumnWidth: isMobile
-      ? MOBILE_MAX_COLUMN_WIDTH
-      : DESKTOP_MAX_COLUMN_WIDTH,
+    columnWidth: DESKTOP_COLUMN_WIDTH,
+    maxColumns: DESKTOP_MAX_COLUMNS,
   }
 }
 

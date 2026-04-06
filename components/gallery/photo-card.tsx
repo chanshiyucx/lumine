@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type KeyboardEvent } from 'react'
+import { type KeyboardEvent } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { formatAlbumChip, formatBytes, formatMimeLabel } from './lib/formatters'
 import { getAvailableCaptureSettings } from './lib/viewer-metadata'
@@ -15,7 +15,6 @@ interface PhotoCardProps {
 }
 
 export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
-  const [hasThumbnailError, setHasThumbnailError] = useState(false)
   const mimeLabel = formatMimeLabel(photo)
   const albumChip = formatAlbumChip(photo.albumKey)
   const captureSettings = getAvailableCaptureSettings(photo)
@@ -46,9 +45,7 @@ export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
       <PhotoThumbnailImage
         photo={photo}
         loading="lazy"
-        imageHidden={hasThumbnailError}
         imageClassName="absolute inset-0 h-full w-full origin-center object-cover duration-300 transition-transform group-hover:scale-105"
-        onError={() => setHasThumbnailError(true)}
       />
 
       <div className="pointer-events-none">
@@ -72,7 +69,7 @@ export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
             </span>
           </div>
           {captureSettings.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
               {captureSettings.map((setting) => (
                 <PhotoCaptureSettingChip key={setting.key} setting={setting} />
               ))}

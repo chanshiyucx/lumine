@@ -102,7 +102,6 @@ export interface GalleryPhoto {
   index: number
   slug: string
   title: string
-  alt: string
   fileName: string
   albumKey: string
   albumLabel: string
@@ -226,7 +225,6 @@ export const photoCollection: PhotoCollection = {
       index,
       slug: createPhotoSlug(photo.title),
       title: photo.title,
-      alt: `${photo.title}, frame ${index + 1}`,
       fileName: getFileNameFromAssetPath(photo.original.url),
       albumKey: photo.original.url.split('/')[1] ?? 'gallery',
       albumLabel: formatAlbumLabel(photo.original.url),
