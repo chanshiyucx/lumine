@@ -8,6 +8,7 @@ interface PhotoThumbnailImageProps {
   alt?: string
   ariaHidden?: boolean
   blurClassName?: string
+  imageHidden?: boolean
   imageClassName?: string
   imageRef?: Ref<HTMLImageElement>
   loading?: 'eager' | 'lazy'
@@ -21,6 +22,7 @@ export function PhotoThumbnailImage({
   alt,
   ariaHidden = false,
   blurClassName,
+  imageHidden = false,
   imageClassName,
   imageRef,
   loading = 'lazy',
@@ -39,17 +41,19 @@ export function PhotoThumbnailImage({
           blurClassName,
         )}
       />
-      <img
-        ref={imageRef}
-        src={photo.thumbnail.url}
-        alt={ariaHidden ? '' : (alt ?? photo.alt)}
-        aria-hidden={ariaHidden}
-        className={imageClassName}
-        loading={loading}
-        draggable={draggable}
-        onLoad={onLoad}
-        onError={onError}
-      />
+      {!imageHidden ? (
+        <img
+          ref={imageRef}
+          src={photo.thumbnail.url}
+          alt={ariaHidden ? '' : (alt ?? photo.alt)}
+          aria-hidden={ariaHidden}
+          className={imageClassName}
+          loading={loading}
+          draggable={draggable}
+          onLoad={onLoad}
+          onError={onError}
+        />
+      ) : null}
     </>
   )
 }
