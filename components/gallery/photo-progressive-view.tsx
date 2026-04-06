@@ -53,20 +53,18 @@ export function PhotoProgressiveView({
       />
 
       {state.mode === 'webgl' && state.renderSource ? (
-        <div className="absolute inset-0 z-20">
-          <WebGLImageViewer
-            src={state.renderSource}
-            width={photo.original.width}
-            height={photo.original.height}
-            className="h-full w-full"
-            initialScale={1}
-            minScale={1}
-            maxScale={20}
-            limitToBounds={true}
-            centerOnInit={true}
-            smooth={true}
-          />
-        </div>
+        <WebGLImageViewer
+          src={state.renderSource}
+          width={photo.original.width}
+          height={photo.original.height}
+          className="absolute inset-0 h-full w-full"
+          initialScale={1}
+          minScale={1}
+          maxScale={20}
+          limitToBounds={true}
+          centerOnInit={true}
+          smooth={true}
+        />
       ) : null}
 
       {state.mode === 'image' && state.renderSource ? (

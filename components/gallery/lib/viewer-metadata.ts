@@ -162,13 +162,3 @@ export function getExposureRows(photo: GalleryPhoto): InfoRowData[] {
     },
   ]
 }
-
-export function getMissingMetadataFields(photo: GalleryPhoto) {
-  const missing: string[] = []
-
-  if (!photo.camera?.lightSource) {
-    missing.push('Light Source')
-  }
-
-  return missing
-}

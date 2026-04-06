@@ -1,56 +1,83 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-  type RefObject,
-} from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
+import { useHorizontalWheelScroll } from '../hooks/use-horizontal-wheel-scroll'
 import { useMobile } from '../hooks/use-mobile'
 import { PhotoThumbnailImage } from '../photo-thumbnail-image'
 
-const MOBILE_MIN_THUMBNAIL_WIDTH = 48
-const DESKTOP_MIN_THUMBNAIL_WIDTH = 72
 const MOBILE_FALLBACK_THUMBNAIL_HEIGHT = 48
 const DESKTOP_FALLBACK_THUMBNAIL_HEIGHT = 64
 const THUMBNAIL_OVERSCAN = 6
+const HOVER_PREVIEW_PADDING = 12
+const HOVER_PREVIEW_MAX_WIDTH = 460
+const HOVER_PREVIEW_MIN_HEIGHT = 180
+const HOVER_PREVIEW_MAX_HEIGHT = 240
+
+interface HoverPreviewState {
+  index: number
+  left: number
+  width: number
+  height: number
+}
 
 interface PhotoViewerThumbnailRailProps {
   photos: GalleryPhoto[]
   activeIndex: number
-  hoverPreviewIndex: number | null
-  railShellRef: RefObject<HTMLDivElement | null>
-  railViewportRef: RefObject<HTMLDivElement | null>
   onSelect: (index: number) => void
-  onThumbnailEnter: (
-    index: number,
-    event: MouseEvent<HTMLButtonElement>,
-  ) => void
-  onThumbnailMove: (index: number, event: MouseEvent<HTMLButtonElement>) => void
-  onThumbnailLeave: () => void
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {
+  const maxWidth = Math.max(
+    1,
+    Math.min(
+      HOVER_PREVIEW_MAX_WIDTH,
+      Math.floor(shellWidth) - 2 * HOVER_PREVIEW_PADDING,
+    ),
+  )
+  const maxHeight = clamp(
+    Math.round(window.innerHeight * 0.24),
+    HOVER_PREVIEW_MIN_HEIGHT,
+    HOVER_PREVIEW_MAX_HEIGHT,
+  )
+
+  let width = maxWidth
+  let height = Math.round(width / aspectRatio)
+
+  if (height > maxHeight) {
+    height = maxHeight
+    width = Math.round(height * aspectRatio)
+  }
+
+  return {
+    width: Math.max(1, width),
+    height: Math.max(1, height),
+  }
 }
 
 export function PhotoViewerThumbnailRail({
   photos,
   activeIndex,
-  hoverPreviewIndex,
-  railShellRef,
-  railViewportRef,
   onSelect,
-  onThumbnailEnter,
-  onThumbnailMove,
-  onThumbnailLeave,
 }: PhotoViewerThumbnailRailProps) {
+  const railShellRef = useRef<HTMLDivElement>(null)
+  const railViewportRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
   const [thumbnailHeight, setThumbnailHeight] = useState(
     isMobile
       ? MOBILE_FALLBACK_THUMBNAIL_HEIGHT
       : DESKTOP_FALLBACK_THUMBNAIL_HEIGHT,
   )
+  const [hoverPreview, setHoverPreview] = useState<HoverPreviewState | null>(
+    null,
+  )
   const hasCenteredInitialItemRef = useRef(false)
+
+  useHorizontalWheelScroll(railViewportRef)
 
   useEffect(() => {
     const viewport = railViewportRef.current
@@ -87,18 +114,12 @@ export function PhotoViewerThumbnailRail({
   const estimateSize = useCallback(
     (index: number) => {
       const photo = photos[index]
-      const minThumbnailWidth = isMobile
-        ? MOBILE_MIN_THUMBNAIL_WIDTH
-        : DESKTOP_MIN_THUMBNAIL_WIDTH
 
       return photo
-        ? Math.max(
-            minThumbnailWidth,
-            Math.round(thumbnailHeight * photo.aspectRatio),
-          )
+        ? Math.max(1, Math.round(thumbnailHeight * photo.aspectRatio))
         : thumbnailHeight
     },
-    [isMobile, photos, thumbnailHeight],
+    [photos, thumbnailHeight],
   )
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual manages imperative scroll state internally and stays local to this component.
@@ -130,15 +151,103 @@ export function PhotoViewerThumbnailRail({
     }
   }, [activeIndex, photos.length, virtualizer])
 
+  const updateHoverPreview = useCallback(
+    (index: number, button: HTMLButtonElement) => {
+      if (
+        isMobile ||
+        !window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      ) {
+        return
+      }
+
+      const railShell = railShellRef.current
+      const photo = photos[index]
+
+      if (!railShell || !photo) {
+        return
+      }
+
+      const shellRect = railShell.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      const previewSize = getHoverPreviewSize(
+        photo.aspectRatio,
+        shellRect.width,
+      )
+      const rawLeft =
+        buttonRect.left -
+        shellRect.left +
+        buttonRect.width / 2 -
+        previewSize.width / 2
+      const maxLeft = Math.max(
+        HOVER_PREVIEW_PADDING,
+        shellRect.width - previewSize.width - HOVER_PREVIEW_PADDING,
+      )
+
+      setHoverPreview({
+        index,
+        left: clamp(rawLeft, HOVER_PREVIEW_PADDING, maxLeft),
+        width: previewSize.width,
+        height: previewSize.height,
+      })
+    },
+    [isMobile, photos],
+  )
+
+  const handleThumbnailEnter = useCallback(
+    (index: number, event: React.MouseEvent<HTMLButtonElement>) => {
+      updateHoverPreview(index, event.currentTarget)
+    },
+    [updateHoverPreview],
+  )
+
+  const handleThumbnailMove = useCallback(
+    (index: number, event: React.MouseEvent<HTMLButtonElement>) => {
+      updateHoverPreview(index, event.currentTarget)
+    },
+    [updateHoverPreview],
+  )
+
+  const handleThumbnailLeave = useCallback(() => {
+    setHoverPreview(null)
+  }, [])
+
+  useEffect(() => {
+    if (isMobile && hoverPreview) {
+      setHoverPreview(null)
+    }
+  }, [hoverPreview, isMobile])
+
+  const hoverPreviewPhoto = hoverPreview ? photos[hoverPreview.index] : null
+
   return (
     <div
       ref={railShellRef}
-      className="bg-base/88 relative h-12 w-full shrink-0 backdrop-blur-xl lg:h-16"
+      className="bg-surface relative h-12 w-full shrink-0 lg:h-16"
     >
+      {hoverPreview && hoverPreviewPhoto ? (
+        <div
+          className="bg-base motion-safe:animate-preview-enter pointer-events-none absolute bottom-full z-100 hidden origin-bottom overflow-hidden lg:block"
+          style={{
+            left: `${hoverPreview.left}px`,
+            width: `${hoverPreview.width}px`,
+            height: `${hoverPreview.height}px`,
+          }}
+        >
+          <div className="relative size-full overflow-hidden">
+            <PhotoThumbnailImage
+              photo={hoverPreviewPhoto}
+              loading="eager"
+              imageClassName="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+        </div>
+      ) : null}
+
       <div
         ref={railViewportRef}
         className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Preview thumbnails"
+        onScroll={handleThumbnailLeave}
       >
         <div
           className="relative"
@@ -149,26 +258,19 @@ export function PhotoViewerThumbnailRail({
         >
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const photo = photos[virtualItem.index]
-
-            if (!photo) {
-              return null
-            }
+            if (!photo) return null
 
             const index = virtualItem.index
             const isActive = index === activeIndex
-            const isHovered = hoverPreviewIndex === index
+            const isHover = index === hoverPreview?.index
 
             return (
               <button
                 key={photo.id}
                 type="button"
                 className={cn(
-                  'group absolute top-0 overflow-hidden transition-[filter,opacity] duration-300 ease-out focus:outline-none focus-visible:outline-none',
-                  isActive
-                    ? 'z-10 opacity-100 grayscale-0'
-                    : isHovered
-                      ? 'opacity-100 grayscale-0'
-                      : 'opacity-72 grayscale hover:opacity-92',
+                  'group transition-filter absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out outline-none',
+                  !(isActive || isHover) && 'grayscale',
                 )}
                 style={{
                   width: `${virtualItem.size}px`,
@@ -176,16 +278,17 @@ export function PhotoViewerThumbnailRail({
                   transform: `translateX(${virtualItem.start}px)`,
                 }}
                 onClick={() => onSelect(index)}
-                onMouseEnter={(event) => onThumbnailEnter(index, event)}
-                onMouseMove={(event) => onThumbnailMove(index, event)}
-                onMouseLeave={onThumbnailLeave}
+                onMouseEnter={(event) => handleThumbnailEnter(index, event)}
+                onMouseMove={(event) => handleThumbnailMove(index, event)}
+                onMouseLeave={handleThumbnailLeave}
                 aria-label={`Open ${photo.title}`}
                 aria-current={isActive}
               >
                 <PhotoThumbnailImage
                   photo={photo}
                   loading="lazy"
-                  imageClassName="absolute inset-0 h-full w-full object-cover"
+                  blurClassName="object-contain opacity-60"
+                  imageClassName="absolute inset-0 h-full w-full object-contain"
                 />
               </button>
             )

@@ -4,6 +4,7 @@ import {
   ShutterSpeed,
   TablerAperture,
 } from '@/components/icons'
+import { cn } from '@/lib/style'
 import type { CaptureSetting } from './lib/viewer-metadata'
 
 const captureSettingIcons: Record<
@@ -18,15 +19,22 @@ const captureSettingIcons: Record<
 
 interface PhotoCaptureSettingChipProps {
   setting: CaptureSetting
+  className?: string
 }
 
 export function PhotoCaptureSettingChip({
   setting,
+  className,
 }: PhotoCaptureSettingChipProps) {
   const Icon = captureSettingIcons[setting.key]
 
   return (
-    <div className="bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1">
+    <div
+      className={cn(
+        'bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1 backdrop-blur-md',
+        className,
+      )}
+    >
       <Icon />
       <span>{setting.value}</span>
     </div>
