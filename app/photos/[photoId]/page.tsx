@@ -1,4 +1,4 @@
-import { PhotoGalleryPage } from '@/components/photo/photo-gallery-page'
+import { PhotoGalleryPage } from '@/components/gallery/photo-gallery-page'
 import { photoCollection } from '@/lib/photos'
 
 export function generateStaticParams() {
