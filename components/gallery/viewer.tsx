@@ -9,15 +9,31 @@ import {
   PanelRightOpen,
   X,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
 import { useMobile } from './hooks/use-mobile'
 import { useViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
+import { LoadingIndicator, type LoadingIndicatorRef } from './loading-indicator'
 import { ProgressiveView } from './progressive-view'
 import { ThumbnailRail } from './thumbnail-rail'
 import { ViewerInfoPanel } from './viewer-info-panel'
+
+const MAX_RENDERED_VIEWS = 3
+
+function normalizeRenderedIndices(
+  renderedIndices: number[],
+  activeIndex: number,
+  photosLength: number,
+) {
+  return renderedIndices
+    .filter(
+      (index) => index >= 0 && index < photosLength && index !== activeIndex,
+    )
+    .concat(activeIndex)
+    .slice(-MAX_RENDERED_VIEWS)
+}
 
 interface ViewerProps {
   photos: GalleryPhoto[]
@@ -35,6 +51,10 @@ export function Viewer({
   const isMobile = useMobile()
   const [isDesktopInfoPanelOpen, setIsDesktopInfoPanelOpen] = useState(true)
   const [isMobileInfoPanelOpen, setIsMobileInfoPanelOpen] = useState(false)
+  const [renderedIndices, setRenderedIndices] = useState<number[]>([
+    activeIndex,
+  ])
+  const loadingIndicatorRef = useRef<LoadingIndicatorRef | null>(null)
 
   const currentPhoto = photos[activeIndex]
   const canGoPrevious = activeIndex > 0
@@ -45,12 +65,23 @@ export function Viewer({
 
   useBodyScrollLock()
 
+  useEffect(() => {
+    const loadingIndicator = loadingIndicatorRef.current
+
+    return () => {
+      loadingIndicator?.resetLoadingState()
+    }
+  }, [])
+
   const goTo = useCallback(
     (index: number) => {
       if (index < 0 || index >= photos.length) {
         return
       }
 
+      setRenderedIndices((current) =>
+        normalizeRenderedIndices(current, index, photos.length),
+      )
       onChange(index)
     },
     [onChange, photos.length],
@@ -70,6 +101,19 @@ export function Viewer({
 
     setIsDesktopInfoPanelOpen((current) => !current)
   }, [isMobile])
+
+  const renderedPhotos = useMemo(
+    () =>
+      normalizeRenderedIndices(renderedIndices, activeIndex, photos.length)
+        .map((index) => ({
+          index,
+          photo: photos[index],
+        }))
+        .filter((entry): entry is { index: number; photo: GalleryPhoto } =>
+          Boolean(entry.photo),
+        ),
+    [activeIndex, photos, renderedIndices],
+  )
 
   return (
     <div
@@ -131,10 +175,31 @@ export function Viewer({
               </button>
             </div>
 
-            <ProgressiveView
-              photo={currentPhoto}
-              className="absolute inset-0"
-            />
+            {renderedPhotos.map(({ index, photo }) => {
+              const isActive = index === activeIndex
+
+              return (
+                <div
+                  key={photo.id}
+                  className={cn(
+                    'absolute inset-0',
+                    isActive
+                      ? 'z-20 opacity-100'
+                      : 'pointer-events-none z-0 opacity-0',
+                  )}
+                  aria-hidden={!isActive}
+                >
+                  <ProgressiveView
+                    photo={photo}
+                    isActive={isActive}
+                    className="absolute inset-0"
+                    loadingIndicatorRef={loadingIndicatorRef}
+                  />
+                </div>
+              )
+            })}
+
+            <LoadingIndicator ref={loadingIndicatorRef} />
 
             <button
               type="button"
