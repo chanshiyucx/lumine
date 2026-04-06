@@ -3,24 +3,24 @@
 import dynamic from 'next/dynamic'
 import { useCallback } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
-import { usePhotoViewerHistory } from './hooks/use-photo-viewer-history'
-import type { PhotoMasonryGridProps } from './photo-masonry-grid'
-import { PhotoViewer } from './photo-viewer'
+import { useViewerHistory } from './hooks/use-photo-viewer-history'
+import type { MasonryGridProps } from './masonry-grid'
+import { Viewer } from './viewer'
 
-const PhotoMasonryGrid = dynamic<PhotoMasonryGridProps>(
-  () => import('./photo-masonry-grid').then((mod) => mod.PhotoMasonryGrid),
+const MasonryGrid = dynamic<MasonryGridProps>(
+  () => import('./masonry-grid').then((mod) => mod.MasonryGrid),
   {
     ssr: false,
   },
 )
 
-interface PhotoMasonryProps {
+interface MasonryProps {
   photos: GalleryPhoto[]
   initialPhotoSlug?: string
 }
 
-export function PhotoMasonry({ photos, initialPhotoSlug }: PhotoMasonryProps) {
-  const { activeIndex, setActiveIndex } = usePhotoViewerHistory({
+export function Masonry({ photos, initialPhotoSlug }: MasonryProps) {
+  const { activeIndex, setActiveIndex } = useViewerHistory({
     photos,
     initialPhotoSlug,
   })
@@ -45,10 +45,10 @@ export function PhotoMasonry({ photos, initialPhotoSlug }: PhotoMasonryProps) {
 
   return (
     <>
-      <PhotoMasonryGrid photos={photos} onOpen={handleOpen} />
+      <MasonryGrid photos={photos} onOpen={handleOpen} />
 
       {activeIndex !== null && (
-        <PhotoViewer
+        <Viewer
           photos={photos}
           activeIndex={activeIndex}
           onClose={handleClose}

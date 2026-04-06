@@ -2,9 +2,9 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
-import { useHorizontalWheelScroll } from '../hooks/use-horizontal-wheel-scroll'
-import { useMobile } from '../hooks/use-mobile'
-import { PhotoThumbnailImage } from '../photo-thumbnail-image'
+import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
+import { useMobile } from './hooks/use-mobile'
+import { ThumbnailImage } from './thumbnail-image'
 
 const MOBILE_FALLBACK_THUMBNAIL_HEIGHT = 48
 const DESKTOP_FALLBACK_THUMBNAIL_HEIGHT = 64
@@ -21,7 +21,7 @@ interface HoverPreviewState {
   height: number
 }
 
-interface PhotoViewerThumbnailRailProps {
+interface ThumbnailRailProps {
   photos: GalleryPhoto[]
   activeIndex: number
   onSelect: (index: number) => void
@@ -59,11 +59,11 @@ function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {
   }
 }
 
-export function PhotoViewerThumbnailRail({
+export function ThumbnailRail({
   photos,
   activeIndex,
   onSelect,
-}: PhotoViewerThumbnailRailProps) {
+}: ThumbnailRailProps) {
   const railShellRef = useRef<HTMLDivElement>(null)
   const railViewportRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
@@ -234,7 +234,7 @@ export function PhotoViewerThumbnailRail({
           }}
         >
           <div className="relative size-full overflow-hidden">
-            <PhotoThumbnailImage
+            <ThumbnailImage
               photo={hoverPreviewPhoto}
               loading="eager"
               imageClassName="absolute inset-0 h-full w-full object-cover"
@@ -284,7 +284,7 @@ export function PhotoViewerThumbnailRail({
                 aria-label={`Open ${photo.title}`}
                 aria-current={isActive}
               >
-                <PhotoThumbnailImage
+                <ThumbnailImage
                   photo={photo}
                   loading="lazy"
                   blurClassName="object-contain opacity-60"

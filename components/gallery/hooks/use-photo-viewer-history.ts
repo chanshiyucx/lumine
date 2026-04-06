@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getPhotoPath, type GalleryPhoto } from '@/lib/photos'
 import { getPhotoIndexFromPathname } from '../lib/masonry-layout'
 
-interface UsePhotoViewerHistoryOptions {
+interface UseViewerHistoryOptions {
   photos: GalleryPhoto[]
   initialPhotoSlug?: string
 }
 
-export function usePhotoViewerHistory({
+export function useViewerHistory({
   photos,
   initialPhotoSlug,
-}: UsePhotoViewerHistoryOptions) {
+}: UseViewerHistoryOptions) {
   const isHydratedRef = useRef(false)
   const pushedViewerStateRef = useRef(false)
   const previousActiveIndexRef = useRef<number | null>(null)

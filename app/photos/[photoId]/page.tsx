@@ -1,4 +1,4 @@
-import { PhotoGalleryPage } from '@/components/gallery/photo-gallery-page'
+import { GalleryPage } from '@/components/gallery/gallery-page'
 import { photoCollection } from '@/lib/photos'
 
 export function generateStaticParams() {
@@ -14,5 +14,5 @@ export default async function PhotoPage({
 }) {
   const { photoId } = await params
 
-  return <PhotoGalleryPage initialPhotoSlug={photoId} />
+  return <GalleryPage initialPhotoSlug={photoId} />
 }

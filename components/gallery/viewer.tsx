@@ -14,24 +14,24 @@ import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
 import { useMobile } from './hooks/use-mobile'
-import { usePhotoViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
-import { PhotoProgressiveView } from './photo-progressive-view'
-import { PhotoViewerInfoPanel } from './viewer/photo-viewer-info-panel'
-import { PhotoViewerThumbnailRail } from './viewer/photo-viewer-thumbnail-rail'
+import { useViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
+import { ProgressiveView } from './progressive-view'
+import { ThumbnailRail } from './thumbnail-rail'
+import { ViewerInfoPanel } from './viewer-info-panel'
 
-interface PhotoViewerProps {
+interface ViewerProps {
   photos: GalleryPhoto[]
   activeIndex: number
   onClose: () => void
   onChange: (index: number) => void
 }
 
-export function PhotoViewer({
+export function Viewer({
   photos,
   activeIndex,
   onClose,
   onChange,
-}: PhotoViewerProps) {
+}: ViewerProps) {
   const isMobile = useMobile()
   const [isDesktopInfoPanelOpen, setIsDesktopInfoPanelOpen] = useState(true)
   const [isMobileInfoPanelOpen, setIsMobileInfoPanelOpen] = useState(false)
@@ -56,7 +56,7 @@ export function PhotoViewer({
     [onChange, photos.length],
   )
 
-  usePhotoViewerKeyboardNavigation({
+  useViewerKeyboardNavigation({
     activeIndex,
     onClose,
     onGoTo: goTo,
@@ -131,7 +131,7 @@ export function PhotoViewer({
               </button>
             </div>
 
-            <PhotoProgressiveView
+            <ProgressiveView
               photo={currentPhoto}
               className="absolute inset-0"
             />
@@ -161,14 +161,14 @@ export function PhotoViewer({
             </button>
           </section>
 
-          <PhotoViewerThumbnailRail
+          <ThumbnailRail
             photos={photos}
             activeIndex={activeIndex}
             onSelect={goTo}
           />
         </div>
 
-        <PhotoViewerInfoPanel
+        <ViewerInfoPanel
           photo={currentPhoto}
           isOpen={isInfoPanelOpen}
           onClose={() => {

@@ -4,13 +4,13 @@ import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
+import { CaptureSettingChip } from './capture-setting-chip'
 import {
   getCaptureSettings,
   getDeviceInfoRows,
   getExposureRows,
   getPhotoInfoRows,
-} from '../lib/viewer-metadata'
-import { PhotoCaptureSettingChip } from '../photo-capture-setting-chip'
+} from './lib/viewer-metadata'
 
 interface InfoRowProps {
   label: string
@@ -41,13 +41,13 @@ function InfoSection({ title, children }: InfoSectionProps) {
   )
 }
 
-interface PhotoViewerInfoPanelProps {
+interface ViewerInfoPanelProps {
   photo: GalleryPhoto
   isOpen?: boolean
   onClose?: () => void
 }
 
-function PhotoViewerInfoPanelContent({ photo }: { photo: GalleryPhoto }) {
+function ViewerInfoPanelContent({ photo }: { photo: GalleryPhoto }) {
   const photoInfoRows = getPhotoInfoRows(photo)
   const captureSettings = getCaptureSettings(photo)
   const deviceInfoRows = getDeviceInfoRows(photo)
@@ -70,7 +70,7 @@ function PhotoViewerInfoPanelContent({ photo }: { photo: GalleryPhoto }) {
         <h3 className="text-sm uppercase">Capture Settings</h3>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           {captureSettings.map((setting) => (
-            <PhotoCaptureSettingChip key={setting.key} setting={setting} />
+            <CaptureSettingChip key={setting.key} setting={setting} />
           ))}
         </div>
       </section>
@@ -100,11 +100,11 @@ function PhotoViewerInfoPanelContent({ photo }: { photo: GalleryPhoto }) {
   )
 }
 
-export function PhotoViewerInfoPanel({
+export function ViewerInfoPanel({
   photo,
   isOpen = true,
   onClose,
-}: PhotoViewerInfoPanelProps) {
+}: ViewerInfoPanelProps) {
   return (
     <aside
       aria-hidden={!isOpen}
@@ -135,7 +135,7 @@ export function PhotoViewerInfoPanel({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <PhotoViewerInfoPanelContent photo={photo} />
+          <ViewerInfoPanelContent photo={photo} />
         </div>
       </div>
     </aside>

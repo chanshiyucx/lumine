@@ -2,19 +2,19 @@
 
 import { type KeyboardEvent } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
+import { CaptureSettingChip } from './capture-setting-chip'
 import { formatAlbumChip, formatBytes, formatMimeLabel } from './lib/formatters'
 import { getAvailableCaptureSettings } from './lib/viewer-metadata'
-import { PhotoCaptureSettingChip } from './photo-capture-setting-chip'
-import { PhotoThumbnailImage } from './photo-thumbnail-image'
+import { ThumbnailImage } from './thumbnail-image'
 
-interface PhotoCardProps {
+interface MasonryItemProps {
   photo: GalleryPhoto
   index: number
   onOpen: (index: number) => void
   width: number
 }
 
-export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
+export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
   const mimeLabel = formatMimeLabel(photo)
   const albumChip = formatAlbumChip(photo.albumKey)
   const captureSettings = getAvailableCaptureSettings(photo)
@@ -42,7 +42,7 @@ export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
       onKeyDown={handleKeyDown}
       aria-label={`Open ${photo.title}`}
     >
-      <PhotoThumbnailImage
+      <ThumbnailImage
         photo={photo}
         loading="lazy"
         imageClassName="absolute inset-0 h-full w-full origin-center object-cover duration-300 transition-transform group-hover:scale-105"
@@ -71,7 +71,7 @@ export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
           {captureSettings.length > 0 && (
             <div className="grid grid-cols-2 gap-2 text-xs">
               {captureSettings.map((setting) => (
-                <PhotoCaptureSettingChip
+                <CaptureSettingChip
                   key={setting.key}
                   setting={setting}
                   className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100"
