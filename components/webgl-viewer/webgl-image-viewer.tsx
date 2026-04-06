@@ -16,9 +16,9 @@ import {
   defaultVelocityAnimation,
   defaultWheelConfig,
 } from './constants'
-import DebugInfoComponent, { type DebugInfoRef } from './DebugInfo'
-import type { WebGLImageViewerProps, WebGLImageViewerRef } from './interface'
-import { WebGLImageViewerEngine } from './WebGLImageViewerEngine'
+import DebugInfoComponent, { type DebugInfoRef } from './debug-info'
+import type { WebGLImageViewerProps, WebGLImageViewerRef } from './types'
+import { WebGLImageViewerEngine } from './webgl-image-viewer-engine'
 
 export const WebGLImageViewer = forwardRef<
   WebGLImageViewerRef,

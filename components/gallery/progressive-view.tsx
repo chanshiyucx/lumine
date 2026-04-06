@@ -8,15 +8,12 @@ import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
 import { formatBytes } from './lib/formatters'
 
-interface PhotoProgressiveViewProps {
+interface ProgressiveViewProps {
   photo: GalleryPhoto
   className?: string
 }
 
-export function PhotoProgressiveView({
-  photo,
-  className,
-}: PhotoProgressiveViewProps) {
+export function ProgressiveView({ photo, className }: ProgressiveViewProps) {
   const { state, isThumbnailLoaded, handleThumbnailLoad } =
     useProgressivePhoto(photo)
 

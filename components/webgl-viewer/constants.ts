@@ -5,7 +5,7 @@ import type {
   PinchConfig,
   VelocityAnimationConfig,
   WheelConfig,
-} from './interface'
+} from './types'
 
 export const defaultWheelConfig: WheelConfig = {
   step: 0.1,

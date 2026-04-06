@@ -1,11 +1,11 @@
 import type * as React from 'react'
-import { ImageViewerEngineBase } from './ImageViewerEngineBase'
-import type { DebugInfo, WebGLImageViewerProps } from './interface'
+import { ImageViewerEngineBase } from './image-viewer-engine-base'
 import {
   createShader,
   FRAGMENT_SHADER_SOURCE,
   VERTEX_SHADER_SOURCE,
 } from './shaders'
+import type { DebugInfo, WebGLImageViewerProps } from './types'
 
 const TILE_SIZE = 512
 const MAX_TILES_PER_FRAME = 4
@@ -255,7 +255,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   private initWorker() {
-    this.worker = new Worker(new URL('./texture.worker.ts', import.meta.url), {
+    this.worker = new Worker(new URL('./texture-worker.ts', import.meta.url), {
       name: 'texture-worker',
       type: 'module',
     })

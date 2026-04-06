@@ -17,15 +17,15 @@ const captureSettingIcons: Record<
   iso: CarbonIsoOutline,
 }
 
-interface PhotoCaptureSettingChipProps {
+interface CaptureSettingChipProps {
   setting: CaptureSetting
   className?: string
 }
 
-export function PhotoCaptureSettingChip({
+export function CaptureSettingChip({
   setting,
   className,
-}: PhotoCaptureSettingChipProps) {
+}: CaptureSettingChipProps) {
   const Icon = captureSettingIcons[setting.key]
 
   return (

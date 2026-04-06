@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation'
 import { photoCollection, type GalleryPhoto } from '@/lib/photos'
-import { PhotoMasonry } from './photo-masonry'
+import { Masonry } from './masonry'
 
-interface PhotoGalleryPageProps {
+interface GalleryPageProps {
   initialPhotoSlug?: string
 }
 
-export function PhotoGalleryPage({ initialPhotoSlug }: PhotoGalleryPageProps) {
+export function GalleryPage({ initialPhotoSlug }: GalleryPageProps) {
   const photos: GalleryPhoto[] = photoCollection.photos
   const hasInitialPhoto =
     !initialPhotoSlug || photos.some((photo) => photo.slug === initialPhotoSlug)
@@ -15,5 +15,5 @@ export function PhotoGalleryPage({ initialPhotoSlug }: PhotoGalleryPageProps) {
     notFound()
   }
 
-  return <PhotoMasonry photos={photos} initialPhotoSlug={initialPhotoSlug} />
+  return <Masonry photos={photos} initialPhotoSlug={initialPhotoSlug} />
 }

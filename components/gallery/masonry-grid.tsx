@@ -8,12 +8,12 @@ import {
   getMasonryConfig,
   getMasonryItemHeightEstimate,
 } from './lib/masonry-layout'
-import { PhotoCard } from './photo-card'
+import { MasonryItem } from './masonry-item'
 
 const MASONRY_OVERSCAN = 2
 const MASONRY_SCROLL_FPS = 12
 
-export interface PhotoMasonryGridProps {
+export interface MasonryGridProps {
   photos: GalleryPhoto[]
   onOpen: (index: number) => void
 }
@@ -28,10 +28,12 @@ const MasonryPhotoItem = memo(function MasonryPhotoItem({
   width,
   onOpen,
 }: MasonryPhotoItemProps) {
-  return <PhotoCard photo={data} index={index} width={width} onOpen={onOpen} />
+  return (
+    <MasonryItem photo={data} index={index} width={width} onOpen={onOpen} />
+  )
 })
 
-export function PhotoMasonryGrid({ photos, onOpen }: PhotoMasonryGridProps) {
+export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const containerWidth = useElementWidth(containerRef)
 

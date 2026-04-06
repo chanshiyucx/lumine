@@ -2,17 +2,17 @@
 
 import { useEffect } from 'react'
 
-interface UsePhotoViewerKeyboardNavigationOptions {
+interface UseViewerKeyboardNavigationOptions {
   activeIndex: number
   onClose: () => void
   onGoTo: (index: number) => void
 }
 
-export function usePhotoViewerKeyboardNavigation({
+export function useViewerKeyboardNavigation({
   activeIndex,
   onClose,
   onGoTo,
-}: UsePhotoViewerKeyboardNavigationOptions) {
+}: UseViewerKeyboardNavigationOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

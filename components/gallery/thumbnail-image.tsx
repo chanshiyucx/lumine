@@ -3,7 +3,7 @@ import type { Ref } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 
-interface PhotoThumbnailImageProps {
+interface ThumbnailImageProps {
   photo: Pick<GalleryPhoto, 'title' | 'blurDataUrl' | 'thumbnail'>
   blurClassName?: string
   imageClassName?: string
@@ -11,13 +11,13 @@ interface PhotoThumbnailImageProps {
   loading?: 'eager' | 'lazy'
 }
 
-export function PhotoThumbnailImage({
+export function ThumbnailImage({
   photo,
   blurClassName,
   imageClassName,
   imageRef,
   loading = 'lazy',
-}: PhotoThumbnailImageProps) {
+}: ThumbnailImageProps) {
   return (
     <>
       <img

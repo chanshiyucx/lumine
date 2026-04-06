@@ -8,5 +8,5 @@ export type {
   WebGLImageViewerProps,
   WebGLImageViewerRef,
   WheelConfig,
-} from './interface'
-export { WebGLImageViewer } from './WebGLImageViewer'
+} from './types'
+export { WebGLImageViewer } from './webgl-image-viewer'
