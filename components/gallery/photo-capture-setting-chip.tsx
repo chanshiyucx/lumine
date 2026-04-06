@@ -31,7 +31,7 @@ export function PhotoCaptureSettingChip({
   return (
     <div
       className={cn(
-        'bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1 backdrop-blur-md',
+        'bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1',
         className,
       )}
     >

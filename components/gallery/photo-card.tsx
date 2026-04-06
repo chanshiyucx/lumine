@@ -74,7 +74,7 @@ export function PhotoCard({ photo, index, onOpen, width }: PhotoCardProps) {
                 <PhotoCaptureSettingChip
                   key={setting.key}
                   setting={setting}
-                  className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100"
                 />
               ))}
             </div>

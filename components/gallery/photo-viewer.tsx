@@ -4,12 +4,12 @@
 import {
   ChevronLeft,
   ChevronRight,
+  Info,
   PanelRightClose,
   PanelRightOpen,
   X,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
@@ -71,13 +71,7 @@ export function PhotoViewer({
     setIsDesktopInfoPanelOpen((current) => !current)
   }, [isMobile])
 
-  const portalRoot = typeof document === 'undefined' ? null : document.body
-
-  if (!portalRoot) {
-    return null
-  }
-
-  return createPortal(
+  return (
     <div
       className="bg-base motion-safe:animate-viewer-enter fixed inset-0 z-100 overflow-hidden"
       role="dialog"
@@ -93,16 +87,13 @@ export function PhotoViewer({
         />
       </div>
 
-      <div className="fixed inset-0 flex flex-col">
-        <div className="flex min-h-0 min-w-0 flex-1">
-          <section className="bg-base relative min-h-0 min-w-0 flex-1 overflow-hidden">
-            <div className="absolute top-2 right-2 left-2 z-40 flex items-start justify-between lg:top-0 lg:right-0 lg:left-auto lg:justify-end">
+      <div className="fixed inset-0 flex min-h-0 min-w-0 flex-col lg:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
+          <section className="group relative min-h-0 min-w-0 flex-1 overflow-hidden">
+            <div className="absolute top-2 right-2 z-50 flex items-start justify-between gap-2">
               <button
                 type="button"
-                className={cn(
-                  'border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 inline-flex h-10 items-center justify-center border px-3 transition lg:hidden',
-                  isInfoPanelOpen && 'bg-overlay',
-                )}
+                className="bg-overlay/80 hover:bg-overlay/90 hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200 lg:inline-flex"
                 onClick={toggleInfoPanel}
                 aria-label={
                   isInfoPanelOpen
@@ -110,36 +101,34 @@ export function PhotoViewer({
                     : 'Expand information panel'
                 }
               >
-                {isInfoPanelOpen ? 'Hide Info' : 'Show Info'}
+                {isInfoPanelOpen ? (
+                  <PanelRightClose className="size-4" />
+                ) : (
+                  <PanelRightOpen className="size-4" />
+                )}
               </button>
 
-              <div className="ml-auto flex">
-                <button
-                  type="button"
-                  className="border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 hidden h-10 w-10 items-center justify-center border-b border-l transition lg:inline-flex"
-                  onClick={toggleInfoPanel}
-                  aria-label={
-                    isInfoPanelOpen
-                      ? 'Collapse information panel'
-                      : 'Expand information panel'
-                  }
-                >
-                  {isInfoPanelOpen ? (
-                    <PanelRightClose className="size-5" strokeWidth={1.8} />
-                  ) : (
-                    <PanelRightOpen className="size-5" strokeWidth={1.8} />
-                  )}
-                </button>
+              <button
+                type="button"
+                className="bg-overlay/80 hover:bg-overlay/90 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200 lg:hidden"
+                onClick={toggleInfoPanel}
+                aria-label={
+                  isInfoPanelOpen
+                    ? 'Collapse information panel'
+                    : 'Expand information panel'
+                }
+              >
+                <Info className="size-4" />
+              </button>
 
-                <button
-                  type="button"
-                  className="border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 inline-flex h-10 w-10 items-center justify-center border-b border-l transition"
-                  onClick={onClose}
-                >
-                  <span className="sr-only">Close preview</span>
-                  <X className="size-5" strokeWidth={1.8} />
-                </button>
-              </div>
+              <button
+                type="button"
+                className="bg-overlay/80 hover:bg-overlay/90 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200"
+                onClick={onClose}
+              >
+                <span className="sr-only">Close preview</span>
+                <X className="size-4" />
+              </button>
             </div>
 
             <PhotoProgressiveView
@@ -150,48 +139,48 @@ export function PhotoViewer({
             <button
               type="button"
               className={cn(
-                'border-subtle/18 bg-overlay/72 text-text/84 hover:bg-overlay/92 absolute top-1/2 left-0 z-40 hidden h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-r transition lg:inline-flex',
-                !canGoPrevious && 'pointer-events-none opacity-30',
+                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 left-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 lg:inline-flex',
+                !canGoPrevious && 'pointer-events-none opacity-0',
               )}
               onClick={() => goTo(activeIndex - 1)}
               aria-label="Previous photo"
             >
-              <ChevronLeft className="size-5" strokeWidth={1.8} />
+              <ChevronLeft className="size-5" />
             </button>
 
             <button
               type="button"
               className={cn(
-                'border-subtle/18 bg-overlay/72 text-text/84 hover:bg-overlay/92 absolute top-1/2 right-0 z-40 hidden h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-l transition lg:inline-flex',
+                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 right-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 lg:inline-flex',
                 !canGoNext && 'pointer-events-none opacity-30',
               )}
               onClick={() => goTo(activeIndex + 1)}
               aria-label="Next photo"
             >
-              <ChevronRight className="size-5" strokeWidth={1.8} />
+              <ChevronRight className="size-5" />
             </button>
           </section>
 
-          {!isMobile && isInfoPanelOpen && (
-            <PhotoViewerInfoPanel photo={currentPhoto} />
-          )}
+          <PhotoViewerThumbnailRail
+            photos={photos}
+            activeIndex={activeIndex}
+            onSelect={goTo}
+          />
         </div>
 
-        {isMobile && isInfoPanelOpen && (
-          <PhotoViewerInfoPanel
-            photo={currentPhoto}
-            isMobile={true}
-            onClose={() => setIsMobileInfoPanelOpen(false)}
-          />
-        )}
+        <PhotoViewerInfoPanel
+          photo={currentPhoto}
+          isOpen={isInfoPanelOpen}
+          onClose={() => {
+            if (isMobile) {
+              setIsMobileInfoPanelOpen(false)
+              return
+            }
 
-        <PhotoViewerThumbnailRail
-          photos={photos}
-          activeIndex={activeIndex}
-          onSelect={goTo}
+            setIsDesktopInfoPanelOpen(false)
+          }}
         />
       </div>
-    </div>,
-    portalRoot,
+    </div>
   )
 }
