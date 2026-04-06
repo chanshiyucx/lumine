@@ -4,31 +4,19 @@ import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 
 interface PhotoThumbnailImageProps {
-  photo: Pick<GalleryPhoto, 'alt' | 'blurDataUrl' | 'thumbnail'>
-  alt?: string
-  ariaHidden?: boolean
+  photo: Pick<GalleryPhoto, 'title' | 'blurDataUrl' | 'thumbnail'>
   blurClassName?: string
-  imageHidden?: boolean
   imageClassName?: string
   imageRef?: Ref<HTMLImageElement>
   loading?: 'eager' | 'lazy'
-  draggable?: boolean
-  onError?: () => void
-  onLoad?: () => void
 }
 
 export function PhotoThumbnailImage({
   photo,
-  alt,
-  ariaHidden = false,
   blurClassName,
-  imageHidden = false,
   imageClassName,
   imageRef,
   loading = 'lazy',
-  draggable = false,
-  onError,
-  onLoad,
 }: PhotoThumbnailImageProps) {
   return (
     <>
@@ -41,19 +29,13 @@ export function PhotoThumbnailImage({
           blurClassName,
         )}
       />
-      {!imageHidden ? (
-        <img
-          ref={imageRef}
-          src={photo.thumbnail.url}
-          alt={ariaHidden ? '' : (alt ?? photo.alt)}
-          aria-hidden={ariaHidden}
-          className={imageClassName}
-          loading={loading}
-          draggable={draggable}
-          onLoad={onLoad}
-          onError={onError}
-        />
-      ) : null}
+      <img
+        ref={imageRef}
+        src={photo.thumbnail.url}
+        alt={photo.title}
+        className={imageClassName}
+        loading={loading}
+      />
     </>
   )
 }

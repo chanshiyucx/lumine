@@ -4,13 +4,10 @@ import { PhotoMasonry } from './photo-masonry'
 
 interface PhotoGalleryPageProps {
   initialPhotoSlug?: string
-  photos?: GalleryPhoto[]
 }
 
-export function PhotoGalleryPage({
-  initialPhotoSlug,
-  photos = photoCollection.photos,
-}: PhotoGalleryPageProps) {
+export function PhotoGalleryPage({ initialPhotoSlug }: PhotoGalleryPageProps) {
+  const photos: GalleryPhoto[] = photoCollection.photos
   const hasInitialPhoto =
     !initialPhotoSlug || photos.some((photo) => photo.slug === initialPhotoSlug)
 

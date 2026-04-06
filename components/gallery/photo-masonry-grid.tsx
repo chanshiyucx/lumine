@@ -67,7 +67,6 @@ export function PhotoMasonryGrid({ photos, onOpen }: PhotoMasonryGridProps) {
         columnGutter={masonryConfig.columnGutter}
         rowGutter={masonryConfig.rowGutter}
         maxColumnCount={masonryConfig.maxColumns}
-        maxColumnWidth={masonryConfig.maxColumnWidth}
         itemHeightEstimate={itemHeightEstimate}
         overscanBy={MASONRY_OVERSCAN}
         scrollFps={MASONRY_SCROLL_FPS}

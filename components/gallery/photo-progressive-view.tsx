@@ -72,7 +72,7 @@ export function PhotoProgressiveView({
       {state.mode === 'image' && state.renderSource ? (
         <img
           src={state.renderSource}
-          alt={photo.alt}
+          alt={photo.title}
           className="absolute inset-0 z-20 h-full w-full object-contain"
           draggable={false}
         />

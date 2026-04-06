@@ -8,13 +8,14 @@ import {
   PanelRightOpen,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
 import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
 import { useHoverPreview } from './hooks/use-hover-preview'
+import { useMobile } from './hooks/use-mobile'
 import { usePhotoViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
 import { PhotoProgressiveView } from './photo-progressive-view'
 import { PhotoViewerHoverPreview } from './viewer/photo-viewer-hover-preview'
@@ -34,17 +35,18 @@ export function PhotoViewer({
   onClose,
   onChange,
 }: PhotoViewerProps) {
-  const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([])
   const railViewportRef = useRef<HTMLDivElement>(null)
   const railShellRef = useRef<HTMLDivElement>(null)
-  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(true)
-  const [loadedThumbnailUrls, setLoadedThumbnailUrls] = useState<Set<string>>(
-    () => new Set(),
-  )
+  const isMobile = useMobile()
+  const [isDesktopInfoPanelOpen, setIsDesktopInfoPanelOpen] = useState(true)
+  const [isMobileInfoPanelOpen, setIsMobileInfoPanelOpen] = useState(false)
 
   const currentPhoto = photos[activeIndex]
   const canGoPrevious = activeIndex > 0
   const canGoNext = activeIndex < photos.length - 1
+  const isInfoPanelOpen = isMobile
+    ? isMobileInfoPanelOpen
+    : isDesktopInfoPanelOpen
   const {
     hoverPreview,
     handleThumbnailEnter,
@@ -72,33 +74,17 @@ export function PhotoViewer({
     onGoTo: goTo,
   })
 
-  useEffect(() => {
-    const currentThumbnail = thumbnailRefs.current[activeIndex]
+  const toggleInfoPanel = useCallback(() => {
+    if (isMobile) {
+      setIsMobileInfoPanelOpen((current) => !current)
+      return
+    }
 
-    currentThumbnail?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    })
-  }, [activeIndex])
-
-  const markThumbnailLoaded = useCallback((thumbnailUrl: string) => {
-    setLoadedThumbnailUrls((current) => {
-      if (current.has(thumbnailUrl)) {
-        return current
-      }
-
-      const next = new Set(current)
-      next.add(thumbnailUrl)
-      return next
-    })
-  }, [])
+    setIsDesktopInfoPanelOpen((current) => !current)
+  }, [isMobile])
 
   const portalRoot = typeof document === 'undefined' ? null : document.body
   const hoverPreviewPhoto = hoverPreview ? photos[hoverPreview.index] : null
-  const isHoverPreviewImageLoaded = hoverPreviewPhoto
-    ? loadedThumbnailUrls.has(hoverPreviewPhoto.thumbnail.url)
-    : false
 
   if (!portalRoot) {
     return null
@@ -129,8 +115,6 @@ export function PhotoViewer({
         <PhotoViewerHoverPreview
           photo={hoverPreviewPhoto}
           preview={hoverPreview}
-          isImageLoaded={isHoverPreviewImageLoaded}
-          onThumbnailLoad={markThumbnailLoaded}
         />
       ) : null}
 
@@ -138,32 +122,50 @@ export function PhotoViewer({
         <div className="flex min-h-0 min-w-0 flex-1">
           <div className="flex min-h-0 min-w-0 flex-1">
             <section className="bg-base relative min-h-0 min-w-0 flex-1 overflow-hidden">
-              <div className="absolute top-0 right-0 z-40 flex">
+              <div className="absolute top-2 right-2 left-2 z-40 flex items-start justify-between lg:top-0 lg:right-0 lg:left-auto lg:justify-end">
                 <button
                   type="button"
-                  className="border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 hidden h-10 w-10 items-center justify-center border-b border-l transition md:inline-flex"
-                  onClick={() => setIsInfoPanelOpen((current) => !current)}
+                  className={cn(
+                    'border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 inline-flex h-10 items-center justify-center border px-3 transition lg:hidden',
+                    isInfoPanelOpen && 'bg-overlay/94 text-text',
+                  )}
+                  onClick={toggleInfoPanel}
                   aria-label={
                     isInfoPanelOpen
                       ? 'Collapse information panel'
                       : 'Expand information panel'
                   }
                 >
-                  {isInfoPanelOpen ? (
-                    <PanelRightClose className="size-5" strokeWidth={1.8} />
-                  ) : (
-                    <PanelRightOpen className="size-5" strokeWidth={1.8} />
-                  )}
+                  {isInfoPanelOpen ? 'Hide Info' : 'Show Info'}
                 </button>
 
-                <button
-                  type="button"
-                  className="border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 inline-flex h-10 w-10 items-center justify-center border-b border-l transition"
-                  onClick={onClose}
-                >
-                  <span className="sr-only">Close preview</span>
-                  <X className="size-5" strokeWidth={1.8} />
-                </button>
+                <div className="ml-auto flex">
+                  <button
+                    type="button"
+                    className="border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 hidden h-10 w-10 items-center justify-center border-b border-l transition lg:inline-flex"
+                    onClick={toggleInfoPanel}
+                    aria-label={
+                      isInfoPanelOpen
+                        ? 'Collapse information panel'
+                        : 'Expand information panel'
+                    }
+                  >
+                    {isInfoPanelOpen ? (
+                      <PanelRightClose className="size-5" strokeWidth={1.8} />
+                    ) : (
+                      <PanelRightOpen className="size-5" strokeWidth={1.8} />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border-subtle/18 bg-overlay/76 text-text/84 hover:bg-overlay/94 inline-flex h-10 w-10 items-center justify-center border-b border-l transition"
+                    onClick={onClose}
+                  >
+                    <span className="sr-only">Close preview</span>
+                    <X className="size-5" strokeWidth={1.8} />
+                  </button>
+                </div>
               </div>
 
               <PhotoProgressiveView
@@ -174,7 +176,7 @@ export function PhotoViewer({
               <button
                 type="button"
                 className={cn(
-                  'border-subtle/18 bg-overlay/72 text-text/84 hover:bg-overlay/92 absolute top-1/2 left-0 z-40 inline-flex h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-r transition',
+                  'border-subtle/18 bg-overlay/72 text-text/84 hover:bg-overlay/92 absolute top-1/2 left-0 z-40 hidden h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-r transition lg:inline-flex',
                   !canGoPrevious && 'pointer-events-none opacity-30',
                 )}
                 onClick={() => goTo(activeIndex - 1)}
@@ -186,7 +188,7 @@ export function PhotoViewer({
               <button
                 type="button"
                 className={cn(
-                  'border-subtle/18 bg-overlay/72 text-text/84 hover:bg-overlay/92 absolute top-1/2 right-0 z-40 inline-flex h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-l transition',
+                  'border-subtle/18 bg-overlay/72 text-text/84 hover:bg-overlay/92 absolute top-1/2 right-0 z-40 hidden h-12 w-10 -translate-y-1/2 items-center justify-center border-y border-l transition lg:inline-flex',
                   !canGoNext && 'pointer-events-none opacity-30',
                 )}
                 onClick={() => goTo(activeIndex + 1)}
@@ -196,25 +198,30 @@ export function PhotoViewer({
               </button>
             </section>
 
-            {isInfoPanelOpen ? (
+            {!isMobile && isInfoPanelOpen ? (
               <PhotoViewerInfoPanel photo={currentPhoto} />
             ) : null}
           </div>
         </div>
 
+        {isMobile && isInfoPanelOpen ? (
+          <PhotoViewerInfoPanel
+            photo={currentPhoto}
+            isMobile={true}
+            onClose={() => setIsMobileInfoPanelOpen(false)}
+          />
+        ) : null}
+
         <PhotoViewerThumbnailRail
           photos={photos}
           activeIndex={activeIndex}
           hoverPreviewIndex={hoverPreview?.index ?? null}
-          loadedThumbnailUrls={loadedThumbnailUrls}
           railShellRef={railShellRef}
           railViewportRef={railViewportRef}
-          thumbnailRefs={thumbnailRefs}
           onSelect={goTo}
           onThumbnailEnter={handleThumbnailEnter}
           onThumbnailMove={handleThumbnailMove}
           onThumbnailLeave={handleThumbnailLeave}
-          onThumbnailLoad={markThumbnailLoaded}
         />
       </div>
     </div>,

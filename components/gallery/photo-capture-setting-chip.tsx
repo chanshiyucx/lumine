@@ -26,7 +26,7 @@ export function PhotoCaptureSettingChip({
   const Icon = captureSettingIcons[setting.key]
 
   return (
-    <div className="bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
+    <div className="bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1">
       <Icon />
       <span>{setting.value}</span>
     </div>
