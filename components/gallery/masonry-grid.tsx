@@ -1,13 +1,14 @@
 'use client'
 
-import { Masonry, type RenderComponentProps } from 'masonic'
-import { memo, useCallback, useMemo, useRef } from 'react'
+import type { RenderComponentProps } from 'masonic'
+import { memo, useCallback, useMemo } from 'react'
 import type { GalleryPhoto } from '@/lib/photos'
-import { useElementWidth } from './hooks/use-element-width'
+import { useViewportSize } from './hooks/use-viewport-size'
 import {
   getMasonryConfig,
   getMasonryItemHeightEstimate,
 } from './lib/masonry-layout'
+import { Masonic } from './masonic'
 import { MasonryItem } from './masonry-item'
 
 const MASONRY_OVERSCAN = 2
@@ -34,12 +35,11 @@ const MasonryPhotoItem = memo(function MasonryPhotoItem({
 })
 
 export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const containerWidth = useElementWidth(containerRef)
+  const { width: viewportWidth } = useViewportSize()
 
   const masonryConfig = useMemo(() => {
-    return getMasonryConfig(containerWidth)
-  }, [containerWidth])
+    return getMasonryConfig(viewportWidth)
+  }, [viewportWidth])
 
   const itemHeightEstimate = useMemo(() => {
     return getMasonryItemHeightEstimate(photos, masonryConfig.columnWidth)
@@ -57,23 +57,21 @@ export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
   }, [])
 
   return (
-    <div ref={containerRef} className="w-full max-w-full">
-      <Masonry<GalleryPhoto>
-        role="grid"
-        aria-label="Photo Masonry"
-        className="w-full max-w-full"
-        items={photos}
-        render={renderItem}
-        itemKey={itemKey}
-        columnWidth={masonryConfig.columnWidth}
-        columnGutter={masonryConfig.columnGutter}
-        rowGutter={masonryConfig.rowGutter}
-        maxColumnCount={masonryConfig.maxColumns}
-        itemHeightEstimate={itemHeightEstimate}
-        overscanBy={MASONRY_OVERSCAN}
-        scrollFps={MASONRY_SCROLL_FPS}
-        tabIndex={-1}
-      />
-    </div>
+    <Masonic<GalleryPhoto>
+      role="grid"
+      aria-label="Photo Masonry"
+      className="w-full max-w-full"
+      items={photos}
+      render={renderItem}
+      itemKey={itemKey}
+      columnWidth={masonryConfig.columnWidth}
+      columnGutter={masonryConfig.columnGutter}
+      rowGutter={masonryConfig.rowGutter}
+      maxColumnCount={masonryConfig.maxColumns}
+      itemHeightEstimate={itemHeightEstimate}
+      overscanBy={MASONRY_OVERSCAN}
+      scrollFps={MASONRY_SCROLL_FPS}
+      tabIndex={-1}
+    />
   )
 }
