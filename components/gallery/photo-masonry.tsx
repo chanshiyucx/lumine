@@ -44,7 +44,7 @@ export function PhotoMasonry({ photos, initialPhotoSlug }: PhotoMasonryProps) {
   )
 
   return (
-    <main className="min-h-screen w-screen max-w-screen">
+    <>
       <PhotoMasonryGrid photos={photos} onOpen={handleOpen} />
 
       {activeIndex !== null && (
@@ -55,6 +55,6 @@ export function PhotoMasonry({ photos, initialPhotoSlug }: PhotoMasonryProps) {
           onChange={handleChange}
         />
       )}
-    </main>
+    </>
   )
 }
