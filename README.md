@@ -2,6 +2,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Create a local env file and set the remote photo manifest URL:
+
+```bash
+cp .env.example .env.local
+```
+
+```bash
+PHOTO_MANIFEST_URL=https://example.com/manifest.json
+```
+
 First, run the development server:
 
 ```bash

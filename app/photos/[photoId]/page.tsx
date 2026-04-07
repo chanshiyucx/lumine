@@ -1,7 +1,9 @@
 import { GalleryPage } from '@/components/gallery/gallery-page'
-import { photoCollection } from '@/lib/photos'
+import { getPhotoCollection } from '@/lib/photo-collection'
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const photoCollection = await getPhotoCollection()
+
   return photoCollection.photos.map((photo) => ({
     photoId: photo.slug,
   }))
