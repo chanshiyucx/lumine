@@ -109,15 +109,30 @@ export function ViewerInfoPanel({
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        'bg-surface/80 fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden backdrop-blur-2xl transition-[width,transform,opacity] duration-300 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0',
+        'fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden border-white/10 backdrop-blur-2xl transition-[width,transform,opacity] duration-300 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0 lg:border-l',
         isOpen
           ? 'translate-y-0 opacity-100 lg:w-80'
           : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
       )}
+      style={{
+        backgroundImage:
+          'linear-gradient(to bottom right, color-mix(in srgb, var(--color-surface) 96%, transparent), color-mix(in srgb, var(--color-overlay) 92%, transparent), color-mix(in srgb, var(--color-base) 88%, transparent))',
+        boxShadow:
+          '0 8px 32px color-mix(in srgb, var(--color-base) 24%, transparent), 0 4px 16px color-mix(in srgb, black 14%, transparent)',
+      }}
     >
       <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden
+        style={{
+          background:
+            'linear-gradient(to bottom right, color-mix(in srgb, var(--color-text) 5%, transparent), transparent 45%, color-mix(in srgb, white 4%, transparent))',
+        }}
+      />
+
+      <div
         className={cn(
-          'flex max-h-[40svh] flex-col transition-transform duration-300 ease-out lg:h-full lg:max-h-none lg:w-80',
+          'relative flex max-h-[40svh] flex-col transition-transform duration-300 ease-out lg:h-full lg:max-h-none lg:w-80',
           !isOpen && 'lg:translate-x-full',
         )}
       >
