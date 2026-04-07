@@ -199,7 +199,11 @@ export function Viewer({
               )
             })}
 
-            <LoadingIndicator ref={loadingIndicatorRef} />
+            <LoadingIndicator
+              key={currentPhoto.id}
+              ref={loadingIndicatorRef}
+              ownerId={currentPhoto.id}
+            />
 
             <button
               type="button"

@@ -37,6 +37,7 @@ export function ProgressiveView({
   const handleWebglLoadingStateChange = useWebGLLoadingState(
     loadingIndicatorRef,
     isActive,
+    photo.id,
   )
 
   const handleFallbackImageLoad = useCallback(() => {
@@ -44,8 +45,8 @@ export function ProgressiveView({
       return
     }
 
-    loadingIndicatorRef.current?.resetLoadingState()
-  }, [isActive, loadingIndicatorRef])
+    loadingIndicatorRef.current?.resetLoadingState(photo.id)
+  }, [isActive, loadingIndicatorRef, photo.id])
 
   return (
     <div className={cn('relative h-full w-full overflow-hidden', className)}>

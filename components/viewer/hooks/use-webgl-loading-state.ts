@@ -28,6 +28,7 @@ function formatWebglStatusLabel(message?: string) {
 export function useWebGLLoadingState(
   loadingIndicatorRef: RefObject<LoadingIndicatorRef | null>,
   isActive: boolean,
+  ownerId: string,
 ) {
   return useCallback(
     (
@@ -40,11 +41,11 @@ export function useWebGLLoadingState(
       }
 
       if (!isLoading) {
-        loadingIndicatorRef.current?.resetLoadingState()
+        loadingIndicatorRef.current?.resetLoadingState(ownerId)
         return
       }
 
-      loadingIndicatorRef.current?.updateLoadingState({
+      loadingIndicatorRef.current?.updateLoadingState(ownerId, {
         isVisible: true,
         isError: false,
         isWebGLLoading: true,
@@ -52,6 +53,6 @@ export function useWebGLLoadingState(
         webglQuality: quality,
       })
     },
-    [isActive, loadingIndicatorRef],
+    [isActive, loadingIndicatorRef, ownerId],
   )
 }

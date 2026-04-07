@@ -6,6 +6,7 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -22,8 +23,11 @@ export interface ViewerLoadingState {
 }
 
 export interface LoadingIndicatorRef {
-  updateLoadingState: (state: Partial<ViewerLoadingState>) => void
-  resetLoadingState: () => void
+  updateLoadingState: (
+    ownerId: string,
+    state: Partial<ViewerLoadingState>,
+  ) => void
+  resetLoadingState: (ownerId?: string) => void
 }
 
 const initialLoadingState: ViewerLoadingState = {
@@ -50,91 +54,111 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
 }
 
-export const LoadingIndicator = forwardRef<LoadingIndicatorRef>(
-  function LoadingIndicator(_props, ref) {
-    const [loadingState, setLoadingState] =
-      useState<ViewerLoadingState>(initialLoadingState)
+interface LoadingIndicatorProps {
+  ownerId: string
+}
 
-    useImperativeHandle(
-      ref,
-      useCallback(
-        () => ({
-          updateLoadingState: (partialState: Partial<ViewerLoadingState>) => {
-            setLoadingState((current) => {
-              if (partialState.isVisible === false) {
-                return initialLoadingState
-              }
+export const LoadingIndicator = forwardRef<
+  LoadingIndicatorRef,
+  LoadingIndicatorProps
+>(function LoadingIndicator({ ownerId }, ref) {
+  const [loadingState, setLoadingState] =
+    useState<ViewerLoadingState>(initialLoadingState)
+  const activeOwnerRef = useRef(ownerId)
 
-              return {
-                ...current,
-                ...partialState,
-                isVisible: partialState.isVisible ?? true,
-              }
-            })
-          },
-          resetLoadingState: () => {
-            setLoadingState(initialLoadingState)
-          },
-        }),
-        [],
-      ),
-    )
+  useImperativeHandle(
+    ref,
+    useCallback(
+      () => ({
+        updateLoadingState: (
+          nextOwnerId: string,
+          partialState: Partial<ViewerLoadingState>,
+        ) => {
+          if (activeOwnerRef.current !== nextOwnerId) {
+            return
+          }
 
-    const bytesLabel = useMemo(() => {
-      const loadedBytes = loadingState.loadedBytes ?? 0
-      const totalBytes = loadingState.totalBytes ?? 0
+          setLoadingState((current) => {
+            if (partialState.isVisible === false) {
+              return initialLoadingState
+            }
 
-      if (totalBytes <= 0) {
-        return loadedBytes > 0 ? formatBytes(loadedBytes) : ''
-      }
+            return {
+              ...current,
+              ...partialState,
+              isVisible: partialState.isVisible ?? true,
+            }
+          })
+        },
+        resetLoadingState: (nextOwnerId?: string) => {
+          if (
+            nextOwnerId !== undefined &&
+            activeOwnerRef.current !== nextOwnerId
+          ) {
+            return
+          }
 
-      return `${formatBytes(loadedBytes)} / ${formatBytes(totalBytes)}`
-    }, [loadingState.loadedBytes, loadingState.totalBytes])
+          setLoadingState(initialLoadingState)
+        },
+      }),
+      [],
+    ),
+  )
 
-    if (!loadingState.isVisible) {
-      return null
+  const bytesLabel = useMemo(() => {
+    const loadedBytes = loadingState.loadedBytes ?? 0
+    const totalBytes = loadingState.totalBytes ?? 0
+
+    if (totalBytes <= 0) {
+      return loadedBytes > 0 ? formatBytes(loadedBytes) : ''
     }
 
-    return (
-      <div className="pointer-events-none absolute right-4 bottom-4 z-40">
-        <div className="bg-overlay/80 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
-          {loadingState.isError ? (
-            <AlertCircle className="text-text size-4" />
-          ) : (
-            <LoaderCircle className="text-text size-4 animate-spin" />
-          )}
+    return `${formatBytes(loadedBytes)} / ${formatBytes(totalBytes)}`
+  }, [loadingState.loadedBytes, loadingState.totalBytes])
 
-          <div className="min-w-24 text-xs">
-            {loadingState.isError ? (
-              <p className="font-medium">
-                {loadingState.errorMessage ?? 'Failed to load image'}
-              </p>
-            ) : loadingState.isWebGLLoading ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">
-                    {loadingState.webglMessage ?? 'Decoding image'}
-                  </p>
-                  {loadingState.webglQuality &&
-                  loadingState.webglQuality !== 'unknown' ? (
-                    <span className="text-text/70 tabular-nums">
-                      {loadingState.webglQuality}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="text-text/70">Building render pipeline</p>
-              </>
-            ) : (
-              <>
-                <p className="font-medium tabular-nums">
-                  Loading {Math.round(loadingState.loadingProgress ?? 0)}%
+  if (!loadingState.isVisible) {
+    return null
+  }
+
+  return (
+    <div className="pointer-events-none absolute right-4 bottom-4 z-40">
+      <div className="bg-overlay/80 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
+        {loadingState.isError ? (
+          <AlertCircle className="text-text size-4" />
+        ) : (
+          <LoaderCircle className="text-text size-4 animate-spin" />
+        )}
+
+        <div className="min-w-24 text-xs">
+          {loadingState.isError ? (
+            <p className="font-medium">
+              {loadingState.errorMessage ?? 'Failed to load image'}
+            </p>
+          ) : loadingState.isWebGLLoading ? (
+            <>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">
+                  {loadingState.webglMessage ?? 'Decoding image'}
                 </p>
-                {bytesLabel && <p className="tabular-nums">{bytesLabel}</p>}
-              </>
-            )}
-          </div>
+                {loadingState.webglQuality &&
+                loadingState.webglQuality !== 'unknown' ? (
+                  <span className="text-text/70 tabular-nums">
+                    {loadingState.webglQuality}
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-text/70">Building render pipeline</p>
+            </>
+          ) : (
+            <>
+              <p className="font-medium tabular-nums">
+                Loading {Math.round(loadingState.loadingProgress ?? 0)}%
+              </p>
+              {bytesLabel && <p className="tabular-nums">{bytesLabel}</p>}
+            </>
+          )}
         </div>
       </div>
-    )
-  },
-)
+    </div>
+  )
+})
