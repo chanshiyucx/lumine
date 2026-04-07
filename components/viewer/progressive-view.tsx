@@ -1,7 +1,7 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import type { RefObject } from 'react'
+import { memo, type RefObject } from 'react'
 import { WebGLImageViewer } from '@/components/webgl-viewer'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
@@ -16,7 +16,7 @@ interface ProgressiveViewProps {
   loadingIndicatorRef: RefObject<LoadingIndicatorRef | null>
 }
 
-export function ProgressiveView({
+export const ProgressiveView = memo(function ProgressiveView({
   photo,
   isActive,
   className,
@@ -89,4 +89,4 @@ export function ProgressiveView({
         ))}
     </div>
   )
-}
+})
