@@ -19,7 +19,7 @@ import {
   type DependencyList,
   type MutableRefObject,
 } from 'react'
-import { useViewportSize } from './hooks/use-viewport-size'
+import { useViewportSize } from '@/hooks/use-viewport-size'
 
 function useForceUpdate() {
   const [, setTick] = useState(0)

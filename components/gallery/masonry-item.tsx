@@ -1,10 +1,14 @@
 'use client'
 
 import { type KeyboardEvent } from 'react'
+import { getAvailableCaptureSettings } from '@/components/viewer/lib/viewer-metadata'
 import type { GalleryPhoto } from '@/lib/photos'
+import {
+  formatAlbumChip,
+  formatBytes,
+  formatMimeLabel,
+} from '../viewer/lib/formatters'
 import { CaptureSettingChip } from './capture-setting-chip'
-import { formatAlbumChip, formatBytes, formatMimeLabel } from './lib/formatters'
-import { getAvailableCaptureSettings } from './lib/viewer-metadata'
 import { ThumbnailImage } from './thumbnail-image'
 
 interface MasonryItemProps {

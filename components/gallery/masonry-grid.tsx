@@ -2,8 +2,8 @@
 
 import type { RenderComponentProps } from 'masonic'
 import { memo, useCallback, useMemo } from 'react'
+import { useViewportSize } from '@/hooks/use-viewport-size'
 import type { GalleryPhoto } from '@/lib/photos'
-import { useViewportSize } from './hooks/use-viewport-size'
 import {
   getMasonryConfig,
   getMasonryItemHeightEstimate,

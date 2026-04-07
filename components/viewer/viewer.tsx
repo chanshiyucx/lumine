@@ -10,10 +10,10 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMobile } from '@/hooks/use-mobile'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
-import { useMobile } from './hooks/use-mobile'
 import { useViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
 import { LoadingIndicator, type LoadingIndicatorRef } from './loading-indicator'
 import { ProgressiveView } from './progressive-view'

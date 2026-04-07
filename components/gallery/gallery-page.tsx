@@ -7,7 +7,7 @@ interface GalleryPageProps {
   initialPhotoSlug?: string
 }
 
-export async function GalleryPage({ initialPhotoSlug }: GalleryPageProps) {
+export async function GalleryPage({ initialPhotoSlug }: GalleryPageProps = {}) {
   const photoCollection = await getPhotoCollection()
   const photos: GalleryPhoto[] = photoCollection.photos
   const hasInitialPhoto =

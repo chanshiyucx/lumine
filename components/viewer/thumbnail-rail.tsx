@@ -1,10 +1,10 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
+import { useMobile } from '@/hooks/use-mobile'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
-import { useMobile } from './hooks/use-mobile'
-import { ThumbnailImage } from './thumbnail-image'
 
 const MOBILE_FALLBACK_THUMBNAIL_HEIGHT = 48
 const DESKTOP_FALLBACK_THUMBNAIL_HEIGHT = 64
@@ -245,7 +245,7 @@ export function ThumbnailRail({
 
       <div
         ref={railViewportRef}
-        className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="scrollbar-hide h-full overflow-x-auto overflow-y-hidden"
         aria-label="Preview thumbnails"
         onScroll={handleThumbnailLeave}
       >

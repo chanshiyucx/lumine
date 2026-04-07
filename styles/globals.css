@@ -48,6 +48,10 @@ body {
   @apply animate-svg-text;
 }
 
+@utility scrollbar-hide {
+  scrollbar-width: none;
+}
+
 @theme inline {
   --animate-svg-text: svg-text 10s var(--delay, 0s) infinite ease-in-out
     backwards;

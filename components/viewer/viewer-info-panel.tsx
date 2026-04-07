@@ -2,9 +2,9 @@
 
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { CaptureSettingChip } from '@/components/gallery/capture-setting-chip'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
-import { CaptureSettingChip } from './capture-setting-chip'
 import {
   getCaptureSettings,
   getDeviceInfoRows,
