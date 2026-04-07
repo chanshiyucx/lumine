@@ -234,11 +234,7 @@ export function ThumbnailRail({
           }}
         >
           <div className="relative size-full overflow-hidden">
-            <ThumbnailImage
-              photo={hoverPreviewPhoto}
-              loading="eager"
-              imageClassName="absolute inset-0 h-full w-full object-cover"
-            />
+            <ThumbnailImage photo={hoverPreviewPhoto} loading="eager" />
           </div>
         </div>
       ) : null}

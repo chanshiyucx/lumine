@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getPhotoIndexFromPathname } from '@/components/gallery/lib/masonry-layout'
 import { getPhotoPath, type Photo } from '@/lib/photos'
-import { getPhotoIndexFromPathname } from '../../gallery/lib/masonry-layout'
 
 interface UseViewerHistoryOptions {
   photos: Photo[]

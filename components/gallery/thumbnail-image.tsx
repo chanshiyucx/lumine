@@ -33,7 +33,10 @@ export function ThumbnailImage({
         ref={imageRef}
         src={photo.thumbnail.url}
         alt={photo.title}
-        className={imageClassName}
+        className={cn(
+          'absolute inset-0 h-full w-full object-cover',
+          imageClassName,
+        )}
         loading={loading}
       />
     </>
