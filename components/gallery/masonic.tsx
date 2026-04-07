@@ -32,14 +32,13 @@ function useForceUpdate() {
 function useContainerPosition(
   elementRef: MutableRefObject<HTMLElement | null>,
   deps: DependencyList = [],
-): ContainerPosition & { height: number } {
-  const [containerPosition, setContainerPosition] = useState<
-    ContainerPosition & { height: number }
-  >({
-    offset: 0,
-    width: 0,
-    height: 0,
-  })
+): ContainerPosition {
+  const [containerPosition, setContainerPosition] = useState<ContainerPosition>(
+    {
+      offset: 0,
+      width: 0,
+    },
+  )
 
   useLayoutEffect(() => {
     const node = elementRef.current
@@ -59,14 +58,12 @@ function useContainerPosition(
     const nextPosition = {
       offset,
       width: node.offsetWidth,
-      height: node.offsetHeight,
     }
 
     setContainerPosition((previousPosition) => {
       if (
         previousPosition.offset === nextPosition.offset &&
-        previousPosition.width === nextPosition.width &&
-        previousPosition.height === nextPosition.height
+        previousPosition.width === nextPosition.width
       ) {
         return previousPosition
       }
@@ -94,13 +91,9 @@ function useContainerPosition(
         const nextPosition = {
           ...previousPosition,
           width: currentNode.offsetWidth,
-          height: currentNode.offsetHeight,
         }
 
-        if (
-          previousPosition.width === nextPosition.width &&
-          previousPosition.height === nextPosition.height
-        ) {
+        if (previousPosition.width === nextPosition.width) {
           return previousPosition
         }
 
@@ -174,7 +167,6 @@ export function Masonic<Item>(props: MasonryProps<Item>) {
   const height = viewportHeight
   const width = containerPosition.width || viewportWidth
   const scrollState = useScroller(containerPosition.offset, props.scrollFps)
-
   const positioner = usePositioner(
     {
       width,

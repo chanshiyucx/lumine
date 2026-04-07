@@ -1,12 +1,11 @@
 'use client'
 
 import type { RenderComponentProps } from 'masonic'
-import { memo, useCallback, useMemo } from 'react'
-import { useViewportSize } from '@/hooks/use-viewport-size'
+import { useCallback, useMemo } from 'react'
 import type { Photo } from '@/lib/photos'
 import {
-  getMasonryConfig,
   getMasonryItemHeightEstimate,
+  useMasonryConfig,
 } from './lib/masonry-layout'
 import { Masonic } from './masonic'
 import { MasonryItem } from './masonry-item'
@@ -19,27 +18,12 @@ export interface MasonryGridProps {
   onOpen: (index: number) => void
 }
 
-interface MasonryPhotoItemProps extends RenderComponentProps<Photo> {
-  onOpen: (index: number) => void
+function getPhotoKey(photo: Photo) {
+  return photo.id
 }
 
-const MasonryPhotoItem = memo(function MasonryPhotoItem({
-  data,
-  index,
-  width,
-  onOpen,
-}: MasonryPhotoItemProps) {
-  return (
-    <MasonryItem photo={data} index={index} width={width} onOpen={onOpen} />
-  )
-})
-
 export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
-  const { width: viewportWidth } = useViewportSize()
-
-  const masonryConfig = useMemo(() => {
-    return getMasonryConfig(viewportWidth)
-  }, [viewportWidth])
+  const masonryConfig = useMasonryConfig()
 
   const itemHeightEstimate = useMemo(() => {
     return getMasonryItemHeightEstimate(photos, masonryConfig.columnWidth)
@@ -47,14 +31,15 @@ export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
 
   const renderItem = useCallback(
     (props: RenderComponentProps<Photo>) => (
-      <MasonryPhotoItem {...props} onOpen={onOpen} />
+      <MasonryItem
+        photo={props.data}
+        index={props.index}
+        width={props.width}
+        onOpen={onOpen}
+      />
     ),
     [onOpen],
   )
-
-  const itemKey = useCallback((photo: Photo) => {
-    return photo.id
-  }, [])
 
   return (
     <Masonic<Photo>
@@ -63,7 +48,7 @@ export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
       className="w-full max-w-full"
       items={photos}
       render={renderItem}
-      itemKey={itemKey}
+      itemKey={getPhotoKey}
       columnWidth={masonryConfig.columnWidth}
       columnGutter={masonryConfig.columnGutter}
       rowGutter={masonryConfig.rowGutter}
