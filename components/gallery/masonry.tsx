@@ -1,7 +1,6 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useCallback } from 'react'
 import { Viewer } from '@/components/viewer'
 import { useViewerHistory } from '@/components/viewer/hooks/use-photo-viewer-history'
 import type { Photo } from '@/lib/photos'
@@ -25,34 +24,16 @@ export function Masonry({ photos, initialPhotoSlug }: MasonryProps) {
     initialPhotoSlug,
   })
 
-  const handleOpen = useCallback(
-    (index: number) => {
-      setActiveIndex(index)
-    },
-    [setActiveIndex],
-  )
-
-  const handleClose = useCallback(() => {
-    setActiveIndex(null)
-  }, [setActiveIndex])
-
-  const handleChange = useCallback(
-    (index: number) => {
-      setActiveIndex(index)
-    },
-    [setActiveIndex],
-  )
-
   return (
     <>
-      <MasonryGrid photos={photos} onOpen={handleOpen} />
+      <MasonryGrid photos={photos} onOpen={setActiveIndex} />
 
       {activeIndex !== null && (
         <Viewer
           photos={photos}
           activeIndex={activeIndex}
-          onClose={handleClose}
-          onChange={handleChange}
+          onClose={() => setActiveIndex(null)}
+          onChange={setActiveIndex}
         />
       )}
     </>

@@ -1,6 +1,6 @@
+import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photos'
 
-const MOBILE_BREAKPOINT = 1024
 export const MASONRY_GAP = 4
 const MOBILE_COLUMN_WIDTH = 150
 const DESKTOP_COLUMN_WIDTH = 250
@@ -14,23 +14,23 @@ export interface MasonryConfig {
   maxColumns?: number
 }
 
-export function getMasonryConfig(containerWidth: number): MasonryConfig {
-  const isMobile = containerWidth > 0 && containerWidth < MOBILE_BREAKPOINT
+const MOBILE_MASONRY_CONFIG: MasonryConfig = {
+  columnGutter: MASONRY_GAP,
+  rowGutter: MASONRY_GAP,
+  columnWidth: MOBILE_COLUMN_WIDTH,
+}
 
-  if (isMobile) {
-    return {
-      columnGutter: MASONRY_GAP,
-      rowGutter: MASONRY_GAP,
-      columnWidth: MOBILE_COLUMN_WIDTH,
-    }
-  }
+const DESKTOP_MASONRY_CONFIG: MasonryConfig = {
+  columnGutter: MASONRY_GAP,
+  rowGutter: MASONRY_GAP,
+  columnWidth: DESKTOP_COLUMN_WIDTH,
+  maxColumns: DESKTOP_MAX_COLUMNS,
+}
 
-  return {
-    columnGutter: MASONRY_GAP,
-    rowGutter: MASONRY_GAP,
-    columnWidth: DESKTOP_COLUMN_WIDTH,
-    maxColumns: DESKTOP_MAX_COLUMNS,
-  }
+export function useMasonryConfig(): MasonryConfig {
+  const isMobile = useMobile()
+
+  return isMobile ? MOBILE_MASONRY_CONFIG : DESKTOP_MASONRY_CONFIG
 }
 
 export function getMasonryItemHeightEstimate(

@@ -188,10 +188,10 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
       )
 
       return {
-        id: photo.original.url,
         index,
-        slug: createPhotoSlug(photo.title),
+        id: photo.original.url,
         title: photo.title,
+        slug: createPhotoSlug(photo.title),
         fileName: getFileNameFromAssetPath(photo.original.url),
         albumKey: photo.original.url.split('/')[1] ?? 'gallery',
         albumLabel: formatAlbumLabel(photo.original.url),
