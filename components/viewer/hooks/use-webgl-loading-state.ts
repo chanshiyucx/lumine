@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, type RefObject } from 'react'
-import type { LoadingIndicatorRef } from '../loading-indicator'
+import type { LoadingIndicatorRef } from '../../viewer/loading-indicator'
 
 function formatWebglStatusLabel(message?: string) {
   if (!message) {

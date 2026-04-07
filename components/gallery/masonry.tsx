@@ -2,10 +2,10 @@
 
 import dynamic from 'next/dynamic'
 import { useCallback } from 'react'
+import { Viewer } from '@/components/viewer'
+import { useViewerHistory } from '@/components/viewer/hooks/use-photo-viewer-history'
 import type { GalleryPhoto } from '@/lib/photos'
-import { useViewerHistory } from './hooks/use-photo-viewer-history'
 import type { MasonryGridProps } from './masonry-grid'
-import { Viewer } from './viewer'
 
 const MasonryGrid = dynamic<MasonryGridProps>(
   () => import('./masonry-grid').then((mod) => mod.MasonryGrid),

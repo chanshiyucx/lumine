@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState, type RefObject } from 'react'
+import type { LoadingIndicatorRef } from '@/components/viewer/loading-indicator'
 import type { GalleryPhoto } from '@/lib/photos'
 import {
   getCachedPhotoResource,
   peekCachedPhotoResource,
   setCachedPhotoResource,
 } from '../lib/progressive-photo-cache'
-import type { LoadingIndicatorRef } from '../loading-indicator'
 
 interface ProgressiveState {
   blobSrc: string | null

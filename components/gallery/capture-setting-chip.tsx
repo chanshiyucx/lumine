@@ -4,8 +4,8 @@ import {
   ShutterSpeed,
   TablerAperture,
 } from '@/components/icons'
+import type { CaptureSetting } from '@/components/viewer/lib/viewer-metadata'
 import { cn } from '@/lib/style'
-import type { CaptureSetting } from './lib/viewer-metadata'
 
 const captureSettingIcons: Record<
   CaptureSetting['key'],
