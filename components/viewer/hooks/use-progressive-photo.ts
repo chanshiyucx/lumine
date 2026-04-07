@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type RefObject } from 'react'
 import type { LoadingIndicatorRef } from '@/components/viewer/loading-indicator'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import {
   getCachedPhotoResource,
   peekCachedPhotoResource,
@@ -88,7 +88,7 @@ async function readResponseAsBlob(
 }
 
 export function useProgressivePhoto(
-  photo: GalleryPhoto,
+  photo: Photo,
   { isActive, loadingIndicatorRef }: UseProgressivePhotoOptions,
 ) {
   const [state, setState] = useState<ProgressiveState>(() => {

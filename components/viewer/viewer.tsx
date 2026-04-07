@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useMobile } from '@/hooks/use-mobile'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
 import { useViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
@@ -36,7 +36,7 @@ function normalizeRenderedIndices(
 }
 
 interface ViewerProps {
-  photos: GalleryPhoto[]
+  photos: Photo[]
   activeIndex: number
   onClose: () => void
   onChange: (index: number) => void
@@ -108,7 +108,7 @@ export function Viewer({
       index,
       photo: photos[index],
     }))
-    .filter((entry): entry is { index: number; photo: GalleryPhoto } =>
+    .filter((entry): entry is { index: number; photo: Photo } =>
       Boolean(entry.photo),
     )
 

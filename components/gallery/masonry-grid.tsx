@@ -3,7 +3,7 @@
 import type { RenderComponentProps } from 'masonic'
 import { memo, useCallback, useMemo } from 'react'
 import { useViewportSize } from '@/hooks/use-viewport-size'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import {
   getMasonryConfig,
   getMasonryItemHeightEstimate,
@@ -15,11 +15,11 @@ const MASONRY_OVERSCAN = 2
 const MASONRY_SCROLL_FPS = 12
 
 export interface MasonryGridProps {
-  photos: GalleryPhoto[]
+  photos: Photo[]
   onOpen: (index: number) => void
 }
 
-interface MasonryPhotoItemProps extends RenderComponentProps<GalleryPhoto> {
+interface MasonryPhotoItemProps extends RenderComponentProps<Photo> {
   onOpen: (index: number) => void
 }
 
@@ -46,18 +46,18 @@ export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
   }, [masonryConfig.columnWidth, photos])
 
   const renderItem = useCallback(
-    (props: RenderComponentProps<GalleryPhoto>) => (
+    (props: RenderComponentProps<Photo>) => (
       <MasonryPhotoItem {...props} onOpen={onOpen} />
     ),
     [onOpen],
   )
 
-  const itemKey = useCallback((photo: GalleryPhoto) => {
+  const itemKey = useCallback((photo: Photo) => {
     return photo.id
   }, [])
 
   return (
-    <Masonic<GalleryPhoto>
+    <Masonic<Photo>
       role="grid"
       aria-label="Photo Masonry"
       className="w-full max-w-full"

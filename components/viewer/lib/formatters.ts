@@ -1,4 +1,4 @@
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 
 export const NOT_AVAILABLE_LABEL = 'Unknown'
 
@@ -14,7 +14,7 @@ export function formatBytes(bytes: number) {
   return `${bytes} B`
 }
 
-export function formatMimeLabel(photo: GalleryPhoto) {
+export function formatMimeLabel(photo: Photo) {
   const extension = photo.original.url.split('.').pop()?.toUpperCase()
 
   if (extension) {

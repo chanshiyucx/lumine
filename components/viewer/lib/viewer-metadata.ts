@@ -1,4 +1,4 @@
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import {
   formatApertureValue,
   formatBrightnessValue,
@@ -25,7 +25,7 @@ export interface CaptureSetting {
   value: string
 }
 
-export function getPhotoInfoRows(photo: GalleryPhoto): InfoRowData[] {
+export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
   return [
     { label: 'File Name', value: photo.fileName },
     { label: 'Format', value: formatMimeLabel(photo) },
@@ -53,7 +53,7 @@ export function getPhotoInfoRows(photo: GalleryPhoto): InfoRowData[] {
   ]
 }
 
-export function getCaptureSettings(photo: GalleryPhoto): CaptureSetting[] {
+export function getCaptureSettings(photo: Photo): CaptureSetting[] {
   return [
     {
       key: 'focal',
@@ -80,13 +80,13 @@ export function getCaptureSettings(photo: GalleryPhoto): CaptureSetting[] {
   ]
 }
 
-export function getAvailableCaptureSettings(photo: GalleryPhoto) {
+export function getAvailableCaptureSettings(photo: Photo) {
   return getCaptureSettings(photo).filter(
     (setting) => setting.value !== NOT_AVAILABLE_LABEL,
   )
 }
 
-export function getDeviceInfoRows(photo: GalleryPhoto): InfoRowData[] {
+export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
   return [
     {
       label: 'Camera',
@@ -118,7 +118,7 @@ export function getDeviceInfoRows(photo: GalleryPhoto): InfoRowData[] {
   ]
 }
 
-export function getExposureRows(photo: GalleryPhoto): InfoRowData[] {
+export function getExposureRows(photo: Photo): InfoRowData[] {
   return [
     {
       label: 'Exposure Program',

@@ -3,14 +3,14 @@
 /* eslint-disable @next/next/no-img-element */
 import type { RefObject } from 'react'
 import { WebGLImageViewer } from '@/components/webgl-viewer'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
 import { useWebGLLoadingState } from './hooks/use-webgl-loading-state'
 import type { LoadingIndicatorRef } from './loading-indicator'
 
 interface ProgressiveViewProps {
-  photo: GalleryPhoto
+  photo: Photo
   isActive: boolean
   className?: string
   loadingIndicatorRef: RefObject<LoadingIndicatorRef | null>

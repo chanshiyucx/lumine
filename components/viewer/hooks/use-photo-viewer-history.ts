@@ -1,11 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getPhotoPath, type GalleryPhoto } from '@/lib/photos'
+import { getPhotoPath, type Photo } from '@/lib/photos'
 import { getPhotoIndexFromPathname } from '../../gallery/lib/masonry-layout'
 
 interface UseViewerHistoryOptions {
-  photos: GalleryPhoto[]
+  photos: Photo[]
   initialPhotoSlug?: string
 }
 

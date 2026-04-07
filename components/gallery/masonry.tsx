@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import { useCallback } from 'react'
 import { Viewer } from '@/components/viewer'
 import { useViewerHistory } from '@/components/viewer/hooks/use-photo-viewer-history'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import type { MasonryGridProps } from './masonry-grid'
 
 const MasonryGrid = dynamic<MasonryGridProps>(
@@ -15,7 +15,7 @@ const MasonryGrid = dynamic<MasonryGridProps>(
 )
 
 interface MasonryProps {
-  photos: GalleryPhoto[]
+  photos: Photo[]
   initialPhotoSlug?: string
 }
 

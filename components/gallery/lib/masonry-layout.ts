@@ -1,4 +1,4 @@
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 
 const MOBILE_BREAKPOINT = 1024
 export const MASONRY_GAP = 4
@@ -34,7 +34,7 @@ export function getMasonryConfig(containerWidth: number): MasonryConfig {
 }
 
 export function getMasonryItemHeightEstimate(
-  photos: GalleryPhoto[],
+  photos: Photo[],
   columnWidth: number,
 ) {
   if (photos.length === 0 || columnWidth <= 0) {

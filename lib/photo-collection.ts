@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { blurhashToDataUrl } from './blurhash'
 import {
   createPhotoSlug,
-  type GalleryPhotoAsset,
+  type PhotoAsset,
   type PhotoCollection,
 } from './photos'
 import { siteConfig } from './site-config'
@@ -117,9 +117,7 @@ function formatLocationLabel(originalPath: string | undefined) {
   return match[4].replaceAll('-', ' ')
 }
 
-function normalizeAsset(
-  asset: z.infer<typeof photoAssetSchema>,
-): GalleryPhotoAsset {
+function normalizeAsset(asset: z.infer<typeof photoAssetSchema>): PhotoAsset {
   return {
     ...asset,
     url: resolveAssetUrl(asset.url),

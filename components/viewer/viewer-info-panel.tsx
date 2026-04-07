@@ -3,7 +3,7 @@
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/gallery/capture-setting-chip'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import {
   getCaptureSettings,
@@ -42,12 +42,12 @@ function InfoSection({ title, children }: InfoSectionProps) {
 }
 
 interface ViewerInfoPanelProps {
-  photo: GalleryPhoto
+  photo: Photo
   isOpen?: boolean
   onClose?: () => void
 }
 
-function ViewerInfoPanelContent({ photo }: { photo: GalleryPhoto }) {
+function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
   const photoInfoRows = getPhotoInfoRows(photo)
   const captureSettings = getCaptureSettings(photo)
   const deviceInfoRows = getDeviceInfoRows(photo)
