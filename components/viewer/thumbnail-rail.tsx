@@ -2,7 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
 import { useMobile } from '@/hooks/use-mobile'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
 
@@ -22,7 +22,7 @@ interface HoverPreviewState {
 }
 
 interface ThumbnailRailProps {
-  photos: GalleryPhoto[]
+  photos: Photo[]
   activeIndex: number
   onSelect: (index: number) => void
 }

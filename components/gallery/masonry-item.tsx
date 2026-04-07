@@ -1,7 +1,7 @@
 'use client'
 
 import { getAvailableCaptureSettings } from '@/components/viewer/lib/viewer-metadata'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import {
   formatAlbumChip,
   formatBytes,
@@ -11,7 +11,7 @@ import { CaptureSettingChip } from './capture-setting-chip'
 import { ThumbnailImage } from './thumbnail-image'
 
 interface MasonryItemProps {
-  photo: GalleryPhoto
+  photo: Photo
   index: number
   onOpen: (index: number) => void
   width: number

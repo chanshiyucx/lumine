@@ -1,4 +1,4 @@
-export interface GalleryPhotoAsset {
+export interface PhotoAsset {
   url: string
   width: number
   height: number
@@ -6,7 +6,7 @@ export interface GalleryPhotoAsset {
   mime: string
 }
 
-export interface GalleryPhotoCamera {
+export interface PhotoCamera {
   make?: string
   model?: string
   lens?: string
@@ -28,7 +28,7 @@ export interface GalleryPhotoCamera {
   maxAperture?: number
 }
 
-export interface GalleryPhotoImage {
+export interface PhotoImage {
   orientation?: number
   colorSpace?: string
   hasHdr?: boolean
@@ -36,7 +36,7 @@ export interface GalleryPhotoImage {
   bitDepth?: number
 }
 
-export interface GalleryPhoto {
+export interface Photo {
   id: string
   index: number
   slug: string
@@ -49,17 +49,17 @@ export interface GalleryPhoto {
   blurDataUrl: string
   aspectRatio: number
   takenAt: string | null
-  camera: GalleryPhotoCamera | null
-  image: GalleryPhotoImage | null
-  original: GalleryPhotoAsset
-  thumbnail: GalleryPhotoAsset
+  camera: PhotoCamera | null
+  image: PhotoImage | null
+  original: PhotoAsset
+  thumbnail: PhotoAsset
 }
 
 export interface PhotoCollection {
   version: number
   updatedAt: string
   albumLabel: string
-  photos: GalleryPhoto[]
+  photos: Photo[]
 }
 
 export function createPhotoSlug(title: string) {

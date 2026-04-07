@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Ref } from 'react'
-import type { GalleryPhoto } from '@/lib/photos'
+import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 
 interface ThumbnailImageProps {
-  photo: Pick<GalleryPhoto, 'title' | 'blurDataUrl' | 'thumbnail'>
+  photo: Pick<Photo, 'title' | 'blurDataUrl' | 'thumbnail'>
   blurClassName?: string
   imageClassName?: string
   imageRef?: Ref<HTMLImageElement>
