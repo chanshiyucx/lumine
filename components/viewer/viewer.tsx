@@ -9,7 +9,7 @@ import {
   PanelRightOpen,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMobile } from '@/hooks/use-mobile'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
@@ -73,19 +73,16 @@ export function Viewer({
     }
   }, [])
 
-  const goTo = useCallback(
-    (index: number) => {
-      if (index < 0 || index >= photos.length) {
-        return
-      }
+  const goTo = (index: number) => {
+    if (index < 0 || index >= photos.length) {
+      return
+    }
 
-      setRenderedIndices((current) =>
-        normalizeRenderedIndices(current, index, photos.length),
-      )
-      onChange(index)
-    },
-    [onChange, photos.length],
-  )
+    setRenderedIndices((current) =>
+      normalizeRenderedIndices(current, index, photos.length),
+    )
+    onChange(index)
+  }
 
   useViewerKeyboardNavigation({
     activeIndex,
@@ -93,27 +90,36 @@ export function Viewer({
     onGoTo: goTo,
   })
 
-  const toggleInfoPanel = useCallback(() => {
+  const toggleInfoPanel = () => {
     if (isMobile) {
       setIsMobileInfoPanelOpen((current) => !current)
       return
     }
 
     setIsDesktopInfoPanelOpen((current) => !current)
-  }, [isMobile])
+  }
 
-  const renderedPhotos = useMemo(
-    () =>
-      normalizeRenderedIndices(renderedIndices, activeIndex, photos.length)
-        .map((index) => ({
-          index,
-          photo: photos[index],
-        }))
-        .filter((entry): entry is { index: number; photo: GalleryPhoto } =>
-          Boolean(entry.photo),
-        ),
-    [activeIndex, photos, renderedIndices],
+  const renderedPhotos = normalizeRenderedIndices(
+    renderedIndices,
+    activeIndex,
+    photos.length,
   )
+    .map((index) => ({
+      index,
+      photo: photos[index],
+    }))
+    .filter((entry): entry is { index: number; photo: GalleryPhoto } =>
+      Boolean(entry.photo),
+    )
+
+  const handleInfoPanelClose = () => {
+    if (isMobile) {
+      setIsMobileInfoPanelOpen(false)
+      return
+    }
+
+    setIsDesktopInfoPanelOpen(false)
+  }
 
   return (
     <div
@@ -139,6 +145,7 @@ export function Viewer({
                 type="button"
                 className="bg-overlay/80 hover:bg-overlay/90 hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200 lg:inline-flex"
                 onClick={toggleInfoPanel}
+                aria-expanded={isInfoPanelOpen}
                 aria-label={
                   isInfoPanelOpen
                     ? 'Collapse information panel'
@@ -156,6 +163,7 @@ export function Viewer({
                 type="button"
                 className="bg-overlay/80 hover:bg-overlay/90 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200 lg:hidden"
                 onClick={toggleInfoPanel}
+                aria-expanded={isInfoPanelOpen}
                 aria-label={
                   isInfoPanelOpen
                     ? 'Collapse information panel'
@@ -169,8 +177,8 @@ export function Viewer({
                 type="button"
                 className="bg-overlay/80 hover:bg-overlay/90 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200"
                 onClick={onClose}
+                aria-label="Close preview"
               >
-                <span className="sr-only">Close preview</span>
                 <X className="size-4" />
               </button>
             </div>
@@ -207,9 +215,9 @@ export function Viewer({
 
             <button
               type="button"
+              disabled={!canGoPrevious}
               className={cn(
-                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 left-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 lg:inline-flex',
-                !canGoPrevious && 'pointer-events-none opacity-0',
+                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 left-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0 lg:inline-flex',
               )}
               onClick={() => goTo(activeIndex - 1)}
               aria-label="Previous photo"
@@ -219,9 +227,9 @@ export function Viewer({
 
             <button
               type="button"
+              disabled={!canGoNext}
               className={cn(
-                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 right-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 lg:inline-flex',
-                !canGoNext && 'pointer-events-none opacity-30',
+                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 right-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-30 lg:inline-flex',
               )}
               onClick={() => goTo(activeIndex + 1)}
               aria-label="Next photo"
@@ -240,14 +248,7 @@ export function Viewer({
         <ViewerInfoPanel
           photo={currentPhoto}
           isOpen={isInfoPanelOpen}
-          onClose={() => {
-            if (isMobile) {
-              setIsMobileInfoPanelOpen(false)
-              return
-            }
-
-            setIsDesktopInfoPanelOpen(false)
-          }}
+          onClose={handleInfoPanelClose}
         />
       </div>
     </div>
