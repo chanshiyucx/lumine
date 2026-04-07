@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photos'
@@ -59,7 +59,7 @@ function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {
   }
 }
 
-export function ThumbnailRail({
+export const ThumbnailRail = memo(function ThumbnailRail({
   photos,
   activeIndex,
   onSelect,
@@ -67,49 +67,15 @@ export function ThumbnailRail({
   const railShellRef = useRef<HTMLDivElement>(null)
   const railViewportRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
-  const [thumbnailHeight, setThumbnailHeight] = useState(
-    isMobile
-      ? MOBILE_FALLBACK_THUMBNAIL_HEIGHT
-      : DESKTOP_FALLBACK_THUMBNAIL_HEIGHT,
-  )
+  const thumbnailHeight = isMobile
+    ? MOBILE_FALLBACK_THUMBNAIL_HEIGHT
+    : DESKTOP_FALLBACK_THUMBNAIL_HEIGHT
   const [hoverPreview, setHoverPreview] = useState<HoverPreviewState | null>(
     null,
   )
   const hasCenteredInitialItemRef = useRef(false)
 
   useHorizontalWheelScroll(railViewportRef)
-
-  useEffect(() => {
-    const viewport = railViewportRef.current
-
-    if (!viewport) {
-      return
-    }
-
-    const syncHeight = () => {
-      const nextHeight = Math.max(1, Math.floor(viewport.clientHeight))
-
-      setThumbnailHeight((currentHeight) => {
-        if (currentHeight === nextHeight) {
-          return currentHeight
-        }
-
-        return nextHeight
-      })
-    }
-
-    syncHeight()
-
-    const observer = new ResizeObserver(() => {
-      syncHeight()
-    })
-
-    observer.observe(viewport)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [railViewportRef])
 
   const estimateSize = useCallback(
     (index: number) => {
@@ -200,13 +166,6 @@ export function ThumbnailRail({
     [updateHoverPreview],
   )
 
-  const handleThumbnailMove = useCallback(
-    (index: number, event: React.MouseEvent<HTMLButtonElement>) => {
-      updateHoverPreview(index, event.currentTarget)
-    },
-    [updateHoverPreview],
-  )
-
   const handleThumbnailLeave = useCallback(() => {
     setHoverPreview(null)
   }, [])
@@ -275,7 +234,6 @@ export function ThumbnailRail({
                 }}
                 onClick={() => onSelect(index)}
                 onMouseEnter={(event) => handleThumbnailEnter(index, event)}
-                onMouseMove={(event) => handleThumbnailMove(index, event)}
                 onMouseLeave={handleThumbnailLeave}
                 aria-label={`Open ${photo.title}`}
                 aria-current={isActive}
@@ -293,4 +251,4 @@ export function ThumbnailRail({
       </div>
     </div>
   )
-}
+})

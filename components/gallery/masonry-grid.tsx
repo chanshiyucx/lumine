@@ -1,7 +1,7 @@
 'use client'
 
 import type { RenderComponentProps } from 'masonic'
-import { useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import type { Photo } from '@/lib/photos'
 import {
   getMasonryItemHeightEstimate,
@@ -22,7 +22,10 @@ function getPhotoKey(photo: Photo) {
   return photo.id
 }
 
-export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
+export const MasonryGrid = memo(function MasonryGrid({
+  photos,
+  onOpen,
+}: MasonryGridProps) {
   const masonryConfig = useMasonryConfig()
 
   const itemHeightEstimate = useMemo(() => {
@@ -59,4 +62,4 @@ export function MasonryGrid({ photos, onOpen }: MasonryGridProps) {
       tabIndex={-1}
     />
   )
-}
+})

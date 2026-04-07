@@ -9,7 +9,7 @@ import {
   PanelRightOpen,
   X,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
@@ -73,16 +73,19 @@ export function Viewer({
     }
   }, [])
 
-  const goTo = (index: number) => {
-    if (index < 0 || index >= photos.length) {
-      return
-    }
+  const goTo = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= photos.length) {
+        return
+      }
 
-    setRenderedIndices((current) =>
-      normalizeRenderedIndices(current, index, photos.length),
-    )
-    onChange(index)
-  }
+      setRenderedIndices((current) =>
+        normalizeRenderedIndices(current, index, photos.length),
+      )
+      onChange(index)
+    },
+    [onChange, photos.length],
+  )
 
   useViewerKeyboardNavigation({
     activeIndex,
