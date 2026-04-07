@@ -1,12 +1,12 @@
 'use client'
 
-import { getAvailableCaptureSettings } from '@/components/viewer/lib/viewer-metadata'
-import type { Photo } from '@/lib/photos'
 import {
   formatAlbumChip,
   formatBytes,
   formatMimeLabel,
-} from '../viewer/lib/formatters'
+} from '@/components/viewer/lib/formatters'
+import { getAvailableCaptureSettings } from '@/components/viewer/lib/viewer-metadata'
+import type { Photo } from '@/lib/photos'
 import { CaptureSettingChip } from './capture-setting-chip'
 import { ThumbnailImage } from './thumbnail-image'
 
@@ -23,24 +23,19 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
   const captureSettings = getAvailableCaptureSettings(photo)
   const cardHeight = Math.round(width / photo.aspectRatio)
 
-  const handleOpen = () => {
-    onOpen(index)
-  }
-
   return (
-    <button
-      type="button"
+    <div
       style={{ height: `${cardHeight}px` }}
-      className="group bg-surface focus-visible:ring-text/70 focus-visible:ring-offset-base relative block w-full cursor-pointer overflow-hidden p-0 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className="group bg-surface relative block w-full cursor-pointer overflow-hidden"
       data-photo-id={photo.id}
-      onClick={handleOpen}
+      onClick={() => onOpen(index)}
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
     >
       <ThumbnailImage
         photo={photo}
         loading="lazy"
-        imageClassName="absolute inset-0 h-full w-full origin-center object-cover duration-300 transition-transform group-hover:scale-105"
+        imageClassName="origin-center duration-300 transition-transform group-hover:scale-105"
       />
 
       <div className="pointer-events-none">
@@ -76,6 +71,6 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
           )}
         </div>
       </div>
-    </button>
+    </div>
   )
 }
