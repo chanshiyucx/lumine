@@ -10,6 +10,7 @@ import {
 import { siteConfig } from './site-config'
 
 const PHOTO_MANIFEST_URL_ENV = 'PHOTO_MANIFEST_URL'
+const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 
 const photoAssetSchema = z.object({
   url: z.string().min(1),
@@ -149,7 +150,9 @@ function getBlurPreviewSize(width: number, height: number) {
 
 async function fetchManifestJson() {
   const manifestUrl = getManifestUrl()
-  const response = await fetch(manifestUrl, { cache: 'force-cache' })
+  const response = await fetch(manifestUrl, {
+    next: { revalidate: PHOTO_MANIFEST_REVALIDATE_SECONDS },
+  })
 
   if (!response.ok) {
     throw new Error(
@@ -172,12 +175,13 @@ async function fetchManifestJson() {
 
 export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
   const manifest = await fetchManifestJson()
+  const photos = manifest.photos.slice().reverse()
 
   return {
     version: manifest.version,
     updatedAt: manifest.updatedAt,
-    albumLabel: formatAlbumLabel(manifest.photos[0]?.original.url),
-    photos: manifest.photos.map((photo, index) => {
+    albumLabel: formatAlbumLabel(photos[0]?.original.url),
+    photos: photos.map((photo, index) => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
       const blurPreviewSize = getBlurPreviewSize(

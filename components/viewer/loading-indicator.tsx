@@ -1,14 +1,7 @@
 'use client'
 
 import { AlertCircle, LoaderCircle } from 'lucide-react'
-import {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 
 export interface ViewerLoadingState {
   isVisible: boolean
@@ -68,53 +61,49 @@ export const LoadingIndicator = forwardRef<
 
   useImperativeHandle(
     ref,
-    useCallback(
-      () => ({
-        updateLoadingState: (
-          nextOwnerId: string,
-          partialState: Partial<ViewerLoadingState>,
-        ) => {
-          if (activeOwnerRef.current !== nextOwnerId) {
-            return
+    () => ({
+      updateLoadingState: (
+        nextOwnerId: string,
+        partialState: Partial<ViewerLoadingState>,
+      ) => {
+        if (activeOwnerRef.current !== nextOwnerId) {
+          return
+        }
+
+        setLoadingState((current) => {
+          if (partialState.isVisible === false) {
+            return initialLoadingState
           }
 
-          setLoadingState((current) => {
-            if (partialState.isVisible === false) {
-              return initialLoadingState
-            }
-
-            return {
-              ...current,
-              ...partialState,
-              isVisible: partialState.isVisible ?? true,
-            }
-          })
-        },
-        resetLoadingState: (nextOwnerId?: string) => {
-          if (
-            nextOwnerId !== undefined &&
-            activeOwnerRef.current !== nextOwnerId
-          ) {
-            return
+          return {
+            ...current,
+            ...partialState,
+            isVisible: partialState.isVisible ?? true,
           }
+        })
+      },
+      resetLoadingState: (nextOwnerId?: string) => {
+        if (
+          nextOwnerId !== undefined &&
+          activeOwnerRef.current !== nextOwnerId
+        ) {
+          return
+        }
 
-          setLoadingState(initialLoadingState)
-        },
-      }),
-      [],
-    ),
+        setLoadingState(initialLoadingState)
+      },
+    }),
+    [],
   )
 
-  const bytesLabel = useMemo(() => {
-    const loadedBytes = loadingState.loadedBytes ?? 0
-    const totalBytes = loadingState.totalBytes ?? 0
-
-    if (totalBytes <= 0) {
-      return loadedBytes > 0 ? formatBytes(loadedBytes) : ''
-    }
-
-    return `${formatBytes(loadedBytes)} / ${formatBytes(totalBytes)}`
-  }, [loadingState.loadedBytes, loadingState.totalBytes])
+  const loadedBytes = loadingState.loadedBytes ?? 0
+  const totalBytes = loadingState.totalBytes ?? 0
+  const bytesLabel =
+    totalBytes <= 0
+      ? loadedBytes > 0
+        ? formatBytes(loadedBytes)
+        : ''
+      : `${formatBytes(loadedBytes)} / ${formatBytes(totalBytes)}`
 
   if (!loadingState.isVisible) {
     return null

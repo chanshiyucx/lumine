@@ -1,7 +1,7 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, type RefObject } from 'react'
+import type { RefObject } from 'react'
 import { WebGLImageViewer } from '@/components/webgl-viewer'
 import type { GalleryPhoto } from '@/lib/photos'
 import { cn } from '@/lib/style'
@@ -40,13 +40,13 @@ export function ProgressiveView({
     photo.id,
   )
 
-  const handleFallbackImageLoad = useCallback(() => {
+  const handleFallbackImageLoad = () => {
     if (!isActive) {
       return
     }
 
     loadingIndicatorRef.current?.resetLoadingState(photo.id)
-  }, [isActive, loadingIndicatorRef, photo.id])
+  }
 
   return (
     <div className={cn('relative h-full w-full overflow-hidden', className)}>

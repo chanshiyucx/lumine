@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useEffectEvent } from 'react'
 
 interface UseViewerKeyboardNavigationOptions {
   activeIndex: number
@@ -13,28 +13,38 @@ export function useViewerKeyboardNavigation({
   onClose,
   onGoTo,
 }: UseViewerKeyboardNavigationOptions) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        onClose()
-      }
-
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault()
-        onGoTo(activeIndex - 1)
-      }
-
-      if (event.key === 'ArrowRight') {
-        event.preventDefault()
-        onGoTo(activeIndex + 1)
-      }
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.defaultPrevented) {
+      return
     }
 
-    document.addEventListener('keydown', handleKeyDown)
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onClose()
+      return
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      onGoTo(activeIndex - 1)
+      return
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      onGoTo(activeIndex + 1)
+    }
+  })
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => {
+      handleKeyDown(event)
+    }
+
+    document.addEventListener('keydown', listener)
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown', listener)
     }
-  }, [activeIndex, onClose, onGoTo])
+  }, [])
 }
