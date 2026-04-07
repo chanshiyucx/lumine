@@ -112,13 +112,12 @@ export function useProgressivePhoto(
 
     if (cachedResource) {
       setState(createCachedState(cachedResource.objectUrl))
-      loadingIndicator?.resetLoadingState()
       return () => {
         controller.abort()
       }
     }
 
-    loadingIndicator?.updateLoadingState({
+    loadingIndicator?.updateLoadingState(photo.id, {
       isVisible: true,
       isError: false,
       isWebGLLoading: false,
@@ -142,7 +141,7 @@ export function useProgressivePhoto(
           controller.signal,
           photo.original.mime,
           (loadedBytes, totalBytes) => {
-            loadingIndicator?.updateLoadingState({
+            loadingIndicator?.updateLoadingState(photo.id, {
               isVisible: true,
               isError: false,
               isWebGLLoading: false,
@@ -177,7 +176,7 @@ export function useProgressivePhoto(
           highResLoaded: false,
           error: true,
         })
-        loadingIndicator?.updateLoadingState({
+        loadingIndicator?.updateLoadingState(photo.id, {
           isVisible: true,
           isError: true,
           errorMessage: 'Failed to load image',
@@ -189,11 +188,11 @@ export function useProgressivePhoto(
 
     return () => {
       controller.abort()
-      loadingIndicator?.resetLoadingState()
     }
   }, [
     isActive,
     loadingIndicatorRef,
+    photo.id,
     photo.original.bytes,
     photo.original.mime,
     photo.original.url,

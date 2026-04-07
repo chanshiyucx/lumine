@@ -1,6 +1,5 @@
 'use client'
 
-import { type KeyboardEvent } from 'react'
 import { getAvailableCaptureSettings } from '@/components/viewer/lib/viewer-metadata'
 import type { GalleryPhoto } from '@/lib/photos'
 import {
@@ -28,23 +27,15 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
     onOpen(index)
   }
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Enter' && event.key !== ' ') {
-      return
-    }
-
-    event.preventDefault()
-    onOpen(index)
-  }
-
   return (
-    <div
+    <button
+      type="button"
       style={{ height: `${cardHeight}px` }}
-      className="group bg-surface relative w-full cursor-pointer overflow-hidden"
+      className="group bg-surface focus-visible:ring-text/70 focus-visible:ring-offset-base relative block w-full cursor-pointer overflow-hidden p-0 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       data-photo-id={photo.id}
       onClick={handleOpen}
-      onKeyDown={handleKeyDown}
       aria-label={`Open ${photo.title}`}
+      aria-haspopup="dialog"
     >
       <ThumbnailImage
         photo={photo}
@@ -85,6 +76,6 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
           )}
         </div>
       </div>
-    </div>
+    </button>
   )
 }

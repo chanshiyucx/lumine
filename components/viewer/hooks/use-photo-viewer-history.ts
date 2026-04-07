@@ -14,8 +14,6 @@ export function useViewerHistory({
   initialPhotoSlug,
 }: UseViewerHistoryOptions) {
   const isHydratedRef = useRef(false)
-  const pushedViewerStateRef = useRef(false)
-  const previousActiveIndexRef = useRef<number | null>(null)
   const slugToIndex = useMemo(() => {
     return new Map(photos.map((photo, index) => [photo.slug, index]))
   }, [photos])
@@ -53,33 +51,18 @@ export function useViewerHistory({
 
     if (!isHydratedRef.current) {
       isHydratedRef.current = true
-      previousActiveIndexRef.current = activeIndex
       return
     }
 
     const currentPath = window.location.pathname
-    const wasOpen = previousActiveIndexRef.current !== null
 
     if (currentPath !== nextPath) {
-      if (activeIndex !== null) {
-        if (!wasOpen && currentPath === '/') {
-          window.history.pushState({ photoViewer: true }, '', nextPath)
-          pushedViewerStateRef.current = true
-        } else {
-          window.history.replaceState({ photoViewer: true }, '', nextPath)
-        }
-      } else if (
-        pushedViewerStateRef.current &&
-        currentPath.startsWith('/photos/')
-      ) {
-        pushedViewerStateRef.current = false
-        window.history.back()
-      } else if (currentPath !== '/') {
-        window.history.replaceState({}, '', '/')
-      }
+      window.history.pushState(
+        { photoViewer: activeIndex !== null },
+        '',
+        nextPath,
+      )
     }
-
-    previousActiveIndexRef.current = activeIndex
   }, [activeIndex, photos])
 
   return {
