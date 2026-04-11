@@ -1,3 +1,5 @@
+import { deflateSync } from 'node:zlib'
+
 const CHARACTERS =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~'
 
@@ -110,24 +112,77 @@ export function decodeBlurhash(hash: string, width: number, height: number) {
   return pixels
 }
 
-export function blurhashToDataUrl(hash: string, width: number, height: number) {
-  const pixels = decodeBlurhash(hash, width, height)
-  const rects: string[] = []
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+])
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const index = 4 * (x + y * width)
-      const red = pixels[index]
-      const green = pixels[index + 1]
-      const blue = pixels[index + 2]
+const CRC_TABLE = new Uint32Array(256).map((_, index) => {
+  let crc = index
 
-      rects.push(
-        `<rect x="${x}" y="${y}" width="1" height="1" fill="rgb(${red},${green},${blue})" />`,
-      )
-    }
+  for (let bit = 0; bit < 8; bit += 1) {
+    crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><defs><filter id="b"><feGaussianBlur stdDeviation="0.65" /></filter></defs><g filter="url(#b)">${rects.join('')}</g></svg>`
+  return crc >>> 0
+})
 
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+function crc32(buffer: Buffer) {
+  let crc = 0xffffffff
+
+  for (const byte of buffer) {
+    crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8)
+  }
+
+  return (crc ^ 0xffffffff) >>> 0
+}
+
+function createPngChunk(type: string, data = Buffer.alloc(0)) {
+  const typeBuffer = Buffer.from(type, 'ascii')
+  const length = Buffer.alloc(4)
+  const crc = Buffer.alloc(4)
+  const payload = Buffer.concat([typeBuffer, data])
+
+  length.writeUInt32BE(data.length, 0)
+  crc.writeUInt32BE(crc32(payload), 0)
+
+  return Buffer.concat([length, payload, crc])
+}
+
+function encodePng(width: number, height: number, pixels: Uint8ClampedArray) {
+  const header = Buffer.alloc(13)
+  const rowLength = width * 4
+  const raw = Buffer.alloc((rowLength + 1) * height)
+
+  header.writeUInt32BE(width, 0)
+  header.writeUInt32BE(height, 4)
+  header[8] = 8
+  header[9] = 6
+  header[10] = 0
+  header[11] = 0
+  header[12] = 0
+
+  for (let y = 0; y < height; y += 1) {
+    const sourceStart = y * rowLength
+    const targetStart = y * (rowLength + 1)
+
+    raw[targetStart] = 0
+    Buffer.from(pixels.buffer, pixels.byteOffset + sourceStart, rowLength).copy(
+      raw,
+      targetStart + 1,
+    )
+  }
+
+  return Buffer.concat([
+    PNG_SIGNATURE,
+    createPngChunk('IHDR', header),
+    createPngChunk('IDAT', deflateSync(raw)),
+    createPngChunk('IEND'),
+  ])
+}
+
+export function blurhashToDataUrl(hash: string, width: number, height: number) {
+  const pixels = decodeBlurhash(hash, width, height)
+  const png = encodePng(width, height, pixels)
+
+  return `data:image/png;base64,${png.toString('base64')}`
 }
