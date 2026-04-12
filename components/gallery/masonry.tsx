@@ -18,6 +18,7 @@ const MasonryGrid = dynamic<MasonryGridProps>(
 interface MasonryProps {
   photos: Photo[]
   initialPhotoSlug?: string
+  basePath?: string
 }
 
 interface DateParts {
@@ -156,10 +157,15 @@ function getVisibleHeaderState(visiblePhotos: Photo[]): GalleryHeaderState {
   }
 }
 
-export function Masonry({ photos, initialPhotoSlug }: MasonryProps) {
+export function Masonry({
+  photos,
+  initialPhotoSlug,
+  basePath = '/',
+}: MasonryProps) {
   const { activeIndex, setActiveIndex } = useViewerHistory({
     photos,
     initialPhotoSlug,
+    basePath,
   })
   const [showHeaderDetail, setShowHeaderDetail] = useState(false)
   const [headerState, setHeaderState] = useState<GalleryHeaderState>({})
