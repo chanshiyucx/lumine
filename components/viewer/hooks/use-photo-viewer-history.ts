@@ -7,11 +7,13 @@ import { getPhotoPath, type Photo } from '@/lib/photos'
 interface UseViewerHistoryOptions {
   photos: Photo[]
   initialPhotoSlug?: string
+  basePath?: string
 }
 
 export function useViewerHistory({
   photos,
   initialPhotoSlug,
+  basePath = '/',
 }: UseViewerHistoryOptions) {
   const isHydratedRef = useRef(false)
   const slugToIndex = useMemo(() => {
@@ -47,7 +49,9 @@ export function useViewerHistory({
 
   useEffect(() => {
     const nextPath =
-      activeIndex === null ? '/' : getPhotoPath(photos[activeIndex]?.slug ?? '')
+      activeIndex === null
+        ? basePath
+        : getPhotoPath(photos[activeIndex]?.slug ?? '')
 
     if (!isHydratedRef.current) {
       isHydratedRef.current = true
@@ -63,7 +67,7 @@ export function useViewerHistory({
         nextPath,
       )
     }
-  }, [activeIndex, photos])
+  }, [activeIndex, basePath, photos])
 
   return {
     activeIndex,
