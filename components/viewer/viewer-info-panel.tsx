@@ -136,7 +136,7 @@ export function ViewerInfoPanel({
           !isOpen && 'lg:translate-x-full',
         )}
       >
-        <div className="flex items-center justify-end px-4 py-3 lg:hidden">
+        <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
           {onClose ? (
             <button
               type="button"
@@ -148,6 +148,7 @@ export function ViewerInfoPanel({
             </button>
           ) : null}
         </div>
+        <div className="from-surface/80 pointer-events-none absolute bottom-0 left-0 z-10 h-10 w-screen bg-linear-to-t to-transparent lg:hidden"></div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <ViewerInfoPanelContent photo={photo} />
