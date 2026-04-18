@@ -146,7 +146,7 @@ export function Viewer({
             <div className="absolute top-2 right-2 z-50 flex items-start justify-between gap-2">
               <button
                 type="button"
-                className="bg-overlay/80 hover:bg-overlay/90 hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200 lg:inline-flex"
+                className="circle-button hidden lg:inline-flex"
                 onClick={toggleInfoPanel}
                 aria-expanded={isInfoPanelOpen}
                 aria-label={
@@ -164,7 +164,7 @@ export function Viewer({
 
               <button
                 type="button"
-                className="bg-overlay/80 hover:bg-overlay/90 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200 lg:hidden"
+                className="circle-button lg:hidden"
                 onClick={toggleInfoPanel}
                 aria-expanded={isInfoPanelOpen}
                 aria-label={
@@ -178,7 +178,7 @@ export function Viewer({
 
               <button
                 type="button"
-                className="bg-overlay/80 hover:bg-overlay/90 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full duration-200"
+                className="circle-button"
                 onClick={onClose}
                 aria-label="Close preview"
               >
@@ -219,9 +219,7 @@ export function Viewer({
             <button
               type="button"
               disabled={!canGoPrevious}
-              className={cn(
-                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 left-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0 lg:inline-flex',
-              )}
+              className="circle-button absolute top-1/2 left-4 z-50 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 lg:inline-flex"
               onClick={() => goTo(activeIndex - 1)}
               aria-label="Previous photo"
             >
@@ -231,9 +229,7 @@ export function Viewer({
             <button
               type="button"
               disabled={!canGoNext}
-              className={cn(
-                'bg-overlay/80 hover:bg-overlay/90 absolute top-1/2 right-4 z-50 hidden h-8 w-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-0 backdrop-blur-sm duration-200 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-30 lg:inline-flex',
-              )}
+              className="circle-button absolute top-1/2 right-4 z-50 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 lg:inline-flex"
               onClick={() => goTo(activeIndex + 1)}
               aria-label="Next photo"
             >

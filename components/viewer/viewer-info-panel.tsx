@@ -21,8 +21,8 @@ interface InfoRowProps {
 function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div className="flex justify-between py-1 text-sm">
-      <dt className="text-subtle">{label}</dt>
-      <dd className="text-text">{value}</dd>
+      <dt className="text-subtle pr-3">{label}</dt>
+      <dd className="text-text break-all">{value}</dd>
     </div>
   )
 }
@@ -109,7 +109,7 @@ export function ViewerInfoPanel({
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden border-white/10 backdrop-blur-2xl transition-[width,transform,opacity] duration-300 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0 lg:border-l',
+        'fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden border-white/10 backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0 lg:border-l',
         isOpen
           ? 'translate-y-0 opacity-100 lg:w-80'
           : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
@@ -130,12 +130,7 @@ export function ViewerInfoPanel({
         }}
       />
 
-      <div
-        className={cn(
-          'relative flex max-h-[40svh] flex-col transition-transform duration-300 ease-out lg:h-full lg:max-h-none lg:w-80',
-          !isOpen && 'lg:translate-x-full',
-        )}
-      >
+      <div className="relative flex max-h-[40svh] flex-col lg:h-full lg:max-h-none lg:w-80">
         <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
           {onClose ? (
             <button
