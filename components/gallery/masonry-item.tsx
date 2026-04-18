@@ -39,8 +39,8 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
       />
 
       <div className="pointer-events-none">
-        <div className="from-base/80 via-base/40 pointer-events-none absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="absolute inset-x-0 bottom-0 space-y-1 p-3">
+        <div className="from-base/80 via-base/60 pointer-events-none absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="absolute inset-x-0 bottom-0 p-2">
           <h3 className="truncate font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             {photo.title}
           </h3>
@@ -54,7 +54,7 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
             <span>{formatBytes(photo.original.bytes)}</span>
           </div>
           <div>
-            <span className="bg-text/10 rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md duration-300 group-hover:opacity-100">
+            <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md duration-300 group-hover:opacity-100">
               {albumChip}
             </span>
           </div>

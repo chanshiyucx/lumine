@@ -38,6 +38,18 @@ body {
   @apply bg-base text-text min-h-screen font-sans font-medium tabular-nums antialiased;
 }
 
+@utility circle-button {
+  @apply bg-overlay/80 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full backdrop-blur-sm duration-200;
+
+  @variant hover {
+    @apply bg-overlay/90;
+  }
+
+  @variant disabled {
+    @apply pointer-events-none opacity-30;
+  }
+}
+
 @utility logo-path {
   stroke-dasharray: var(--path-length);
   stroke-dashoffset: var(--path-length);
@@ -57,7 +69,7 @@ body {
   --animate-svg-text: svg-text 10s var(--delay, 0s) infinite ease-in-out
     backwards;
   --animate-viewer-enter: viewer-enter 0.3s ease-out forwards;
-  --animate-preview-enter: preview-enter 0.3s ease-out forwards;
+  --animate-preview-enter: preview-enter 0.2s ease-out forwards;
 
   @keyframes svg-text {
     0% {
