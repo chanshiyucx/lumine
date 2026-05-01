@@ -28,6 +28,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
+  category: 'Photo Gallery',
+  keywords: 'Blog, Gallery, Photos, Lumine',
 }
 
 export default function RootLayout({

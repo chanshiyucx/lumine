@@ -107,21 +107,26 @@ function formatLocationRange(startPhoto: Photo, endPhoto?: Photo) {
 }
 
 function getVisibleHeaderState(visiblePhotos: Photo[]): GalleryHeaderState {
-  const datedPhotos = visiblePhotos
-    .map((photo): DatedPhoto | null => {
-      const date = parsePhotoDate(photo)
+  let start: DatedPhoto | undefined
+  let end: DatedPhoto | undefined
 
-      if (!date) {
-        return null
-      }
+  visiblePhotos.forEach((photo) => {
+    const date = parsePhotoDate(photo)
 
-      return { date, photo }
-    })
-    .filter((item): item is DatedPhoto => item !== null)
-    .sort((a, b) => a.date.key - b.date.key)
+    if (!date) {
+      return
+    }
 
-  const start = datedPhotos[0]
-  const end = datedPhotos.at(-1)
+    const datedPhoto = { date, photo }
+
+    if (!start || date.key < start.date.key) {
+      start = datedPhoto
+    }
+
+    if (!end || date.key > end.date.key) {
+      end = datedPhoto
+    }
+  })
 
   if (!start || !end) {
     return {}
@@ -172,7 +177,15 @@ export function Masonry({
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowHeaderDetail(window.scrollY > HEADER_SCROLL_THRESHOLD)
+      const nextShowHeaderDetail = window.scrollY > HEADER_SCROLL_THRESHOLD
+
+      setShowHeaderDetail((currentShowHeaderDetail) => {
+        if (currentShowHeaderDetail === nextShowHeaderDetail) {
+          return currentShowHeaderDetail
+        }
+
+        return nextShowHeaderDetail
+      })
     }
 
     handleScroll()

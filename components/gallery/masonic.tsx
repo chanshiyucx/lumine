@@ -177,7 +177,15 @@ export function Masonic<Item>(props: MasonryProps<Item>) {
       maxColumnCount: props.maxColumnCount,
       maxColumnWidth: props.maxColumnWidth,
     },
-    [width],
+    [
+      width,
+      props.columnWidth,
+      props.columnGutter,
+      props.rowGutter,
+      props.columnCount,
+      props.maxColumnCount,
+      props.maxColumnWidth,
+    ],
   )
 
   const resizeObserver = useThrottledResizeObserver(
