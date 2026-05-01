@@ -14,20 +14,21 @@ interface MasonryItemProps {
   photo: Photo
   index: number
   onOpen: (index: number) => void
-  width: number
 }
 
-export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
+export function MasonryItem({ photo, index, onOpen }: MasonryItemProps) {
   const mimeLabel = formatMimeLabel(photo)
   const albumChip = formatAlbumChip(photo.albumKey)
   const captureSettings = getAvailableCaptureSettings(photo)
-  const cardHeight = Math.round(width / photo.aspectRatio)
 
   return (
-    <div
-      style={{ height: `${cardHeight}px` }}
-      className="group bg-surface relative block w-full cursor-pointer overflow-hidden"
-      data-photo-id={photo.id}
+    <button
+      type="button"
+      style={{
+        aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
+      }}
+      className="group bg-surface relative block w-full cursor-pointer overflow-hidden border-0 p-0 text-left font-[inherit]"
+      data-photo-index={index}
       onClick={() => onOpen(index)}
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
@@ -71,6 +72,6 @@ export function MasonryItem({ photo, index, onOpen, width }: MasonryItemProps) {
           )}
         </div>
       </div>
-    </div>
+    </button>
   )
 }
