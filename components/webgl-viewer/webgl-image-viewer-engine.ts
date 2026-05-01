@@ -1,11 +1,10 @@
 import type * as React from 'react'
-import { ImageViewerEngineBase } from './image-viewer-engine-base'
 import {
   createShader,
   FRAGMENT_SHADER_SOURCE,
   VERTEX_SHADER_SOURCE,
 } from './shaders'
-import type { DebugInfo, WebGLImageViewerProps } from './types'
+import type { DebugInfo, ResolvedWebGLImageViewerProps } from './types'
 
 const TILE_SIZE = 512
 const MAX_TILES_PER_FRAME = 4
@@ -22,6 +21,7 @@ interface TileInfo {
 }
 
 type TileKey = string
+type ViewerImageSource = HTMLImageElement | ImageBitmap
 
 const SIMPLE_LOD_LEVELS = [
   { scale: 0.25 },
@@ -31,13 +31,16 @@ const SIMPLE_LOD_LEVELS = [
   { scale: 4 },
 ] as const
 
-export class WebGLImageViewerEngine extends ImageViewerEngineBase {
+export class WebGLImageViewerEngine {
   private canvas: HTMLCanvasElement
   private gl: WebGLRenderingContext
-  private program!: WebGLProgram
+  private program: WebGLProgram | null = null
+  private positionBuffer: WebGLBuffer | null = null
+  private texCoordBuffer: WebGLBuffer | null = null
+  private matrixLocation: WebGLUniformLocation | null = null
+  private imageLocation: WebGLUniformLocation | null = null
   private texture: WebGLTexture | null = null
   private imageLoaded = false
-  private originalImageSrc = ''
 
   private scale = 1
   private translateX = 0
@@ -70,13 +73,11 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   private targetTranslateY = 0
   private animationStartLOD = -1
 
-  private originalImage: HTMLImageElement | null = null
   private currentLOD = 1
   private lodTextures = new Map<number, WebGLTexture>()
 
-  private config: Required<WebGLImageViewerProps>
+  private config: ResolvedWebGLImageViewerProps
   private onZoomChange?: (originalScale: number, relativeScale: number) => void
-  private onImageCopied?: () => void
   private onLoadingStateChange?: (
     isLoading: boolean,
     message?: string,
@@ -109,19 +110,20 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   private lastViewportHash = ''
   private resizeObserver: ResizeObserver | null = null
   private lastTileUpdateTime = 0
+  private animationFrameId: number | null = null
+  private tileUpdateTimeoutId: number | null = null
+  private destroyed = false
 
   constructor(
     canvas: HTMLCanvasElement,
-    config: Required<WebGLImageViewerProps>,
+    config: ResolvedWebGLImageViewerProps,
     onDebugUpdate?: React.RefObject<{
       updateDebugInfo: (debugInfo: DebugInfo) => void
     } | null>,
   ) {
-    super()
     this.canvas = canvas
     this.config = config
     this.onZoomChange = config.onZoomChange
-    this.onImageCopied = config.onImageCopied
     this.onLoadingStateChange = config.onLoadingStateChange
     this.onDebugUpdate = onDebugUpdate
 
@@ -153,13 +155,15 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     this.boundHandleTouchEnd = () => this.handleTouchEnd()
     this.boundResizeCanvas = () => this.resizeCanvas()
 
-    this.setupCanvas()
-    this.initWebGL()
-    this.initWorker()
-    this.setupEventListeners()
-
-    this.isLoadingTexture = false
-    this.notifyLoadingStateChange(false)
+    try {
+      this.initWebGL()
+      this.setupCanvas()
+      this.initWorker()
+      this.setupEventListeners()
+    } catch (error) {
+      this.destroy()
+      throw error
+    }
   }
 
   private setupCanvas() {
@@ -182,6 +186,10 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   private resizeCanvas() {
+    if (this.destroyed) {
+      return
+    }
+
     const rect = this.canvas.getBoundingClientRect()
     this.devicePixelRatio = window.devicePixelRatio || 1
     this.canvasWidth = rect.width
@@ -217,18 +225,33 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
       FRAGMENT_SHADER_SOURCE,
     )
 
-    this.program = gl.createProgram()!
-    gl.attachShader(this.program, vertexShader)
-    gl.attachShader(this.program, fragmentShader)
-    gl.linkProgram(this.program)
-
-    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
-      throw new Error(
-        `Program linking failed: ${gl.getProgramInfoLog(this.program)}`,
-      )
+    const program = gl.createProgram()
+    if (!program) {
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      throw new Error('Failed to create WebGL program')
     }
 
-    gl.useProgram(this.program)
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const error = gl.getProgramInfoLog(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteProgram(program)
+      throw new Error(`Program linking failed: ${error}`)
+    }
+
+    gl.deleteShader(vertexShader)
+    gl.deleteShader(fragmentShader)
+
+    this.program = program
+    this.matrixLocation = gl.getUniformLocation(program, 'u_matrix')
+    this.imageLocation = gl.getUniformLocation(program, 'u_image')
+
+    gl.useProgram(program)
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -237,19 +260,27 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     ])
     const texCoords = new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0])
 
-    const positionBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    this.positionBuffer = gl.createBuffer()
+    if (!this.positionBuffer) {
+      throw new Error('Failed to create WebGL position buffer')
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
 
-    const positionLocation = gl.getAttribLocation(this.program, 'a_position')
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    const texCoordBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    this.texCoordBuffer = gl.createBuffer()
+    if (!this.texCoordBuffer) {
+      throw new Error('Failed to create WebGL texture coordinate buffer')
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
-    const texCoordLocation = gl.getAttribLocation(this.program, 'a_texCoord')
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
     gl.enableVertexAttribArray(texCoordLocation)
     gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
   }
@@ -266,6 +297,14 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   private handleWorkerMessage(event: MessageEvent) {
+    if (this.destroyed) {
+      const imageBitmap = event.data?.payload?.imageBitmap
+      if (imageBitmap instanceof ImageBitmap) {
+        imageBitmap.close()
+      }
+      return
+    }
+
     const { type, payload } = event.data
 
     if (type === 'init-done') {
@@ -328,11 +367,87 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     url: string,
     preknownWidth?: number,
     preknownHeight?: number,
+    sourceBlob?: Blob,
   ) {
-    this.originalImageSrc = url
     this.isLoadingTexture = true
     this.notifyLoadingStateChange(true, 'Loading...')
 
+    if (sourceBlob && 'createImageBitmap' in window) {
+      try {
+        await this.loadImageFromBlob(sourceBlob, preknownWidth, preknownHeight)
+        return
+      } catch (error) {
+        if (this.destroyed) {
+          throw error
+        }
+
+        console.warn('Failed to decode image blob for WebGL:', error)
+      }
+    }
+
+    await this.loadImageElement(url, preknownWidth, preknownHeight)
+  }
+
+  private async loadImageFromBlob(
+    blob: Blob,
+    preknownWidth?: number,
+    preknownHeight?: number,
+  ) {
+    const imageBitmap = await createImageBitmap(blob)
+
+    try {
+      if (this.destroyed) {
+        imageBitmap.close()
+        return
+      }
+
+      if (preknownWidth && preknownHeight) {
+        this.imageWidth = preknownWidth
+        this.imageHeight = preknownHeight
+      } else {
+        this.imageWidth = imageBitmap.width
+        this.imageHeight = imageBitmap.height
+      }
+
+      this.setupInitialScaling()
+      this.notifyLoadingStateChange(true, 'Creating texture...')
+      await this.createTexture(imageBitmap)
+
+      if (this.destroyed) {
+        imageBitmap.close()
+        return
+      }
+
+      if (this.worker) {
+        this.worker.postMessage(
+          {
+            type: 'init',
+            payload: { imageBitmap },
+          },
+          [imageBitmap],
+        )
+      } else {
+        imageBitmap.close()
+      }
+
+      this.imageLoaded = true
+      this.isLoadingTexture = false
+      this.notifyLoadingStateChange(false)
+      this.render()
+      this.notifyZoomChange()
+    } catch (error) {
+      imageBitmap.close()
+      this.isLoadingTexture = false
+      this.notifyLoadingStateChange(false)
+      throw error
+    }
+  }
+
+  private async loadImageElement(
+    url: string,
+    preknownWidth?: number,
+    preknownHeight?: number,
+  ) {
     if (preknownWidth && preknownHeight) {
       this.imageWidth = preknownWidth
       this.imageHeight = preknownHeight
@@ -345,6 +460,11 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     return new Promise<void>((resolve, reject) => {
       image.onload = async () => {
         try {
+          if (this.destroyed) {
+            resolve()
+            return
+          }
+
           if (!preknownWidth || !preknownHeight) {
             this.imageWidth = image.width
             this.imageHeight = image.height
@@ -354,7 +474,19 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
           this.notifyLoadingStateChange(true, 'Creating texture...')
           await this.createTexture(image)
 
+          if (this.destroyed) {
+            resolve()
+            return
+          }
+
           const imageBitmap = await createImageBitmap(image)
+
+          if (this.destroyed) {
+            imageBitmap.close()
+            resolve()
+            return
+          }
+
           this.worker?.postMessage(
             {
               type: 'init',
@@ -395,14 +527,13 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     }
   }
 
-  private async createTexture(image: HTMLImageElement) {
-    this.originalImage = image
-    await this.createLODTexture(this.currentLOD)
+  private async createTexture(source: ViewerImageSource) {
+    await this.createLODTexture(source, this.currentLOD)
   }
 
-  private async createLODTexture(lodLevel: number) {
+  private async createLODTexture(source: ViewerImageSource, lodLevel: number) {
     if (
-      !this.originalImage ||
+      this.destroyed ||
       lodLevel < 0 ||
       lodLevel >= SIMPLE_LOD_LEVELS.length
     ) {
@@ -412,11 +543,11 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     const lodConfig = SIMPLE_LOD_LEVELS[lodLevel]
     const finalWidth = Math.max(
       1,
-      Math.round(this.originalImage.width * lodConfig.scale),
+      Math.round(this.imageWidth * lodConfig.scale),
     )
     const finalHeight = Math.max(
       1,
-      Math.round(this.originalImage.height * lodConfig.scale),
+      Math.round(this.imageHeight * lodConfig.scale),
     )
 
     const canvas = document.createElement('canvas')
@@ -426,7 +557,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
 
     context.imageSmoothingEnabled = true
     context.imageSmoothingQuality = lodConfig.scale >= 1 ? 'high' : 'medium'
-    context.drawImage(this.originalImage, 0, 0, finalWidth, finalHeight)
+    context.drawImage(source, 0, 0, finalWidth, finalHeight)
 
     const texture = this.createWebGLTexture(canvas)
     if (!texture) {
@@ -444,6 +575,10 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   private createWebGLTexture(
     source: HTMLCanvasElement | HTMLImageElement | ImageBitmap,
   ): WebGLTexture | null {
+    if (this.destroyed) {
+      return null
+    }
+
     const { gl } = this
     const texture = gl.createTexture()
 
@@ -467,6 +602,20 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     }
 
     this.lodTextures.clear()
+    this.texture = null
+  }
+
+  private cleanupTileTextures() {
+    for (const tileInfo of this.tileCache.values()) {
+      if (tileInfo.texture) {
+        this.gl.deleteTexture(tileInfo.texture)
+      }
+    }
+
+    this.tileCache.clear()
+    this.loadingTiles.clear()
+    this.pendingTileRequests = []
+    this.currentVisibleTiles.clear()
   }
 
   private selectOptimalLOD(): number {
@@ -499,6 +648,15 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     targetTranslateY: number,
     animationTime?: number,
   ) {
+    if (this.destroyed) {
+      return
+    }
+
+    if (this.animationFrameId !== null) {
+      window.cancelAnimationFrame(this.animationFrameId)
+      this.animationFrameId = null
+    }
+
     this.isAnimating = true
     this.animationStartTime = performance.now()
     this.animationDuration = animationTime || (this.config.smooth ? 300 : 0)
@@ -530,7 +688,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   private animate() {
-    if (!this.isAnimating) {
+    if (this.destroyed || !this.isAnimating) {
       return
     }
 
@@ -554,7 +712,10 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     this.notifyZoomChange()
 
     if (progress < 1) {
-      requestAnimationFrame(() => this.animate())
+      this.animationFrameId = window.requestAnimationFrame(() => {
+        this.animationFrameId = null
+        this.animate()
+      })
       return
     }
 
@@ -565,7 +726,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     this.translateY = this.targetTranslateY
     this.render()
     this.notifyZoomChange()
-    this.updateTileCache()
+    void this.updateTileCache()
   }
 
   private fitImageToScreen() {
@@ -746,6 +907,10 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   private async updateTileCache() {
+    if (this.destroyed) {
+      return
+    }
+
     const visibleTiles = this.calculateVisibleTiles()
     const newVisibleTiles = new Set<TileKey>()
     const viewportHash = `${this.scale.toFixed(3)}-${this.translateX.toFixed(1)}-${this.translateY.toFixed(1)}`
@@ -806,6 +971,7 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
 
   private processPendingTileRequests() {
     if (
+      this.destroyed ||
       this.pendingTileRequests.length === 0 ||
       !this.worker ||
       !this.textureWorkerInitialized
@@ -843,6 +1009,10 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   private render() {
+    if (this.destroyed || !this.program) {
+      return
+    }
+
     const { gl } = this
 
     gl.viewport(0, 0, this.canvas.width, this.canvas.height)
@@ -850,12 +1020,9 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.useProgram(this.program)
 
-    const matrixLocation = gl.getUniformLocation(this.program, 'u_matrix')
-    const imageLocation = gl.getUniformLocation(this.program, 'u_image')
-
     if (this.texture) {
-      gl.uniformMatrix3fv(matrixLocation, false, this.createMatrix())
-      gl.uniform1i(imageLocation, 0)
+      gl.uniformMatrix3fv(this.matrixLocation, false, this.createMatrix())
+      gl.uniform1i(this.imageLocation, 0)
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, this.texture)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
@@ -874,8 +1041,8 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
         tileInfo.y,
         tileInfo.lodLevel,
       )
-      gl.uniformMatrix3fv(matrixLocation, false, tileMatrix)
-      gl.uniform1i(imageLocation, 0)
+      gl.uniformMatrix3fv(this.matrixLocation, false, tileMatrix)
+      gl.uniform1i(this.imageLocation, 0)
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, tileInfo.texture)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
@@ -885,10 +1052,14 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
 
     if (
       !this.isAnimating &&
+      this.tileUpdateTimeoutId === null &&
       performance.now() - this.lastTileUpdateTime > 100
     ) {
       this.lastTileUpdateTime = performance.now()
-      setTimeout(() => this.updateTileCache(), 0)
+      this.tileUpdateTimeoutId = window.setTimeout(() => {
+        this.tileUpdateTimeoutId = null
+        void this.updateTileCache()
+      }, 0)
     }
   }
 
@@ -963,6 +1134,23 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
   }
 
   public destroy() {
+    if (this.destroyed) {
+      return
+    }
+
+    this.destroyed = true
+    this.isAnimating = false
+
+    if (this.animationFrameId !== null) {
+      window.cancelAnimationFrame(this.animationFrameId)
+      this.animationFrameId = null
+    }
+
+    if (this.tileUpdateTimeoutId !== null) {
+      window.clearTimeout(this.tileUpdateTimeoutId)
+      this.tileUpdateTimeoutId = null
+    }
+
     window.removeEventListener('resize', this.boundResizeCanvas)
     this.canvas.removeEventListener('mousedown', this.boundHandleMouseDown)
     this.canvas.removeEventListener('mousemove', this.boundHandleMouseMove)
@@ -974,17 +1162,30 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     this.canvas.removeEventListener('touchend', this.boundHandleTouchEnd)
 
     this.cleanupLODTextures()
+    this.cleanupTileTextures()
     if (this.texture) {
       this.gl.deleteTexture(this.texture)
+      this.texture = null
     }
     if (this.program) {
       this.gl.deleteProgram(this.program)
+      this.program = null
+    }
+    if (this.positionBuffer) {
+      this.gl.deleteBuffer(this.positionBuffer)
+      this.positionBuffer = null
+    }
+    if (this.texCoordBuffer) {
+      this.gl.deleteBuffer(this.texCoordBuffer)
+      this.texCoordBuffer = null
     }
     if (this.resizeObserver) {
       this.resizeObserver.disconnect()
+      this.resizeObserver = null
     }
 
     this.worker?.terminate()
+    this.worker = null
   }
 
   private updateDebugInfo() {
@@ -1340,23 +1541,5 @@ export class WebGLImageViewerEngine extends ImageViewerEngineBase {
     this.constrainImagePosition()
     this.render()
     this.notifyZoomChange()
-  }
-
-  async copyOriginalImageToClipboard() {
-    try {
-      const response = await fetch(this.originalImageSrc)
-      const blob = await response.blob()
-
-      if (!navigator.clipboard || !navigator.clipboard.write) {
-        console.warn('Clipboard API not supported')
-        return
-      }
-
-      const clipboardItem = new ClipboardItem({ [blob.type]: blob })
-      await navigator.clipboard.write([clipboardItem])
-      this.onImageCopied?.()
-    } catch (error) {
-      console.error('Failed to copy image to clipboard:', error)
-    }
   }
 }

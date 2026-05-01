@@ -6,7 +6,7 @@ export interface DebugInfoRef {
   updateDebugInfo: (debugInfo: DebugInfo) => void
 }
 
-interface DebugInfoProps {
+export interface DebugInfoProps {
   ref: React.Ref<DebugInfoRef>
 }
 

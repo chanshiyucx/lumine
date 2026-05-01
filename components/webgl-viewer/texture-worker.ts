@@ -8,6 +8,7 @@ self.onmessage = async (event: MessageEvent) => {
   const { type, payload } = event.data
 
   if (type === 'init') {
+    originalImage?.close()
     originalImage = payload.imageBitmap
     self.postMessage({ type: 'init-done' })
   } else if (type === 'create-tile') {
