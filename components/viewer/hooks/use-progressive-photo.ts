@@ -10,6 +10,7 @@ import {
 } from '../lib/progressive-photo-cache'
 
 interface ProgressiveState {
+  blob: Blob | null
   blobSrc: string | null
   resourceLoaded: boolean
   error: boolean
@@ -22,14 +23,16 @@ interface UseProgressivePhotoOptions {
 
 function createInitialState(): ProgressiveState {
   return {
+    blob: null,
     blobSrc: null,
     resourceLoaded: false,
     error: false,
   }
 }
 
-function createCachedState(objectUrl: string): ProgressiveState {
+function createCachedState(blob: Blob, objectUrl: string): ProgressiveState {
   return {
+    blob,
     blobSrc: objectUrl,
     resourceLoaded: true,
     error: false,
@@ -110,7 +113,7 @@ export function useProgressivePhoto(
       return createInitialState()
     }
 
-    return createCachedState(cachedResource.objectUrl)
+    return createCachedState(cachedResource.blob, cachedResource.objectUrl)
   })
 
   useEffect(() => {
@@ -123,7 +126,7 @@ export function useProgressivePhoto(
     const cachedResource = getCachedPhotoResource(photo.original.url)
 
     if (cachedResource) {
-      setState(createCachedState(cachedResource.objectUrl))
+      setState(createCachedState(cachedResource.blob, cachedResource.objectUrl))
       return () => {
         controller.abort()
       }
@@ -175,10 +178,11 @@ export function useProgressivePhoto(
 
         const objectUrl = URL.createObjectURL(blob)
         setCachedPhotoResource(photo.original.url, {
+          blob,
           objectUrl,
           totalBytes: blob.size,
         })
-        setState(createCachedState(objectUrl))
+        setState(createCachedState(blob, objectUrl))
       } catch (error) {
         if (controller.signal.aborted) {
           return
@@ -186,6 +190,7 @@ export function useProgressivePhoto(
 
         console.error('Failed to load image:', error)
         setState({
+          blob: null,
           blobSrc: null,
           resourceLoaded: false,
           error: true,

@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import * as React from 'react'
 import {
   forwardRef,
@@ -9,16 +10,25 @@ import {
   useRef,
 } from 'react'
 import {
-  defaultAlignmentAnimation,
   defaultDoubleClickConfig,
   defaultPanningConfig,
   defaultPinchConfig,
-  defaultVelocityAnimation,
   defaultWheelConfig,
 } from './constants'
-import DebugInfoComponent, { type DebugInfoRef } from './debug-info'
-import type { WebGLImageViewerProps, WebGLImageViewerRef } from './types'
+import type { DebugInfoProps, DebugInfoRef } from './debug-info'
+import type {
+  ResolvedWebGLImageViewerProps,
+  WebGLImageViewerProps,
+  WebGLImageViewerRef,
+} from './types'
 import { WebGLImageViewerEngine } from './webgl-image-viewer-engine'
+
+const DebugInfoComponent = dynamic<DebugInfoProps>(
+  () => import('./debug-info'),
+  {
+    ssr: false,
+  },
+)
 
 export const WebGLImageViewer = forwardRef<
   WebGLImageViewerRef,
@@ -27,6 +37,7 @@ export const WebGLImageViewer = forwardRef<
 >(function WebGLImageViewer(
   {
     src,
+    sourceBlob,
     className = '',
     width,
     height,
@@ -40,10 +51,8 @@ export const WebGLImageViewer = forwardRef<
     limitToBounds = true,
     centerOnInit = true,
     smooth = true,
-    alignmentAnimation = defaultAlignmentAnimation,
-    velocityAnimation = defaultVelocityAnimation,
     onZoomChange,
-    onImageCopied,
+    onError,
     onLoadingStateChange,
     debug = false,
     ...divProps
@@ -54,9 +63,10 @@ export const WebGLImageViewer = forwardRef<
   const viewerRef = useRef<WebGLImageViewerEngine | null>(null)
   const debugInfoRef = useRef<DebugInfoRef | null>(null)
 
-  const config: Required<WebGLImageViewerProps> = useMemo(
+  const config: ResolvedWebGLImageViewerProps = useMemo(
     () => ({
       src,
+      sourceBlob,
       className,
       width: width || 0,
       height: height || 0,
@@ -70,21 +80,14 @@ export const WebGLImageViewer = forwardRef<
       limitToBounds,
       centerOnInit,
       smooth,
-      alignmentAnimation: {
-        ...defaultAlignmentAnimation,
-        ...alignmentAnimation,
-      },
-      velocityAnimation: {
-        ...defaultVelocityAnimation,
-        ...velocityAnimation,
-      },
       onZoomChange: onZoomChange || (() => {}),
-      onImageCopied: onImageCopied || (() => {}),
+      onError: onError || (() => {}),
       onLoadingStateChange: onLoadingStateChange || (() => {}),
       debug,
     }),
     [
       src,
+      sourceBlob,
       className,
       width,
       height,
@@ -98,10 +101,8 @@ export const WebGLImageViewer = forwardRef<
       limitToBounds,
       centerOnInit,
       smooth,
-      alignmentAnimation,
-      velocityAnimation,
       onZoomChange,
-      onImageCopied,
+      onError,
       onLoadingStateChange,
       debug,
     ],
@@ -119,27 +120,35 @@ export const WebGLImageViewer = forwardRef<
       return
     }
 
-    const webGLImageViewerEngine = new WebGLImageViewerEngine(
-      canvasRef.current,
-      config,
-      debug ? debugInfoRef : undefined,
-    )
+    let webGLImageViewerEngine: WebGLImageViewerEngine | null = null
 
     try {
+      webGLImageViewerEngine = new WebGLImageViewerEngine(
+        canvasRef.current,
+        config,
+        debug ? debugInfoRef : undefined,
+      )
+
       const preknownWidth = config.width > 0 ? config.width : undefined
       const preknownHeight = config.height > 0 ? config.height : undefined
 
       webGLImageViewerEngine
-        .loadImage(src, preknownWidth, preknownHeight)
-        .catch(console.error)
+        .loadImage(src, preknownWidth, preknownHeight, config.sourceBlob)
+        .catch((error) => {
+          console.error('Failed to load WebGL image:', error)
+          config.onError(
+            error instanceof Error ? error : new Error(String(error)),
+          )
+        })
 
       viewerRef.current = webGLImageViewerEngine
     } catch (error) {
       console.error('Failed to initialize WebGL Image Viewer:', error)
+      config.onError(error instanceof Error ? error : new Error(String(error)))
     }
 
     return () => {
-      webGLImageViewerEngine.destroy()
+      webGLImageViewerEngine?.destroy()
       viewerRef.current = null
     }
   }, [src, config, debug])
@@ -166,7 +175,6 @@ export const WebGLImageViewer = forwardRef<
           outline: 'none',
           margin: 0,
           padding: 0,
-          imageRendering: 'pixelated',
         }}
       />
       {debug ? <DebugInfoComponent ref={debugInfoRef} /> : null}

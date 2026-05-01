@@ -1,4 +1,5 @@
 interface CachedPhotoResource {
+  blob: Blob
   objectUrl: string
   totalBytes: number | null
 }

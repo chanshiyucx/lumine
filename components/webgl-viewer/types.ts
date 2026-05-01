@@ -1,7 +1,6 @@
 export interface WheelConfig {
   step: number
   wheelDisabled?: boolean
-  touchPadDisabled?: boolean
 }
 
 export interface PinchConfig {
@@ -18,22 +17,11 @@ export interface DoubleClickConfig {
 
 export interface PanningConfig {
   disabled?: boolean
-  velocityDisabled?: boolean
-}
-
-export interface AlignmentAnimationConfig {
-  sizeX: number
-  sizeY: number
-  velocityAlignmentTime: number
-}
-
-export interface VelocityAnimationConfig {
-  sensitivity: number
-  animationTime: number
 }
 
 export interface WebGLImageViewerProps {
   src: string
+  sourceBlob?: Blob
   className?: string
   width?: number
   height?: number
@@ -47,16 +35,20 @@ export interface WebGLImageViewerProps {
   limitToBounds?: boolean
   centerOnInit?: boolean
   smooth?: boolean
-  alignmentAnimation?: AlignmentAnimationConfig
-  velocityAnimation?: VelocityAnimationConfig
   onZoomChange?: (originalScale: number, relativeScale: number) => void
-  onImageCopied?: () => void
+  onError?: (error: Error) => void
   onLoadingStateChange?: (
     isLoading: boolean,
     message?: string,
     quality?: 'high' | 'medium' | 'low' | 'unknown',
   ) => void
   debug?: boolean
+}
+
+export type ResolvedWebGLImageViewerProps = Required<
+  Omit<WebGLImageViewerProps, 'sourceBlob'>
+> & {
+  sourceBlob?: Blob
 }
 
 export interface WebGLImageViewerRef {

@@ -1,8 +1,9 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import { memo, type RefObject } from 'react'
+import { memo, useCallback, useState, type RefObject } from 'react'
 import { WebGLImageViewer } from '@/components/webgl-viewer'
+import { isProd } from '@/lib/env'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
@@ -22,14 +23,20 @@ export const ProgressiveView = memo(function ProgressiveView({
   className,
   loadingIndicatorRef,
 }: ProgressiveViewProps) {
+  const [webglFailureKey, setWebglFailureKey] = useState<string | null>(null)
   const state = useProgressivePhoto(photo, {
     isActive,
     loadingIndicatorRef,
   })
 
+  const webglResourceKey = `${photo.id}:${state.blobSrc ?? ''}`
+  const webglFailed = webglFailureKey === webglResourceKey
+
   const canUseWebgl = Boolean(
     state.resourceLoaded &&
+    state.blob &&
     state.blobSrc &&
+    !webglFailed &&
     typeof window !== 'undefined' &&
     window.WebGLRenderingContext,
   )
@@ -47,6 +54,10 @@ export const ProgressiveView = memo(function ProgressiveView({
 
     loadingIndicatorRef.current?.resetLoadingState(photo.id)
   }
+
+  const handleWebglError = useCallback(() => {
+    setWebglFailureKey(webglResourceKey)
+  }, [webglResourceKey])
 
   return (
     <div className={cn('relative h-full w-full overflow-hidden', className)}>
@@ -66,15 +77,18 @@ export const ProgressiveView = memo(function ProgressiveView({
           <div className="absolute inset-0 h-full w-full">
             <WebGLImageViewer
               src={state.blobSrc}
+              sourceBlob={state.blob ?? undefined}
               width={photo.original.width}
               height={photo.original.height}
               className="absolute inset-0 h-full w-full"
               initialScale={1}
               minScale={1}
               maxScale={20}
-              limitToBounds={true}
-              centerOnInit={true}
-              smooth={true}
+              limitToBounds
+              centerOnInit
+              smooth
+              debug={!isProd}
+              onError={handleWebglError}
               onLoadingStateChange={handleWebglLoadingStateChange}
             />
           </div>
