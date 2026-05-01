@@ -38,6 +38,10 @@ body {
   @apply bg-base text-text min-h-screen font-sans font-medium tabular-nums antialiased;
 }
 
+@utility button-reset {
+  @apply appearance-none border-0 p-0 font-[inherit] text-inherit;
+}
+
 @utility circle-button {
   @apply bg-overlay/80 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full backdrop-blur-sm duration-200;
 

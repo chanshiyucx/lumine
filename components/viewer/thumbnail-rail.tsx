@@ -224,7 +224,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 key={photo.id}
                 type="button"
                 className={cn(
-                  'group transition-filter absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out outline-none',
+                  'button-reset group transition-filter absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out outline-none',
                   !(isActive || isHover) && 'grayscale',
                 )}
                 style={{

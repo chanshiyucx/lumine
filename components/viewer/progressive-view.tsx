@@ -28,7 +28,7 @@ export const ProgressiveView = memo(function ProgressiveView({
   })
 
   const canUseWebgl = Boolean(
-    state.highResLoaded &&
+    state.resourceLoaded &&
     state.blobSrc &&
     typeof window !== 'undefined' &&
     window.WebGLRenderingContext,
@@ -58,7 +58,7 @@ export const ProgressiveView = memo(function ProgressiveView({
         loading="eager"
       />
 
-      {state.highResLoaded &&
+      {state.resourceLoaded &&
         state.blobSrc &&
         isActive &&
         !state.error &&

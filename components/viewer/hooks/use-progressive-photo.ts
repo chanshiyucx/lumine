@@ -11,7 +11,7 @@ import {
 
 interface ProgressiveState {
   blobSrc: string | null
-  highResLoaded: boolean
+  resourceLoaded: boolean
   error: boolean
 }
 
@@ -23,7 +23,7 @@ interface UseProgressivePhotoOptions {
 function createInitialState(): ProgressiveState {
   return {
     blobSrc: null,
-    highResLoaded: false,
+    resourceLoaded: false,
     error: false,
   }
 }
@@ -31,9 +31,23 @@ function createInitialState(): ProgressiveState {
 function createCachedState(objectUrl: string): ProgressiveState {
   return {
     blobSrc: objectUrl,
-    highResLoaded: true,
+    resourceLoaded: true,
     error: false,
   }
+}
+
+function getChunkBlobPart(chunk: Uint8Array): BlobPart {
+  const { buffer, byteLength, byteOffset } = chunk
+
+  if (buffer instanceof ArrayBuffer) {
+    if (byteOffset === 0 && byteLength === buffer.byteLength) {
+      return buffer
+    }
+
+    return buffer.slice(byteOffset, byteOffset + byteLength)
+  }
+
+  return chunk.slice() as Uint8Array<ArrayBuffer>
 }
 
 async function readResponseAsBlob(
@@ -53,33 +67,31 @@ async function readResponseAsBlob(
   }
 
   const reader = response.body.getReader()
-  const chunks: ArrayBuffer[] = []
+  const chunks: BlobPart[] = []
   let loadedBytes = 0
 
-  while (true) {
-    if (signal.aborted) {
-      throw new DOMException('The operation was aborted.', 'AbortError')
+  try {
+    while (true) {
+      if (signal.aborted) {
+        throw new DOMException('The operation was aborted.', 'AbortError')
+      }
+
+      const { done, value } = await reader.read()
+
+      if (done) {
+        break
+      }
+
+      if (!value) {
+        continue
+      }
+
+      chunks.push(getChunkBlobPart(value))
+      loadedBytes += value.byteLength
+      onProgress(loadedBytes, totalBytes)
     }
-
-    const { done, value } = await reader.read()
-
-    if (done) {
-      break
-    }
-
-    if (!value) {
-      continue
-    }
-
-    const chunk = Uint8Array.from(value)
-    const chunkBuffer = chunk.buffer.slice(
-      chunk.byteOffset,
-      chunk.byteOffset + chunk.byteLength,
-    ) as ArrayBuffer
-
-    chunks.push(chunkBuffer)
-    loadedBytes += value.byteLength
-    onProgress(loadedBytes, totalBytes)
+  } finally {
+    reader.releaseLock()
   }
 
   return new Blob(chunks, {
@@ -102,7 +114,7 @@ export function useProgressivePhoto(
   })
 
   useEffect(() => {
-    if (!isActive || state.highResLoaded || state.error) {
+    if (!isActive || state.resourceLoaded || state.error) {
       return
     }
 
@@ -141,16 +153,18 @@ export function useProgressivePhoto(
           controller.signal,
           photo.original.mime,
           (loadedBytes, totalBytes) => {
+            const progressTotalBytes = totalBytes ?? photo.original.bytes
+
             loadingIndicator?.updateLoadingState(photo.id, {
               isVisible: true,
               isError: false,
               isWebGLLoading: false,
               loadingProgress:
-                totalBytes && totalBytes > 0
-                  ? Math.min(100, (loadedBytes / totalBytes) * 100)
+                progressTotalBytes > 0
+                  ? Math.min(100, (loadedBytes / progressTotalBytes) * 100)
                   : 0,
               loadedBytes,
-              totalBytes: totalBytes ?? photo.original.bytes,
+              totalBytes: progressTotalBytes,
             })
           },
         )
@@ -173,7 +187,7 @@ export function useProgressivePhoto(
         console.error('Failed to load image:', error)
         setState({
           blobSrc: null,
-          highResLoaded: false,
+          resourceLoaded: false,
           error: true,
         })
         loadingIndicator?.updateLoadingState(photo.id, {
@@ -197,7 +211,7 @@ export function useProgressivePhoto(
     photo.original.mime,
     photo.original.url,
     state.error,
-    state.highResLoaded,
+    state.resourceLoaded,
   ])
 
   return state
