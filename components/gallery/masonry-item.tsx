@@ -27,7 +27,7 @@ export function MasonryItem({ photo, index, onOpen }: MasonryItemProps) {
       style={{
         aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
       }}
-      className="group bg-surface relative block w-full cursor-pointer overflow-hidden border-0 p-0 text-left font-[inherit]"
+      className="button-reset group bg-surface relative block w-full cursor-pointer overflow-hidden text-left"
       data-photo-index={index}
       onClick={() => onOpen(index)}
       aria-label={`Open ${photo.title}`}

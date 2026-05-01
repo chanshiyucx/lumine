@@ -16,7 +16,6 @@ import {
 export interface InfoRowData {
   label: string
   value: string
-  missing?: boolean
 }
 
 export interface CaptureSetting {
@@ -41,12 +40,10 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
     {
       label: 'Color Space',
       value: photo.image?.colorSpace ?? NOT_AVAILABLE_LABEL,
-      missing: !photo.image?.colorSpace,
     },
     {
       label: 'Location',
       value: photo.locationLabel,
-      missing: photo.locationLabel === NOT_AVAILABLE_LABEL,
     },
     { label: 'Taken At', value: formatDateTimeLabel(photo.takenAt) },
     { label: 'Time Zone', value: formatTimeZoneLabel(photo.takenAt) },
@@ -93,27 +90,22 @@ export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
       value:
         [photo.camera?.make, photo.camera?.model].filter(Boolean).join(' ') ||
         NOT_AVAILABLE_LABEL,
-      missing: !photo.camera?.make && !photo.camera?.model,
     },
     {
       label: 'Lens',
       value: photo.camera?.lens ?? NOT_AVAILABLE_LABEL,
-      missing: !photo.camera?.lens,
     },
     {
       label: 'Focal Length',
       value: formatFocalLength(photo.camera?.focalLengthMm),
-      missing: !photo.camera?.focalLengthMm,
     },
     {
       label: '35mm Equivalent',
       value: formatFocalLength(photo.camera?.focalLengthIn35mm),
-      missing: !photo.camera?.focalLengthIn35mm,
     },
     {
       label: 'Max Aperture',
       value: formatApertureValue(photo.camera?.maxAperture),
-      missing: !photo.camera?.maxAperture,
     },
   ]
 }
@@ -123,42 +115,34 @@ export function getExposureRows(photo: Photo): InfoRowData[] {
     {
       label: 'Exposure Program',
       value: formatSentenceCase(photo.camera?.exposureProgram),
-      missing: !photo.camera?.exposureProgram,
     },
     {
       label: 'Exposure Mode',
       value: formatSentenceCase(photo.camera?.exposureMode),
-      missing: !photo.camera?.exposureMode,
     },
     {
       label: 'Metering Mode',
       value: formatSentenceCase(photo.camera?.meteringMode),
-      missing: !photo.camera?.meteringMode,
     },
     {
       label: 'White Balance',
       value: formatSentenceCase(photo.camera?.whiteBalance),
-      missing: !photo.camera?.whiteBalance,
     },
     {
       label: 'Flash',
       value: formatSentenceCase(photo.camera?.flash),
-      missing: !photo.camera?.flash,
     },
     {
       label: 'Sensing Method',
       value: formatSentenceCase(photo.camera?.sensingMethod),
-      missing: !photo.camera?.sensingMethod,
     },
     {
       label: 'Scene Capture Type',
       value: formatSentenceCase(photo.camera?.sceneCaptureType),
-      missing: !photo.camera?.sceneCaptureType,
     },
     {
       label: 'Brightness',
       value: formatBrightnessValue(photo.camera?.brightnessEv),
-      missing: photo.camera?.brightnessEv === undefined,
     },
   ]
 }

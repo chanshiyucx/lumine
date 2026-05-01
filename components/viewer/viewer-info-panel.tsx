@@ -15,7 +15,6 @@ import {
 interface InfoRowProps {
   label: string
   value: string
-  missing?: boolean
 }
 
 function InfoRow({ label, value }: InfoRowProps) {
@@ -57,12 +56,7 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
     <div className="space-y-6 p-4">
       <InfoSection title="Basic Info">
         {photoInfoRows.map((row) => (
-          <InfoRow
-            key={row.label}
-            label={row.label}
-            value={row.value}
-            missing={row.missing}
-          />
+          <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
 
@@ -77,23 +71,13 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
 
       <InfoSection title="Device Info">
         {deviceInfoRows.map((row) => (
-          <InfoRow
-            key={row.label}
-            label={row.label}
-            value={row.value}
-            missing={row.missing}
-          />
+          <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
 
       <InfoSection title="Shooting Mode">
         {exposureRows.map((row) => (
-          <InfoRow
-            key={row.label}
-            label={row.label}
-            value={row.value}
-            missing={row.missing}
-          />
+          <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
     </div>
