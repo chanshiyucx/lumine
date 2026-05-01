@@ -31,7 +31,7 @@ export function formatAlbumChip(albumKey: string) {
   return label || 'Masonry'
 }
 
-export function formatSentenceCase(value: string | undefined | null) {
+export function formatSentenceCase(value?: string) {
   if (!value) {
     return NOT_AVAILABLE_LABEL
   }
@@ -39,7 +39,7 @@ export function formatSentenceCase(value: string | undefined | null) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
-export function formatDateTimeLabel(takenAt: string | null) {
+export function formatDateTimeLabel(takenAt?: string) {
   if (!takenAt) {
     return NOT_AVAILABLE_LABEL
   }
@@ -55,7 +55,7 @@ export function formatDateTimeLabel(takenAt: string | null) {
   return `${year}/${Number(month)}/${Number(day)} ${hour}:${minute}:${second}`
 }
 
-export function formatTimeZoneLabel(takenAt: string | null) {
+export function formatTimeZoneLabel(takenAt?: string) {
   if (!takenAt) {
     return NOT_AVAILABLE_LABEL
   }
@@ -91,7 +91,7 @@ export function formatMegapixels(width: number, height: number) {
   return `${megapixels.toFixed(1)} MP`
 }
 
-export function formatFocalLength(value: number | undefined) {
+export function formatFocalLength(value?: number) {
   if (!value) {
     return NOT_AVAILABLE_LABEL
   }
@@ -99,7 +99,7 @@ export function formatFocalLength(value: number | undefined) {
   return `${Number(value.toFixed(1)).toString()} mm`
 }
 
-export function formatApertureValue(value: number | undefined) {
+export function formatApertureValue(value?: number) {
   if (!value) {
     return NOT_AVAILABLE_LABEL
   }
@@ -107,7 +107,7 @@ export function formatApertureValue(value: number | undefined) {
   return `f/${Number(value.toFixed(1)).toString()}`
 }
 
-export function formatIsoValue(value: number | undefined) {
+export function formatIsoValue(value?: number) {
   if (!value) {
     return NOT_AVAILABLE_LABEL
   }
@@ -115,7 +115,7 @@ export function formatIsoValue(value: number | undefined) {
   return `ISO ${value}`
 }
 
-export function formatBrightnessValue(value: number | undefined) {
+export function formatBrightnessValue(value?: number) {
   if (value === undefined) {
     return NOT_AVAILABLE_LABEL
   }

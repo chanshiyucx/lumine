@@ -1,8 +1,7 @@
 import { z } from 'zod'
+import { PHOTO_MANIFEST_URL_ENV } from './env'
 
-const PHOTO_MANIFEST_URL_ENV = 'PHOTO_MANIFEST_URL'
-
-export const siteConfigSchema = z.object({
+const siteConfigSchema = z.object({
   name: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1),

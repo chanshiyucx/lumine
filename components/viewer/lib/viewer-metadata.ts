@@ -146,9 +146,9 @@ export function getExposureRows(photo: Photo): InfoRowData[] {
       missing: !photo.camera?.flash,
     },
     {
-      label: 'Light Source',
-      value: formatSentenceCase(photo.camera?.lightSource),
-      missing: !photo.camera?.lightSource,
+      label: 'Sensing Method',
+      value: formatSentenceCase(photo.camera?.sensingMethod),
+      missing: !photo.camera?.sensingMethod,
     },
     {
       label: 'Scene Capture Type',

@@ -22,10 +22,8 @@ export interface PhotoCamera {
   flash?: string
   sceneCaptureType?: string
   brightnessEv?: number
-  lightSource?: string
-  software?: string
-  artist?: string
   maxAperture?: number
+  sensingMethod?: string
 }
 
 export interface PhotoImage {
@@ -36,29 +34,38 @@ export interface PhotoImage {
   bitDepth?: number
 }
 
-export interface Photo {
+export interface PhotoLocation {
+  lat: number
+  lng: number
+  alt?: number
+}
+
+export interface PhotoManifestEntry {
+  original: PhotoAsset
+  thumbnail: PhotoAsset
+  blurhash: string
+  title: string
+  takenAt: string
+  camera: PhotoCamera
+  image: PhotoImage
+  location?: PhotoLocation
+}
+
+export interface Photo extends PhotoManifestEntry {
   id: string
   index: number
   slug: string
-  title: string
   fileName: string
   albumKey: string
   albumLabel: string
   locationLabel: string
-  blurhash: string
   blurDataUrl: string
   aspectRatio: number
-  takenAt: string | null
-  camera: PhotoCamera | null
-  image: PhotoImage | null
-  original: PhotoAsset
-  thumbnail: PhotoAsset
 }
 
 export interface PhotoCollection {
   version: number
   updatedAt: string
-  albumLabel: string
   photos: Photo[]
 }
 

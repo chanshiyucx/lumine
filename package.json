@@ -56,12 +56,5 @@
   },
   "engines": {
     "node": ">=24.0.0"
-  },
-  "browserslist": [
-    "last 2 chrome versions",
-    "last 2 firefox versions",
-    "last 2 safari versions",
-    "last 2 edge versions",
-    "not dead"
-  ]
+  }
 }
