@@ -2,6 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
 import { blurhashToDataUrl } from './blurhash'
+import { PHOTO_MANIFEST_URL_ENV } from './env'
 import {
   createPhotoSlug,
   type PhotoAsset,
@@ -9,62 +10,82 @@ import {
 } from './photos'
 import { siteConfig } from './site-config'
 
-const PHOTO_MANIFEST_URL_ENV = 'PHOTO_MANIFEST_URL'
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
+const DEFAULT_ALBUM_KEY = 'gallery'
+const DEFAULT_ALBUM_LABEL = 'Selected Frames'
+const DEFAULT_LOCATION_LABEL = 'Not available'
+const ALBUM_FOLDER_PATTERN = /^(\d{4})(\d{2})(\d{2})-(.+)$/
 
-const photoAssetSchema = z.object({
-  url: z.string().min(1),
-  width: z.number().positive(),
-  height: z.number().positive(),
-  bytes: z.number().nonnegative(),
-  mime: z.string().min(1),
-})
+const photoAssetSchema = z
+  .object({
+    url: z.string().min(1),
+    width: z.number().positive(),
+    height: z.number().positive(),
+    bytes: z.number().nonnegative(),
+    mime: z.string().min(1),
+  })
+  .strict()
 
-const photoCameraSchema = z.object({
-  make: z.string().min(1).optional(),
-  model: z.string().min(1).optional(),
-  lens: z.string().min(1).optional(),
-  focalLengthMm: z.number().positive().optional(),
-  focalLengthIn35mm: z.number().positive().optional(),
-  aperture: z.number().positive().optional(),
-  shutter: z.string().min(1).optional(),
-  iso: z.number().int().positive().optional(),
-  exposureProgram: z.string().min(1).optional(),
-  exposureMode: z.string().min(1).optional(),
-  meteringMode: z.string().min(1).optional(),
-  whiteBalance: z.string().min(1).optional(),
-  flash: z.string().min(1).optional(),
-  sceneCaptureType: z.string().min(1).optional(),
-  brightnessEv: z.number().optional(),
-  lightSource: z.string().min(1).optional(),
-  software: z.string().min(1).optional(),
-  artist: z.string().min(1).optional(),
-  maxAperture: z.number().positive().optional(),
-})
+const photoCameraSchema = z
+  .object({
+    make: z.string().min(1).optional(),
+    model: z.string().min(1).optional(),
+    lens: z.string().min(1).optional(),
+    focalLengthMm: z.number().positive().optional(),
+    focalLengthIn35mm: z.number().positive().optional(),
+    aperture: z.number().positive().optional(),
+    shutter: z.string().min(1).optional(),
+    iso: z.number().int().positive().optional(),
+    exposureProgram: z.string().min(1).optional(),
+    exposureMode: z.string().min(1).optional(),
+    meteringMode: z.string().min(1).optional(),
+    whiteBalance: z.string().min(1).optional(),
+    flash: z.string().min(1).optional(),
+    sceneCaptureType: z.string().min(1).optional(),
+    brightnessEv: z.number().optional(),
+    maxAperture: z.number().positive().optional(),
+    sensingMethod: z.string().min(1).optional(),
+  })
+  .strict()
 
-const photoImageSchema = z.object({
-  orientation: z.number().int().positive().optional(),
-  colorSpace: z.string().min(1).optional(),
-  hasHdr: z.boolean().optional(),
-  isLivePhoto: z.boolean().optional(),
-  bitDepth: z.number().int().positive().optional(),
-})
+const photoImageSchema = z
+  .object({
+    orientation: z.number().int().positive().optional(),
+    colorSpace: z.string().min(1).optional(),
+    hasHdr: z.boolean().optional(),
+    isLivePhoto: z.boolean().optional(),
+    bitDepth: z.number().int().positive().optional(),
+  })
+  .strict()
 
-const photoManifestSchema = z.object({
-  original: photoAssetSchema,
-  thumbnail: photoAssetSchema,
-  blurhash: z.string().min(6),
-  title: z.string().min(1),
-  takenAt: z.string().min(1).optional(),
-  camera: photoCameraSchema.optional(),
-  image: photoImageSchema.optional(),
-})
+const photoLocationSchema = z
+  .object({
+    lat: z.number(),
+    lng: z.number(),
+    alt: z.number().optional(),
+  })
+  .strict()
 
-const manifestSchema = z.object({
-  version: z.number().int().positive(),
-  updatedAt: z.string().min(1),
-  photos: z.array(photoManifestSchema),
-})
+const photoManifestSchema = z
+  .object({
+    original: photoAssetSchema,
+    thumbnail: photoAssetSchema,
+    blurhash: z.string().min(6),
+    title: z.string().min(1),
+    takenAt: z.string().min(1),
+    location: photoLocationSchema.optional(),
+    camera: photoCameraSchema,
+    image: photoImageSchema,
+  })
+  .strict()
+
+const manifestSchema = z
+  .object({
+    version: z.number().int().positive(),
+    updatedAt: z.string().min(1),
+    photos: z.array(photoManifestSchema),
+  })
+  .strict()
 
 function getManifestUrl() {
   const manifestUrl = process.env[PHOTO_MANIFEST_URL_ENV]
@@ -83,38 +104,33 @@ function resolveAssetUrl(pathname: string) {
   return new URL(pathname, siteConfig.mediaOrigin).toString()
 }
 
-function formatAlbumLabel(originalPath: string | undefined) {
+function parseAlbumPath(originalPath: string | undefined) {
   const folder = originalPath?.split('/')[1]
 
   if (!folder) {
-    return 'Selected Frames'
+    return null
   }
 
-  const match = /^(\d{4})(\d{2})(\d{2})-(.+)$/.exec(folder)
+  const match = ALBUM_FOLDER_PATTERN.exec(folder)
 
   if (!match) {
-    return folder.replaceAll('-', ' ')
+    const label = folder.replaceAll('-', ' ')
+
+    return {
+      key: folder,
+      label,
+      locationLabel: label,
+    }
   }
 
   const [, year, month, day, location] = match
+  const locationLabel = location.replaceAll('-', ' ')
 
-  return `${location.replaceAll('-', ' ')} · ${year}.${month}.${day}`
-}
-
-function formatLocationLabel(originalPath: string | undefined) {
-  const folder = originalPath?.split('/')[1]
-
-  if (!folder) {
-    return 'Not available'
+  return {
+    key: folder,
+    label: `${locationLabel} · ${year}.${month}.${day}`,
+    locationLabel,
   }
-
-  const match = /^(\d{4})(\d{2})(\d{2})-(.+)$/.exec(folder)
-
-  if (!match) {
-    return folder.replaceAll('-', ' ')
-  }
-
-  return match[4].replaceAll('-', ' ')
 }
 
 function normalizeAsset(asset: z.infer<typeof photoAssetSchema>): PhotoAsset {
@@ -178,34 +194,30 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
   return {
     version: manifest.version,
     updatedAt: manifest.updatedAt,
-    albumLabel: formatAlbumLabel(photos[0]?.original.url),
     photos: photos.map((photo, index) => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
+      const album = parseAlbumPath(photo.original.url)
       const blurPreviewSize = getBlurPreviewSize(
         thumbnail.width,
         thumbnail.height,
       )
 
       return {
+        ...photo,
         index,
         id: photo.original.url,
-        title: photo.title,
         slug: createPhotoSlug(photo.title),
         fileName: getFileNameFromAssetPath(photo.original.url),
-        albumKey: photo.original.url.split('/')[1] ?? 'gallery',
-        albumLabel: formatAlbumLabel(photo.original.url),
-        locationLabel: formatLocationLabel(photo.original.url),
-        blurhash: photo.blurhash,
+        albumKey: album?.key ?? DEFAULT_ALBUM_KEY,
+        albumLabel: album?.label ?? DEFAULT_ALBUM_LABEL,
+        locationLabel: album?.locationLabel ?? DEFAULT_LOCATION_LABEL,
         blurDataUrl: blurhashToDataUrl(
           photo.blurhash,
           blurPreviewSize.width,
           blurPreviewSize.height,
         ),
         aspectRatio: thumbnail.width / thumbnail.height,
-        takenAt: photo.takenAt ?? null,
-        camera: photo.camera ?? null,
-        image: photo.image ?? null,
         original,
         thumbnail,
       }
