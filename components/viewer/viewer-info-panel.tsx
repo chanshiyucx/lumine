@@ -3,7 +3,6 @@
 import { X } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/gallery/capture-setting-chip'
-import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import {
@@ -14,11 +13,11 @@ import {
 } from './lib/viewer-metadata'
 
 const VIEWER_ACCENT = 'var(--viewer-accent, var(--color-iris))'
-const VIEWER_EDGE = 'var(--viewer-panel-edge, var(--color-overlay))'
-const VIEWER_GLOW = 'var(--viewer-panel-glow, var(--color-iris))'
-const VIEWER_SURFACE = 'var(--viewer-panel-surface, var(--color-surface))'
-const PANEL_BACKGROUND_IMAGE = `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_SURFACE} 97%, var(--color-surface)), color-mix(in srgb, var(--color-overlay) 93%, ${VIEWER_ACCENT}) 52%, color-mix(in srgb, var(--color-base) 92%, ${VIEWER_EDGE}) 100%)`
-const PANEL_INNER_GLOW = `linear-gradient(to bottom right, transparent, color-mix(in srgb, ${VIEWER_GLOW} 3%, transparent) 48%, color-mix(in srgb, ${VIEWER_EDGE} 4%, transparent))`
+const PANEL_BACKGROUND_SCRIM = [
+  'linear-gradient(to bottom right, color-mix(in srgb, var(--color-base) 64%, transparent), color-mix(in srgb, var(--color-overlay) 58%, transparent) 52%, color-mix(in srgb, var(--color-base) 72%, transparent))',
+  'linear-gradient(to bottom, color-mix(in srgb, black 16%, transparent), transparent 44%, color-mix(in srgb, black 24%, transparent))',
+].join(', ')
+const PANEL_INNER_GLOW = `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_ACCENT} 7%, transparent), transparent, color-mix(in srgb, ${VIEWER_ACCENT} 8%, transparent))`
 
 interface InfoRowProps {
   label: string
@@ -97,19 +96,17 @@ export function ViewerInfoPanel({
   isOpen = true,
   onClose,
 }: ViewerInfoPanelProps) {
-  const isMobile = useMobile()
   const accentPalette = photo.accentPalette
   const panelStyle = {
     '--viewer-accent': accentPalette.accent,
-    '--viewer-panel-edge': isMobile
-      ? accentPalette.bottomEdge
-      : accentPalette.rightEdge,
-    '--viewer-panel-glow': accentPalette.glow,
-    '--viewer-panel-surface': accentPalette.surface,
-    backgroundColor: VIEWER_SURFACE,
-    backgroundImage: PANEL_BACKGROUND_IMAGE,
+    backgroundColor:
+      'color-mix(in srgb, var(--color-surface) 88%, transparent)',
+    backgroundImage: `${PANEL_BACKGROUND_SCRIM}, url("${photo.blurDataUrl}")`,
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
     boxShadow:
-      '0 8px 32px color-mix(in srgb, var(--viewer-panel-glow, var(--color-iris)) 8%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-panel-edge, var(--color-iris)) 6%, transparent), 0 4px 16px color-mix(in srgb, black 18%, transparent)',
+      '0 8px 32px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 13%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)',
   } as CSSProperties
 
   return (

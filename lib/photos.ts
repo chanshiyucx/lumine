@@ -42,10 +42,6 @@ export interface PhotoLocation {
 
 export interface PhotoAccentPalette {
   accent: string
-  surface: string
-  rightEdge: string
-  bottomEdge: string
-  glow: string
 }
 
 export interface PhotoManifestEntry {
