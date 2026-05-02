@@ -14,22 +14,11 @@ interface HslColor {
   l: number
 }
 
-interface ColorAccumulator {
-  r: number
-  g: number
-  b: number
-  weight: number
-}
-
-const SOURCE_SIZE = 32
-const DARK_BACKGROUND: RgbColor = { r: 39, g: 36, b: 54 }
+const SOURCE_SIZE = 16
+const DARK_BACKGROUND: RgbColor = { r: 28, g: 28, b: 30 }
 const WHITE: RgbColor = { r: 255, g: 255, b: 255 }
 const FALLBACK_PALETTE: PhotoAccentPalette = {
   accent: '#8c7bd9',
-  surface: '#302d42',
-  rightEdge: '#554f77',
-  bottomEdge: '#554f77',
-  glow: '#a99cf0',
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -50,6 +39,56 @@ function mixColor(from: RgbColor, to: RgbColor, amount: number): RgbColor {
     g: from.g + (to.g - from.g) * amount,
     b: from.b + (to.b - from.b) * amount,
   }
+}
+
+function getLuminance({ r, g, b }: RgbColor) {
+  const [red, green, blue] = [r, g, b].map((channel) => {
+    const value = channel / 255
+    return value <= 0.03928
+      ? value / 12.92
+      : Math.pow((value + 0.055) / 1.055, 2.4)
+  })
+
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+}
+
+function getContrastRatio(first: RgbColor, second: RgbColor) {
+  const firstLuminance = getLuminance(first)
+  const secondLuminance = getLuminance(second)
+  const lighter = Math.max(firstLuminance, secondLuminance)
+  const darker = Math.min(firstLuminance, secondLuminance)
+
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function normalizeAccentColor(color: RgbColor) {
+  const contrastRatio = getContrastRatio(color, DARK_BACKGROUND)
+
+  if (contrastRatio >= 2.2 && contrastRatio <= 4.5) {
+    return color
+  }
+
+  if (contrastRatio > 4.5) {
+    for (let amount = 0.05; amount <= 1; amount += 0.05) {
+      const candidate = mixColor(color, DARK_BACKGROUND, amount)
+
+      if (getContrastRatio(candidate, DARK_BACKGROUND) <= 4.5) {
+        return candidate
+      }
+    }
+
+    return mixColor(color, DARK_BACKGROUND, 0.8)
+  }
+
+  for (let amount = 0.05; amount <= 1; amount += 0.05) {
+    const candidate = mixColor(color, WHITE, amount)
+
+    if (getContrastRatio(candidate, DARK_BACKGROUND) >= 2.2) {
+      return candidate
+    }
+  }
+
+  return mixColor(color, WHITE, 0.8)
 }
 
 function rgbToHsl({ r, g, b }: RgbColor): HslColor {
@@ -122,175 +161,51 @@ function hslToRgb({ h, s, l }: HslColor): RgbColor {
   }
 }
 
-function shapeColor(
-  color: RgbColor,
-  {
-    saturationBoost,
-    minSaturation,
-    maxSaturation,
-    minLightness,
-    maxLightness,
-  }: {
-    saturationBoost: number
-    minSaturation: number
-    maxSaturation: number
-    minLightness: number
-    maxLightness: number
-  },
-) {
+function shapeAccentColor(color: RgbColor) {
   const hsl = rgbToHsl(color)
 
   return hslToRgb({
     h: hsl.h,
-    s: clamp(
-      Math.max(hsl.s * saturationBoost, minSaturation),
-      minSaturation,
-      maxSaturation,
-    ),
-    l: clamp(hsl.l, minLightness, maxLightness),
+    s: clamp(Math.max(hsl.s * 1.3, 0.22), 0.22, 0.62),
+    l: clamp(hsl.l, 0.34, 0.56),
   })
 }
 
-function getLuminance({ r, g, b }: RgbColor) {
-  const [red, green, blue] = [r, g, b].map((channel) => {
-    const value = channel / 255
-    return value <= 0.03928
-      ? value / 12.92
-      : Math.pow((value + 0.055) / 1.055, 2.4)
-  })
+function getAccentColor(data: Uint8ClampedArray) {
+  let red = 0
+  let green = 0
+  let blue = 0
+  let weight = 0
 
-  return 0.2126 * red + 0.7152 * green + 0.0722 * blue
-}
+  for (let index = 0; index < data.length; index += 4) {
+    const color = {
+      r: data[index],
+      g: data[index + 1],
+      b: data[index + 2],
+    }
+    const hsl = rgbToHsl(color)
 
-function getContrastRatio(first: RgbColor, second: RgbColor) {
-  const firstLuminance = getLuminance(first)
-  const secondLuminance = getLuminance(second)
-  const lighter = Math.max(firstLuminance, secondLuminance)
-  const darker = Math.min(firstLuminance, secondLuminance)
-
-  return (lighter + 0.05) / (darker + 0.05)
-}
-
-function normalizeAccentColor(color: RgbColor) {
-  const contrastRatio = getContrastRatio(color, DARK_BACKGROUND)
-
-  if (contrastRatio >= 2.2 && contrastRatio <= 4.5) {
-    return color
-  }
-
-  if (contrastRatio > 4.5) {
-    for (let amount = 0.05; amount <= 1; amount += 0.05) {
-      const candidate = mixColor(color, DARK_BACKGROUND, amount)
-
-      if (getContrastRatio(candidate, DARK_BACKGROUND) <= 4.5) {
-        return candidate
-      }
+    if (hsl.s < 0.08 || hsl.l < 0.14 || hsl.l > 0.88) {
+      continue
     }
 
-    return mixColor(color, DARK_BACKGROUND, 0.8)
+    const midtoneWeight = 1 - clamp(Math.abs(hsl.l - 0.5) * 1.8, 0, 0.85)
+    const colorWeight = Math.max(0.04, hsl.s * hsl.s * midtoneWeight)
+
+    red += color.r * colorWeight
+    green += color.g * colorWeight
+    blue += color.b * colorWeight
+    weight += colorWeight
   }
 
-  for (let amount = 0.05; amount <= 1; amount += 0.05) {
-    const candidate = mixColor(color, WHITE, amount)
-
-    if (getContrastRatio(candidate, DARK_BACKGROUND) >= 2.2) {
-      return candidate
-    }
-  }
-
-  return mixColor(color, WHITE, 0.8)
-}
-
-function createAccumulator(): ColorAccumulator {
-  return { r: 0, g: 0, b: 0, weight: 0 }
-}
-
-function addColor(
-  accumulator: ColorAccumulator,
-  { r, g, b }: RgbColor,
-  weight: number,
-) {
-  accumulator.r += r * weight
-  accumulator.g += g * weight
-  accumulator.b += b * weight
-  accumulator.weight += weight
-}
-
-function getAverageColor(accumulator: ColorAccumulator) {
-  if (accumulator.weight === 0) {
+  if (weight === 0) {
     return null
   }
 
   return {
-    r: accumulator.r / accumulator.weight,
-    g: accumulator.g / accumulator.weight,
-    b: accumulator.b / accumulator.weight,
-  }
-}
-
-function createPalette({
-  full,
-  rightEdge,
-  bottomEdge,
-  vivid,
-}: {
-  full: RgbColor
-  rightEdge: RgbColor
-  bottomEdge: RgbColor
-  vivid: RgbColor
-}): PhotoAccentPalette {
-  const accent = normalizeAccentColor(
-    shapeColor(vivid, {
-      saturationBoost: 1.4,
-      minSaturation: 0.2,
-      maxSaturation: 0.58,
-      minLightness: 0.34,
-      maxLightness: 0.58,
-    }),
-  )
-  const surface = shapeColor(full, {
-    saturationBoost: 0.72,
-    minSaturation: 0.08,
-    maxSaturation: 0.28,
-    minLightness: 0.27,
-    maxLightness: 0.42,
-  })
-  const glow = normalizeAccentColor(
-    shapeColor(vivid, {
-      saturationBoost: 1.55,
-      minSaturation: 0.24,
-      maxSaturation: 0.64,
-      minLightness: 0.38,
-      maxLightness: 0.6,
-    }),
-  )
-
-  return {
-    accent: rgbToHex(accent),
-    surface: rgbToHex(surface),
-    rightEdge: rgbToHex(
-      normalizeAccentColor(
-        shapeColor(rightEdge, {
-          saturationBoost: 1.08,
-          minSaturation: 0.14,
-          maxSaturation: 0.46,
-          minLightness: 0.3,
-          maxLightness: 0.54,
-        }),
-      ),
-    ),
-    bottomEdge: rgbToHex(
-      normalizeAccentColor(
-        shapeColor(bottomEdge, {
-          saturationBoost: 1.08,
-          minSaturation: 0.14,
-          maxSaturation: 0.46,
-          minLightness: 0.3,
-          maxLightness: 0.54,
-        }),
-      ),
-    ),
-    glow: rgbToHex(glow),
+    r: red / weight,
+    g: green / weight,
+    b: blue / weight,
   }
 }
 
@@ -303,59 +218,18 @@ export function createPhotoAccentPalette(
     1,
     Math.round((thumbnail.height / thumbnail.width) * width),
   )
-  let data: Uint8ClampedArray
 
   try {
-    data = decodeBlurhash(blurhash, width, height)
+    const accentColor = getAccentColor(decodeBlurhash(blurhash, width, height))
+
+    if (!accentColor) {
+      return FALLBACK_PALETTE
+    }
+
+    return {
+      accent: rgbToHex(normalizeAccentColor(shapeAccentColor(accentColor))),
+    }
   } catch {
     return FALLBACK_PALETTE
   }
-
-  const rightEdgeStart = Math.floor(width * 0.62)
-  const bottomEdgeStart = Math.floor(height * 0.62)
-  const full = createAccumulator()
-  const rightEdge = createAccumulator()
-  const bottomEdge = createAccumulator()
-  const vivid = createAccumulator()
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const index = (y * width + x) * 4
-      const color = {
-        r: data[index],
-        g: data[index + 1],
-        b: data[index + 2],
-      }
-      const hsl = rgbToHsl(color)
-      const midtoneWeight = 1 - clamp(Math.abs(hsl.l - 0.5) * 1.8, 0, 0.85)
-      const vividWeight = hsl.s * hsl.s * midtoneWeight
-
-      addColor(full, color, 1)
-
-      if (x >= rightEdgeStart) {
-        addColor(rightEdge, color, 1)
-      }
-
-      if (y >= bottomEdgeStart) {
-        addColor(bottomEdge, color, 1)
-      }
-
-      if (hsl.s > 0.06 && hsl.l > 0.12 && hsl.l < 0.88) {
-        addColor(vivid, color, Math.max(0.02, vividWeight))
-      }
-    }
-  }
-
-  const fullColor = getAverageColor(full)
-
-  if (!fullColor) {
-    return FALLBACK_PALETTE
-  }
-
-  return createPalette({
-    full: fullColor,
-    rightEdge: getAverageColor(rightEdge) ?? fullColor,
-    bottomEdge: getAverageColor(bottomEdge) ?? fullColor,
-    vivid: getAverageColor(vivid) ?? fullColor,
-  })
 }
