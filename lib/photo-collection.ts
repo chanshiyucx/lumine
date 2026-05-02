@@ -3,6 +3,7 @@ import { cache } from 'react'
 import { z } from 'zod'
 import { blurhashToDataUrl } from './blurhash'
 import { PHOTO_MANIFEST_URL_ENV } from './env'
+import { createPhotoAccentPalette } from './photo-accent-palette'
 import {
   createPhotoSlug,
   type PhotoAsset,
@@ -217,6 +218,7 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
           blurPreviewSize.width,
           blurPreviewSize.height,
         ),
+        accentPalette: createPhotoAccentPalette(photo.blurhash, thumbnail),
         aspectRatio: thumbnail.width / thumbnail.height,
         original,
         thumbnail,
