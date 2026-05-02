@@ -1,8 +1,9 @@
 'use client'
 
 import { X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/gallery/capture-setting-chip'
+import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
 import {
@@ -11,6 +12,13 @@ import {
   getExposureRows,
   getPhotoInfoRows,
 } from './lib/viewer-metadata'
+
+const VIEWER_ACCENT = 'var(--viewer-accent, var(--color-iris))'
+const VIEWER_EDGE = 'var(--viewer-panel-edge, var(--color-overlay))'
+const VIEWER_GLOW = 'var(--viewer-panel-glow, var(--color-iris))'
+const VIEWER_SURFACE = 'var(--viewer-panel-surface, var(--color-surface))'
+const PANEL_BACKGROUND_IMAGE = `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_SURFACE} 97%, var(--color-surface)), color-mix(in srgb, var(--color-overlay) 93%, ${VIEWER_ACCENT}) 52%, color-mix(in srgb, var(--color-base) 92%, ${VIEWER_EDGE}) 100%)`
+const PANEL_INNER_GLOW = `linear-gradient(to bottom right, transparent, color-mix(in srgb, ${VIEWER_GLOW} 3%, transparent) 48%, color-mix(in srgb, ${VIEWER_EDGE} 4%, transparent))`
 
 interface InfoRowProps {
   label: string
@@ -89,28 +97,37 @@ export function ViewerInfoPanel({
   isOpen = true,
   onClose,
 }: ViewerInfoPanelProps) {
+  const isMobile = useMobile()
+  const accentPalette = photo.accentPalette
+  const panelStyle = {
+    '--viewer-accent': accentPalette.accent,
+    '--viewer-panel-edge': isMobile
+      ? accentPalette.bottomEdge
+      : accentPalette.rightEdge,
+    '--viewer-panel-glow': accentPalette.glow,
+    '--viewer-panel-surface': accentPalette.surface,
+    backgroundColor: VIEWER_SURFACE,
+    backgroundImage: PANEL_BACKGROUND_IMAGE,
+    boxShadow:
+      '0 8px 32px color-mix(in srgb, var(--viewer-panel-glow, var(--color-iris)) 8%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-panel-edge, var(--color-iris)) 6%, transparent), 0 4px 16px color-mix(in srgb, black 18%, transparent)',
+  } as CSSProperties
+
   return (
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden border-white/10 backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0 lg:border-l',
+        'bg-surface fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0',
         isOpen
           ? 'translate-y-0 opacity-100 lg:w-80'
           : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
       )}
-      style={{
-        backgroundImage:
-          'linear-gradient(to bottom right, color-mix(in srgb, var(--color-surface) 96%, transparent), color-mix(in srgb, var(--color-overlay) 92%, transparent), color-mix(in srgb, var(--color-base) 88%, transparent))',
-        boxShadow:
-          '0 8px 32px color-mix(in srgb, var(--color-base) 24%, transparent), 0 4px 16px color-mix(in srgb, black 14%, transparent)',
-      }}
+      style={panelStyle}
     >
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
         style={{
-          background:
-            'linear-gradient(to bottom right, color-mix(in srgb, var(--color-text) 5%, transparent), transparent 45%, color-mix(in srgb, white 4%, transparent))',
+          background: PANEL_INNER_GLOW,
         }}
       />
 
