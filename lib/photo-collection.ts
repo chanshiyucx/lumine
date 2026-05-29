@@ -10,6 +10,7 @@ import {
   type PhotoCollection,
 } from './photos'
 import { siteConfig } from './site-config'
+import { decodePathSegment } from './url-segments'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 const DEFAULT_ALBUM_KEY = 'gallery'
@@ -106,7 +107,8 @@ function resolveAssetUrl(pathname: string) {
 }
 
 function parseAlbumPath(originalPath: string | undefined) {
-  const folder = originalPath?.split('/')[1]
+  const rawFolder = originalPath?.split('/')[1]
+  const folder = rawFolder ? decodePathSegment(rawFolder) : null
 
   if (!folder) {
     return null

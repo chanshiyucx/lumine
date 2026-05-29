@@ -1,3 +1,5 @@
+import { encodePathSegment, normalizePathSegment } from './url-segments'
+
 export interface PhotoAsset {
   url: string
   width: number
@@ -75,9 +77,12 @@ export interface PhotoCollection {
 }
 
 export function createPhotoSlug(title: string) {
-  return title.trim().replaceAll(/\s+/g, '-').replaceAll('/', '-')
+  return normalizePathSegment(title.trim().replaceAll(/\s+/g, '-')).replaceAll(
+    '/',
+    '-',
+  )
 }
 
 export function getPhotoPath(slug: string) {
-  return `/photos/${encodeURIComponent(slug)}`
+  return `/photos/${encodePathSegment(slug)}`
 }

@@ -1,5 +1,6 @@
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photos'
+import { decodePathSegment } from '@/lib/url-segments'
 
 export const MASONRY_GAP = 4
 const MOBILE_COLUMN_WIDTH = 150
@@ -62,5 +63,5 @@ export function getPhotoIndexFromPathname(
     return null
   }
 
-  return slugToIndex.get(decodeURIComponent(match[1])) ?? null
+  return slugToIndex.get(decodePathSegment(match[1])) ?? null
 }

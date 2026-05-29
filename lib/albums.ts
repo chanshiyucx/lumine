@@ -1,4 +1,5 @@
 import type { Photo } from './photos'
+import { decodePathSegment, encodePathSegment } from './url-segments'
 
 export interface Album {
   key: string
@@ -7,15 +8,11 @@ export interface Album {
 }
 
 export function getAlbumPath(albumKey: string) {
-  return `/albums/${encodeURIComponent(albumKey)}`
+  return `/albums/${encodePathSegment(albumKey)}`
 }
 
 export function normalizeAlbumKey(albumKey: string) {
-  try {
-    return decodeURIComponent(albumKey)
-  } catch {
-    return albumKey
-  }
+  return decodePathSegment(albumKey)
 }
 
 function createAlbum(photo: Photo): Album {
