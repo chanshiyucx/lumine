@@ -12,10 +12,7 @@
     "lint:fix": "eslint --fix",
     "format": "prettier --write",
     "type-check": "tsc --noEmit",
-    "prepare": "simple-git-hooks"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged"
+    "prepare": "git config --local core.hooksPath web/.githooks"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -50,7 +47,6 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

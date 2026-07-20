@@ -1,0 +1,5 @@
+target/
+.thumbnails/
+manifest.json
+state.json
+pipeline.toml
