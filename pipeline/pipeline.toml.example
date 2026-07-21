@@ -8,4 +8,3 @@ thumbnail_format = "webp"
 thumbnail_quality = 92
 avif_quality = 95
 avif_speed = 7
-enable_blurhash = true

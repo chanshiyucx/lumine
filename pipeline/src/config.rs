@@ -22,7 +22,6 @@ pub struct Config {
     pub avif_quality: u8,
     #[serde(default = "default_avif_speed")]
     pub avif_speed: u8,
-    pub enable_blurhash: bool,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]

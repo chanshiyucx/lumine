@@ -67,6 +67,8 @@ pub fn run() -> Result<BuildExit> {
         bail!("source directory does not exist: {}", source_dir.display());
     }
 
+    validate_path_isolation(&source_dir, &root_dir)?;
+
     fs::create_dir_all(&originals_dir).with_context(|| {
         format!(
             "failed to create originals directory {}",
@@ -275,6 +277,53 @@ pub fn run() -> Result<BuildExit> {
     }
 }
 
+fn validate_path_isolation(source_dir: &Path, root_dir: &Path) -> Result<()> {
+    let canonical_source = fs::canonicalize(source_dir)
+        .with_context(|| format!("failed to resolve source path {}", source_dir.display()))?;
+    let canonical_root = canonicalize_allow_missing(root_dir)
+        .with_context(|| format!("failed to resolve target path {}", root_dir.display()))?;
+
+    if canonical_source == canonical_root
+        || canonical_source.starts_with(&canonical_root)
+        || canonical_root.starts_with(&canonical_source)
+    {
+        bail!(
+            "sourcePath and targetPath must be separate, non-nested directories (source: {}, target: {})",
+            canonical_source.display(),
+            canonical_root.display()
+        );
+    }
+
+    Ok(())
+}
+
+fn canonicalize_allow_missing(path: &Path) -> Result<PathBuf> {
+    let mut existing = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()?.join(path)
+    };
+    let mut missing_components = Vec::new();
+
+    while !existing.exists() {
+        let name = existing
+            .file_name()
+            .ok_or_else(|| anyhow!("path has no existing ancestor: {}", path.display()))?;
+        missing_components.push(name.to_os_string());
+
+        if !existing.pop() {
+            bail!("path has no existing ancestor: {}", path.display());
+        }
+    }
+
+    let mut canonical = fs::canonicalize(&existing)?;
+    for component in missing_components.iter().rev() {
+        canonical.push(component);
+    }
+
+    Ok(canonical)
+}
+
 fn collect_selected_sources(source_dir: &Path, source_tags: &[String]) -> Result<Vec<SourceItem>> {
     let mut candidates = Vec::new();
 
@@ -406,28 +455,58 @@ fn cleanup_removed_outputs(
     current_keys: &BTreeSet<String>,
     previous_state: &StateFile,
 ) -> Result<()> {
+    let canonical_root = fs::canonicalize(root_dir)
+        .with_context(|| format!("failed to resolve target path {}", root_dir.display()))?;
+
     for (source_key, state_entry) in &previous_state.files {
         if current_keys.contains(source_key) {
             continue;
         }
 
-        remove_output_if_exists(root_dir, &state_entry.original)?;
-        remove_output_if_exists(root_dir, &state_entry.thumbnail)?;
+        remove_output_if_exists(root_dir, &canonical_root, &state_entry.original)?;
+        remove_output_if_exists(root_dir, &canonical_root, &state_entry.thumbnail)?;
     }
 
     Ok(())
 }
 
-fn remove_output_if_exists(root_dir: &Path, relative_path: &str) -> Result<()> {
+fn remove_output_if_exists(
+    root_dir: &Path,
+    canonical_root: &Path,
+    relative_path: &str,
+) -> Result<()> {
     if relative_path.is_empty() {
         return Ok(());
     }
 
-    let path = root_dir.join(relative_path);
-    if path.exists() {
-        fs::remove_file(&path)
-            .with_context(|| format!("failed to remove stale output {}", path.display()))?;
+    let relative_path = Path::new(relative_path);
+    if relative_path.is_absolute()
+        || relative_path
+            .components()
+            .any(|component| !matches!(component, std::path::Component::Normal(_)))
+    {
+        bail!(
+            "refusing to remove unsafe state path: {}",
+            relative_path.display()
+        );
     }
+
+    let path = root_dir.join(relative_path);
+    if !path.exists() {
+        return Ok(());
+    }
+
+    let canonical_path = fs::canonicalize(&path)
+        .with_context(|| format!("failed to resolve stale output {}", path.display()))?;
+    if canonical_path == canonical_root || !canonical_path.starts_with(canonical_root) {
+        bail!(
+            "refusing to remove path outside target directory: {}",
+            canonical_path.display()
+        );
+    }
+
+    fs::remove_file(&path)
+        .with_context(|| format!("failed to remove stale output {}", path.display()))?;
 
     Ok(())
 }
@@ -522,11 +601,7 @@ fn process_one(context: &ProcessContext<'_>, item: &SourceItem) -> Result<Proces
 
     let blurhash = {
         let _processing_scope = ScopedCounter::new(&status.processing);
-        if config.enable_blurhash {
-            Some(compute_blurhash(&thumbnail_image)?)
-        } else {
-            None
-        }
+        compute_blurhash(&thumbnail_image)?
     };
 
     let original_key = normalize_relative_path(root_dir, &original_path)?;
@@ -536,8 +611,7 @@ fn process_one(context: &ProcessContext<'_>, item: &SourceItem) -> Result<Proces
         .file_stem()
         .map(|stem| stem.to_string_lossy().into_owned())
         .ok_or_else(|| anyhow!("missing file stem for {}", item.path.display()))?;
-    let extracted =
-        extract_source_metadata(exif.as_ref(), Some(source_bit_depth), source_orientation);
+    let extracted = extract_source_metadata(exif.as_ref(), Some(source_bit_depth));
 
     Ok(ProcessedPhoto {
         state_key: item.source_key.clone(),
@@ -551,38 +625,36 @@ fn process_one(context: &ProcessContext<'_>, item: &SourceItem) -> Result<Proces
         photo_entry: PhotoEntry {
             original: Asset {
                 url: original_key,
-                width: Some(original_width),
-                height: Some(original_height),
+                width: original_width,
+                height: original_height,
                 bytes: original_metadata.len(),
                 mime: AVIF_MIME.to_string(),
             },
             thumbnail: Asset {
                 url: thumbnail_key,
-                width: Some(thumbnail_width),
-                height: Some(thumbnail_height),
+                width: thumbnail_width,
+                height: thumbnail_height,
                 bytes: thumbnail_metadata.len(),
                 mime: mime_from_format(config.thumbnail_format).to_string(),
             },
             blurhash,
             title,
-            taken_at: extracted.taken_at,
+            taken_at: extracted
+                .taken_at
+                .unwrap_or(timestamp_ms_rfc3339(item.mtime_ms)?),
             location: extracted.location,
-            camera: extracted.camera,
-            image: Some(extracted.image),
+            camera: extracted.camera.unwrap_or_default(),
+            image: extracted.image,
         },
     })
 }
 
-fn extract_source_metadata(
-    exif: Option<&Exif>,
-    bit_depth: Option<u8>,
-    source_orientation: u8,
-) -> ExtractedMetadata {
+fn extract_source_metadata(exif: Option<&Exif>, bit_depth: Option<u8>) -> ExtractedMetadata {
     ExtractedMetadata {
         taken_at: exif.and_then(extract_taken_at),
         location: exif.and_then(extract_location),
         camera: exif.and_then(extract_camera),
-        image: extract_image_metadata(exif, bit_depth, source_orientation),
+        image: extract_image_metadata(exif, bit_depth),
     }
 }
 
@@ -668,13 +740,7 @@ fn extract_location(exif: &Exif) -> Option<Location> {
         if altitude_ref == 1 { -value } else { value }
     });
 
-    Some(Location {
-        lat,
-        lng,
-        alt,
-        country: None,
-        city: None,
-    })
+    Some(Location { lat, lng, alt })
 }
 
 fn extract_camera(exif: &Exif) -> Option<Camera> {
@@ -693,7 +759,6 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
     let metering_mode = exif_display(exif, Tag::MeteringMode);
     let white_balance = compact_white_balance(exif);
     let flash = compact_flash(exif);
-    let light_source = exif_display(exif, Tag::LightSource);
     let scene_capture_type = exif_display(exif, Tag::SceneCaptureType);
     let brightness_ev = rational_value(exif, Tag::BrightnessValue).map(round_f32);
     let sensing_method = exif_display(exif, Tag::SensingMethod);
@@ -712,7 +777,6 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
         && metering_mode.is_none()
         && white_balance.is_none()
         && flash.is_none()
-        && light_source.is_none()
         && scene_capture_type.is_none()
         && brightness_ev.is_none()
         && sensing_method.is_none()
@@ -735,18 +799,13 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
         metering_mode,
         white_balance,
         flash,
-        light_source,
         scene_capture_type,
         brightness_ev,
         sensing_method,
     })
 }
 
-fn extract_image_metadata(
-    exif: Option<&Exif>,
-    bit_depth: Option<u8>,
-    source_orientation: u8,
-) -> ImageMetadata {
+fn extract_image_metadata(exif: Option<&Exif>, bit_depth: Option<u8>) -> ImageMetadata {
     let has_hdr = bit_depth.map(|value| value > 8).unwrap_or(false);
     let color_space = exif
         .and_then(|exif| exif_display(exif, Tag::ColorSpace))
@@ -759,7 +818,6 @@ fn extract_image_metadata(
         has_hdr,
         is_live_photo: false,
         bit_depth,
-        source_orientation: (source_orientation != 1).then_some(source_orientation),
     }
 }
 
@@ -1933,6 +1991,11 @@ fn now_rfc3339() -> Result<String> {
     Ok(OffsetDateTime::now_utc().format(&Rfc3339)?)
 }
 
+fn timestamp_ms_rfc3339(timestamp_ms: u64) -> Result<String> {
+    let timestamp_ns = i128::from(timestamp_ms) * 1_000_000;
+    Ok(OffsetDateTime::from_unix_timestamp_nanos(timestamp_ns)?.format(&Rfc3339)?)
+}
+
 fn inferred_bit_depth(image: &DynamicImage) -> u8 {
     match image.color() {
         ColorType::L16 | ColorType::La16 | ColorType::Rgb16 | ColorType::Rgba16 => 16,
@@ -2083,26 +2146,21 @@ struct ManifestFileRef<'a> {
 struct PhotoEntry {
     original: Asset,
     thumbnail: Asset,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    blurhash: Option<String>,
+    blurhash: String,
     title: String,
-    #[serde(rename = "takenAt", skip_serializing_if = "Option::is_none")]
-    taken_at: Option<String>,
+    #[serde(rename = "takenAt")]
+    taken_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     location: Option<Location>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    camera: Option<Camera>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    image: Option<ImageMetadata>,
+    camera: Camera,
+    image: ImageMetadata,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 struct Asset {
     url: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    width: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    height: Option<u32>,
+    width: u32,
+    height: u32,
     bytes: u64,
     mime: String,
 }
@@ -2141,13 +2199,9 @@ struct Location {
     lng: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     alt: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    country: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    city: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 struct Camera {
     #[serde(skip_serializing_if = "Option::is_none")]
     make: Option<String>,
@@ -2177,8 +2231,6 @@ struct Camera {
     white_balance: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     flash: Option<String>,
-    #[serde(rename = "lightSource", skip_serializing_if = "Option::is_none")]
-    light_source: Option<String>,
     #[serde(rename = "sceneCaptureType", skip_serializing_if = "Option::is_none")]
     scene_capture_type: Option<String>,
     #[serde(rename = "brightnessEv", skip_serializing_if = "Option::is_none")]
@@ -2190,8 +2242,6 @@ struct Camera {
 #[derive(Clone, Deserialize, Serialize)]
 struct ImageMetadata {
     orientation: u8,
-    #[serde(rename = "sourceOrientation", skip_serializing_if = "Option::is_none")]
-    source_orientation: Option<u8>,
     #[serde(rename = "colorSpace")]
     color_space: String,
     #[serde(rename = "hasHdr")]
