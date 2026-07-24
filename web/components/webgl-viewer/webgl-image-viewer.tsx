@@ -21,7 +21,10 @@ import type {
   WebGLImageViewerProps,
   WebGLImageViewerRef,
 } from './types'
-import { WebGLImageViewerEngine } from './webgl-image-viewer-engine'
+import {
+  WebGLImageViewerEngine,
+  type WebGLImageViewerEngineOptions,
+} from './webgl-image-viewer-engine'
 
 const DebugInfoComponent = dynamic<DebugInfoProps>(
   () => import('./debug-info'),
@@ -29,6 +32,8 @@ const DebugInfoComponent = dynamic<DebugInfoProps>(
     ssr: false,
   },
 )
+
+const noop = () => {}
 
 export const WebGLImageViewer = forwardRef<
   WebGLImageViewerRef,
@@ -63,50 +68,46 @@ export const WebGLImageViewer = forwardRef<
   const viewerRef = useRef<WebGLImageViewerEngine | null>(null)
   const debugInfoRef = useRef<DebugInfoRef | null>(null)
 
-  const config: ResolvedWebGLImageViewerProps = useMemo(
+  const interactionConfig = useMemo(
     () => ({
-      src,
-      sourceBlob,
-      className,
-      width: width || 0,
-      height: height || 0,
-      initialScale,
-      minScale,
-      maxScale,
       wheel: { ...defaultWheelConfig, ...wheel },
       pinch: { ...defaultPinchConfig, ...pinch },
       doubleClick: { ...defaultDoubleClickConfig, ...doubleClick },
       panning: { ...defaultPanningConfig, ...panning },
-      limitToBounds,
-      centerOnInit,
-      smooth,
-      onZoomChange: onZoomChange || (() => {}),
-      onError: onError || (() => {}),
-      onLoadingStateChange: onLoadingStateChange || (() => {}),
-      debug,
     }),
-    [
-      src,
-      sourceBlob,
-      className,
-      width,
-      height,
-      initialScale,
-      minScale,
-      maxScale,
-      wheel,
-      pinch,
-      doubleClick,
-      panning,
-      limitToBounds,
-      centerOnInit,
-      smooth,
-      onZoomChange,
-      onError,
-      onLoadingStateChange,
-      debug,
-    ],
+    [doubleClick, panning, pinch, wheel],
   )
+
+  const callbacksRef = useRef<
+    Pick<
+      ResolvedWebGLImageViewerProps,
+      'onError' | 'onLoadingStateChange' | 'onZoomChange'
+    >
+  >({
+    onZoomChange: onZoomChange || noop,
+    onError: onError || noop,
+    onLoadingStateChange: onLoadingStateChange || noop,
+  })
+
+  const interactionConfigRef = useRef<
+    Pick<
+      ResolvedWebGLImageViewerProps,
+      'doubleClick' | 'panning' | 'pinch' | 'wheel'
+    >
+  >(interactionConfig)
+
+  useEffect(() => {
+    callbacksRef.current = {
+      onZoomChange: onZoomChange || noop,
+      onError: onError || noop,
+      onLoadingStateChange: onLoadingStateChange || noop,
+    }
+  }, [onError, onLoadingStateChange, onZoomChange])
+
+  useEffect(() => {
+    interactionConfigRef.current = interactionConfig
+    viewerRef.current?.updateInteractionConfig(interactionConfigRef.current)
+  }, [interactionConfig])
 
   useImperativeHandle(ref, () => ({
     zoomIn: (animated?: boolean) => viewerRef.current?.zoomIn(animated),
@@ -120,23 +121,39 @@ export const WebGLImageViewer = forwardRef<
       return
     }
 
+    const options: WebGLImageViewerEngineOptions = {
+      initialScale,
+      minScale,
+      maxScale,
+      wheel: interactionConfigRef.current.wheel,
+      pinch: interactionConfigRef.current.pinch,
+      doubleClick: interactionConfigRef.current.doubleClick,
+      panning: interactionConfigRef.current.panning,
+      limitToBounds,
+      centerOnInit,
+      smooth,
+      onZoomChange: (...args) => callbacksRef.current.onZoomChange(...args),
+      onLoadingStateChange: (...args) =>
+        callbacksRef.current.onLoadingStateChange(...args),
+    }
+
     let webGLImageViewerEngine: WebGLImageViewerEngine | null = null
 
     try {
       webGLImageViewerEngine = new WebGLImageViewerEngine(
         canvasRef.current,
-        config,
+        options,
         debug ? debugInfoRef : undefined,
       )
 
-      const preknownWidth = config.width > 0 ? config.width : undefined
-      const preknownHeight = config.height > 0 ? config.height : undefined
+      const preknownWidth = width && width > 0 ? width : undefined
+      const preknownHeight = height && height > 0 ? height : undefined
 
       webGLImageViewerEngine
-        .loadImage(src, preknownWidth, preknownHeight, config.sourceBlob)
+        .loadImage(src, preknownWidth, preknownHeight, sourceBlob)
         .catch((error) => {
           console.error('Failed to load WebGL image:', error)
-          config.onError(
+          callbacksRef.current.onError(
             error instanceof Error ? error : new Error(String(error)),
           )
         })
@@ -144,14 +161,28 @@ export const WebGLImageViewer = forwardRef<
       viewerRef.current = webGLImageViewerEngine
     } catch (error) {
       console.error('Failed to initialize WebGL Image Viewer:', error)
-      config.onError(error instanceof Error ? error : new Error(String(error)))
+      callbacksRef.current.onError(
+        error instanceof Error ? error : new Error(String(error)),
+      )
     }
 
     return () => {
       webGLImageViewerEngine?.destroy()
       viewerRef.current = null
     }
-  }, [src, config, debug])
+  }, [
+    centerOnInit,
+    debug,
+    height,
+    initialScale,
+    limitToBounds,
+    maxScale,
+    minScale,
+    smooth,
+    sourceBlob,
+    src,
+    width,
+  ])
 
   return (
     <div

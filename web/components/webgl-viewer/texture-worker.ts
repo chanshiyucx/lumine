@@ -8,22 +8,63 @@ self.onmessage = async (event: MessageEvent) => {
   const { type, payload } = event.data
 
   if (type === 'init') {
-    originalImage?.close()
-    originalImage = payload.imageBitmap
-    self.postMessage({ type: 'init-done' })
+    try {
+      originalImage?.close()
+      const nextImage = payload.imageBitmap as ImageBitmap
+      originalImage = nextImage
+
+      const canvas = new OffscreenCanvas(
+        payload.previewWidth,
+        payload.previewHeight,
+      )
+      const context = canvas.getContext('2d')
+      if (!context) {
+        throw new Error('Failed to create preview canvas context')
+      }
+
+      context.imageSmoothingEnabled = true
+      context.imageSmoothingQuality = 'medium'
+      context.drawImage(
+        nextImage,
+        0,
+        0,
+        payload.previewWidth,
+        payload.previewHeight,
+      )
+
+      const previewBitmap = canvas.transferToImageBitmap()
+      self.postMessage({ type: 'init-done', payload: { previewBitmap } }, [
+        previewBitmap,
+      ])
+    } catch (error) {
+      self.postMessage({
+        type: 'init-error',
+        payload: {
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to initialize texture worker',
+        },
+      })
+    }
   } else if (type === 'create-tile') {
+    const { x, y, lodLevel, lodConfig, imageWidth, imageHeight, key } = payload
+
     if (!originalImage) {
-      console.warn('Worker has not been initialized with an image.')
+      self.postMessage({
+        type: 'tile-error',
+        payload: {
+          key,
+          error: 'Worker has not been initialized with an image',
+        },
+      })
       return
     }
-
-    const { x, y, lodLevel, lodConfig, imageWidth, imageHeight, key } = payload
 
     try {
       const { cols, rows } = getTileGridSize(
         imageWidth,
         imageHeight,
-        lodLevel,
         lodConfig,
       )
 
@@ -45,7 +86,7 @@ self.onmessage = async (event: MessageEvent) => {
       )
 
       if (targetWidth <= 0 || targetHeight <= 0) {
-        return
+        throw new Error('Tile dimensions must be positive')
       }
 
       const canvas = new OffscreenCanvas(targetWidth, targetHeight)
@@ -72,8 +113,13 @@ self.onmessage = async (event: MessageEvent) => {
         [imageBitmap],
       )
     } catch (error) {
-      console.error('Error creating tile in worker:', error)
-      self.postMessage({ type: 'tile-error', payload: { key, error } })
+      self.postMessage({
+        type: 'tile-error',
+        payload: {
+          key,
+          error: error instanceof Error ? error.message : 'Failed to create tile',
+        },
+      })
     }
   }
 }
@@ -81,7 +127,6 @@ self.onmessage = async (event: MessageEvent) => {
 function getTileGridSize(
   imageWidth: number,
   imageHeight: number,
-  _lodLevel: number,
   lodConfig: { scale: number },
 ): { cols: number; rows: number } {
   const scaledWidth = imageWidth * lodConfig.scale

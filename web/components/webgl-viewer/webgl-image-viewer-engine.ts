@@ -7,8 +7,10 @@ import {
 import type { DebugInfo, ResolvedWebGLImageViewerProps } from './types'
 
 const TILE_SIZE = 512
-const MAX_TILES_PER_FRAME = 4
+const MAX_CONCURRENT_TILE_REQUESTS = 4
 const TILE_CACHE_SIZE = 32
+const MAX_PREVIEW_PIXELS = 4_194_304
+const FALLBACK_PREVIEW_LONG_EDGE = 1024
 
 interface TileInfo {
   x: number
@@ -21,7 +23,27 @@ interface TileInfo {
 }
 
 type TileKey = string
-type ViewerImageSource = HTMLImageElement | ImageBitmap
+
+export type WebGLImageViewerEngineOptions = Pick<
+  ResolvedWebGLImageViewerProps,
+  | 'centerOnInit'
+  | 'doubleClick'
+  | 'initialScale'
+  | 'limitToBounds'
+  | 'maxScale'
+  | 'minScale'
+  | 'onLoadingStateChange'
+  | 'onZoomChange'
+  | 'panning'
+  | 'pinch'
+  | 'smooth'
+  | 'wheel'
+>
+
+interface WorkerInitialization {
+  resolve: () => void
+  reject: (error: Error) => void
+}
 
 const SIMPLE_LOD_LEVELS = [
   { scale: 0.25 },
@@ -34,6 +56,7 @@ const SIMPLE_LOD_LEVELS = [
 export class WebGLImageViewerEngine {
   private canvas: HTMLCanvasElement
   private gl: WebGLRenderingContext
+  private readonly maxTextureSize: number
   private program: WebGLProgram | null = null
   private positionBuffer: WebGLBuffer | null = null
   private texCoordBuffer: WebGLBuffer | null = null
@@ -76,9 +99,12 @@ export class WebGLImageViewerEngine {
   private currentLOD = 1
   private lodTextures = new Map<number, WebGLTexture>()
 
-  private config: ResolvedWebGLImageViewerProps
-  private onZoomChange?: (originalScale: number, relativeScale: number) => void
-  private onLoadingStateChange?: (
+  private config: WebGLImageViewerEngineOptions
+  private readonly onZoomChange: (
+    originalScale: number,
+    relativeScale: number,
+  ) => void
+  private readonly onLoadingStateChange: (
     isLoading: boolean,
     message?: string,
     quality?: 'high' | 'medium' | 'low' | 'unknown',
@@ -91,6 +117,7 @@ export class WebGLImageViewerEngine {
   private isLoadingTexture = true
   private worker: Worker | null = null
   private textureWorkerInitialized = false
+  private workerInitialization: WorkerInitialization | null = null
 
   private boundHandleMouseDown: (event: MouseEvent) => void
   private boundHandleMouseMove: (event: MouseEvent) => void
@@ -104,7 +131,7 @@ export class WebGLImageViewerEngine {
 
   private tileCache = new Map<TileKey, TileInfo>()
   private loadingTiles = new Map<TileKey, { priority: number }>()
-  private pendingTileRequests: Array<{ key: TileKey; priority: number }> = []
+  private pendingTileRequests = new Map<TileKey, number>()
 
   private currentVisibleTiles = new Set<TileKey>()
   private lastViewportHash = ''
@@ -116,7 +143,7 @@ export class WebGLImageViewerEngine {
 
   constructor(
     canvas: HTMLCanvasElement,
-    config: ResolvedWebGLImageViewerProps,
+    config: WebGLImageViewerEngineOptions,
     onDebugUpdate?: React.RefObject<{
       updateDebugInfo: (debugInfo: DebugInfo) => void
     } | null>,
@@ -139,6 +166,7 @@ export class WebGLImageViewerEngine {
     }
 
     this.gl = gl
+    this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number
 
     this.boundHandleMouseDown = (event: MouseEvent) =>
       this.handleMouseDown(event)
@@ -298,7 +326,8 @@ export class WebGLImageViewerEngine {
 
   private handleWorkerMessage(event: MessageEvent) {
     if (this.destroyed) {
-      const imageBitmap = event.data?.payload?.imageBitmap
+      const imageBitmap =
+        event.data?.payload?.imageBitmap ?? event.data?.payload?.previewBitmap
       if (imageBitmap instanceof ImageBitmap) {
         imageBitmap.close()
       }
@@ -308,8 +337,37 @@ export class WebGLImageViewerEngine {
     const { type, payload } = event.data
 
     if (type === 'init-done') {
+      const previewBitmap = payload?.previewBitmap as ImageBitmap | undefined
+      if (!previewBitmap) {
+        this.rejectWorkerInitialization(
+          new Error('Worker did not return a preview bitmap'),
+        )
+        return
+      }
+
+      const texture = this.createWebGLTexture(previewBitmap)
+      previewBitmap.close()
+
+      if (!texture) {
+        this.rejectWorkerInitialization(
+          new Error('Failed to create preview texture'),
+        )
+        return
+      }
+
+      this.cleanupLODTextures()
+      this.lodTextures.set(this.currentLOD, texture)
+      this.texture = texture
+      this.currentQuality = 'low'
       this.textureWorkerInitialized = true
-      this.updateTileCache()
+      this.resolveWorkerInitialization()
+      return
+    }
+
+    if (type === 'init-error') {
+      this.rejectWorkerInitialization(
+        new Error(payload?.message || 'Failed to initialize texture worker'),
+      )
       return
     }
 
@@ -320,9 +378,8 @@ export class WebGLImageViewerEngine {
 
       if (!this.currentVisibleTiles.has(key)) {
         imageBitmap.close()
-        if (loadingInfo) {
-          this.loadingTiles.delete(key)
-        }
+        this.loadingTiles.delete(key)
+        this.processPendingTileRequests()
         return
       }
 
@@ -356,10 +413,13 @@ export class WebGLImageViewerEngine {
       } else if (loadingInfo) {
         this.loadingTiles.delete(key)
       }
+
+      this.processPendingTileRequests()
     } else if (type === 'tile-error') {
       const { key, error } = payload
       console.warn(`Worker failed to create tile: ${key}`, error)
       this.loadingTiles.delete(key)
+      this.processPendingTileRequests()
     }
   }
 
@@ -378,7 +438,7 @@ export class WebGLImageViewerEngine {
         return
       } catch (error) {
         if (this.destroyed) {
-          throw error
+          return
         }
 
         console.warn('Failed to decode image blob for WebGL:', error)
@@ -411,32 +471,18 @@ export class WebGLImageViewerEngine {
 
       this.setupInitialScaling()
       this.notifyLoadingStateChange(true, 'Creating texture...')
-      await this.createTexture(imageBitmap)
+      await this.initializeTextureWorker(imageBitmap)
 
-      if (this.destroyed) {
-        imageBitmap.close()
-        return
-      }
-
-      if (this.worker) {
-        this.worker.postMessage(
-          {
-            type: 'init',
-            payload: { imageBitmap },
-          },
-          [imageBitmap],
-        )
-      } else {
-        imageBitmap.close()
-      }
-
+      if (this.destroyed) return
       this.imageLoaded = true
       this.isLoadingTexture = false
       this.notifyLoadingStateChange(false)
       this.render()
       this.notifyZoomChange()
+      void this.updateTileCache()
     } catch (error) {
       imageBitmap.close()
+      if (this.destroyed) return
       this.isLoadingTexture = false
       this.notifyLoadingStateChange(false)
       throw error
@@ -472,13 +518,6 @@ export class WebGLImageViewerEngine {
           }
 
           this.notifyLoadingStateChange(true, 'Creating texture...')
-          await this.createTexture(image)
-
-          if (this.destroyed) {
-            resolve()
-            return
-          }
-
           const imageBitmap = await createImageBitmap(image)
 
           if (this.destroyed) {
@@ -487,21 +526,24 @@ export class WebGLImageViewerEngine {
             return
           }
 
-          this.worker?.postMessage(
-            {
-              type: 'init',
-              payload: { imageBitmap },
-            },
-            [imageBitmap],
-          )
+          await this.initializeTextureWorker(imageBitmap)
 
+          if (this.destroyed) {
+            resolve()
+            return
+          }
           this.imageLoaded = true
           this.isLoadingTexture = false
           this.notifyLoadingStateChange(false)
           this.render()
           this.notifyZoomChange()
+          void this.updateTileCache()
           resolve()
         } catch (error) {
+          if (this.destroyed) {
+            resolve()
+            return
+          }
           this.isLoadingTexture = false
           this.notifyLoadingStateChange(false)
           reject(error)
@@ -509,6 +551,11 @@ export class WebGLImageViewerEngine {
       }
 
       image.onerror = () => {
+        if (this.destroyed) {
+          resolve()
+          return
+        }
+
         this.isLoadingTexture = false
         this.notifyLoadingStateChange(false)
         reject(new Error('Failed to load image'))
@@ -527,59 +574,89 @@ export class WebGLImageViewerEngine {
     }
   }
 
-  private async createTexture(source: ViewerImageSource) {
-    await this.createLODTexture(source, this.currentLOD)
-  }
-
-  private async createLODTexture(source: ViewerImageSource, lodLevel: number) {
-    if (
-      this.destroyed ||
-      lodLevel < 0 ||
-      lodLevel >= SIMPLE_LOD_LEVELS.length
-    ) {
-      return
+  private initializeTextureWorker(imageBitmap: ImageBitmap) {
+    const worker = this.worker
+    if (!worker) {
+      imageBitmap.close()
+      return Promise.reject(new Error('Texture worker is not available'))
     }
 
-    const lodConfig = SIMPLE_LOD_LEVELS[lodLevel]
-    const finalWidth = Math.max(
-      1,
-      Math.round(this.imageWidth * lodConfig.scale),
-    )
-    const finalHeight = Math.max(
-      1,
-      Math.round(this.imageHeight * lodConfig.scale),
-    )
+    const previewSize = this.getPreviewSize()
 
-    const canvas = document.createElement('canvas')
-    canvas.width = finalWidth
-    canvas.height = finalHeight
-    const context = canvas.getContext('2d')!
-
-    context.imageSmoothingEnabled = true
-    context.imageSmoothingQuality = lodConfig.scale >= 1 ? 'high' : 'medium'
-    context.drawImage(source, 0, 0, finalWidth, finalHeight)
-
-    const texture = this.createWebGLTexture(canvas)
-    if (!texture) {
-      return
-    }
-
-    this.cleanupLODTextures()
-    this.lodTextures.set(lodLevel, texture)
-    this.texture = texture
-    this.currentLOD = lodLevel
-    this.currentQuality =
-      lodConfig.scale >= 2 ? 'high' : lodConfig.scale >= 1 ? 'medium' : 'low'
+    return new Promise<void>((resolve, reject) => {
+      this.workerInitialization = { resolve, reject }
+      worker.postMessage(
+        {
+          type: 'init',
+          payload: {
+            imageBitmap,
+            previewWidth: previewSize.width,
+            previewHeight: previewSize.height,
+          },
+        },
+        [imageBitmap],
+      )
+    })
   }
 
-  private createWebGLTexture(
-    source: HTMLCanvasElement | HTMLImageElement | ImageBitmap,
-  ): WebGLTexture | null {
+  private getPreviewSize() {
+    const hasUsableViewport = this.canvasWidth > 0 && this.canvasHeight > 0
+
+    let desiredWidth: number
+    let desiredHeight: number
+
+    if (hasUsableViewport) {
+      const fitScale = this.getFitToScreenScale()
+      desiredWidth = this.imageWidth * fitScale * this.devicePixelRatio
+      desiredHeight = this.imageHeight * fitScale * this.devicePixelRatio
+    } else {
+      const longEdge = Math.max(this.imageWidth, this.imageHeight)
+      const fallbackScale = Math.min(1, FALLBACK_PREVIEW_LONG_EDGE / longEdge)
+      desiredWidth = this.imageWidth * fallbackScale
+      desiredHeight = this.imageHeight * fallbackScale
+    }
+
+    const pixelScale = Math.sqrt(
+      MAX_PREVIEW_PIXELS / Math.max(1, desiredWidth * desiredHeight),
+    )
+    const limitScale = Math.min(
+      1,
+      pixelScale,
+      this.maxTextureSize / Math.max(1, desiredWidth),
+      this.maxTextureSize / Math.max(1, desiredHeight),
+    )
+
+    return {
+      width: Math.max(1, Math.round(desiredWidth * limitScale)),
+      height: Math.max(1, Math.round(desiredHeight * limitScale)),
+    }
+  }
+
+  private resolveWorkerInitialization() {
+    const initialization = this.workerInitialization
+    this.workerInitialization = null
+    initialization?.resolve()
+  }
+
+  private rejectWorkerInitialization(error: Error) {
+    const initialization = this.workerInitialization
+    this.workerInitialization = null
+    initialization?.reject(error)
+  }
+
+  private createWebGLTexture(source: ImageBitmap): WebGLTexture | null {
     if (this.destroyed) {
       return null
     }
 
     const { gl } = this
+    if (
+      source.width > this.maxTextureSize ||
+      source.height > this.maxTextureSize
+    ) {
+      return null
+    }
+
     const texture = gl.createTexture()
 
     if (!texture) {
@@ -614,7 +691,7 @@ export class WebGLImageViewerEngine {
 
     this.tileCache.clear()
     this.loadingTiles.clear()
-    this.pendingTileRequests = []
+    this.pendingTileRequests.clear()
     this.currentVisibleTiles.clear()
   }
 
@@ -911,14 +988,24 @@ export class WebGLImageViewerEngine {
       return
     }
 
-    const visibleTiles = this.calculateVisibleTiles()
-    const newVisibleTiles = new Set<TileKey>()
-    const viewportHash = `${this.scale.toFixed(3)}-${this.translateX.toFixed(1)}-${this.translateY.toFixed(1)}`
+    const lodLevel = this.selectOptimalLOD()
+    const viewportHash = [
+      lodLevel,
+      this.canvasWidth.toFixed(1),
+      this.canvasHeight.toFixed(1),
+      this.devicePixelRatio.toFixed(2),
+      this.scale.toFixed(3),
+      this.translateX.toFixed(1),
+      this.translateY.toFixed(1),
+    ].join(':')
 
     if (viewportHash === this.lastViewportHash) {
+      this.processPendingTileRequests()
       return
     }
 
+    const visibleTiles = this.calculateVisibleTiles()
+    const newVisibleTiles = new Set<TileKey>()
     this.lastViewportHash = viewportHash
 
     for (const tile of visibleTiles) {
@@ -926,10 +1013,16 @@ export class WebGLImageViewerEngine {
       newVisibleTiles.add(key)
 
       if (!this.tileCache.has(key) && !this.loadingTiles.has(key)) {
-        this.pendingTileRequests.push({ key, priority: tile.priority })
+        this.pendingTileRequests.set(key, tile.priority)
       } else if (this.tileCache.has(key)) {
         const tileInfo = this.tileCache.get(key)!
         tileInfo.lastUsed = performance.now()
+      }
+    }
+
+    for (const key of this.pendingTileRequests.keys()) {
+      if (!newVisibleTiles.has(key)) {
+        this.pendingTileRequests.delete(key)
       }
     }
 
@@ -972,23 +1065,39 @@ export class WebGLImageViewerEngine {
   private processPendingTileRequests() {
     if (
       this.destroyed ||
-      this.pendingTileRequests.length === 0 ||
+      this.pendingTileRequests.size === 0 ||
       !this.worker ||
       !this.textureWorkerInitialized
     ) {
       return
     }
 
-    this.pendingTileRequests.sort((a, b) => a.priority - b.priority)
-    const batch = this.pendingTileRequests.splice(0, MAX_TILES_PER_FRAME)
+    let availableSlots = MAX_CONCURRENT_TILE_REQUESTS - this.loadingTiles.size
+    if (availableSlots <= 0) {
+      return
+    }
 
-    for (const request of batch) {
-      const { key, priority } = request
-      if (this.loadingTiles.has(key) || this.tileCache.has(key)) {
+    const requests = Array.from(this.pendingTileRequests.entries()).sort(
+      ([, priorityA], [, priorityB]) => priorityA - priorityB,
+    )
+
+    for (const [key, priority] of requests) {
+      if (availableSlots <= 0) {
+        break
+      }
+
+      this.pendingTileRequests.delete(key)
+
+      if (
+        !this.currentVisibleTiles.has(key) ||
+        this.loadingTiles.has(key) ||
+        this.tileCache.has(key)
+      ) {
         continue
       }
 
       this.loadingTiles.set(key, { priority })
+      availableSlots -= 1
 
       const [x, y, lodLevel] = key.split('-').map(Number)
       const lodConfig = SIMPLE_LOD_LEVELS[lodLevel]
@@ -1133,6 +1242,28 @@ export class WebGLImageViewerEngine {
     return this.scale
   }
 
+  public updateInteractionConfig({
+    doubleClick,
+    panning,
+    pinch,
+    wheel,
+  }: Pick<
+    ResolvedWebGLImageViewerProps,
+    'doubleClick' | 'panning' | 'pinch' | 'wheel'
+  >) {
+    this.config.doubleClick = doubleClick
+    this.config.panning = panning
+    this.config.pinch = pinch
+    this.config.wheel = wheel
+
+    if (panning.disabled) {
+      this.isDragging = false
+    }
+    if (pinch.disabled) {
+      this.lastTouchDistance = 0
+    }
+  }
+
   public destroy() {
     if (this.destroyed) {
       return
@@ -1150,6 +1281,8 @@ export class WebGLImageViewerEngine {
       window.clearTimeout(this.tileUpdateTimeoutId)
       this.tileUpdateTimeoutId = null
     }
+
+    this.rejectWorkerInitialization(new Error('Image viewer was destroyed'))
 
     window.removeEventListener('resize', this.boundResizeCanvas)
     this.canvas.removeEventListener('mousedown', this.boundHandleMouseDown)
@@ -1217,7 +1350,7 @@ export class WebGLImageViewerEngine {
       effectiveMaxScale,
       originalSizeScale,
       renderCount: performance.now(),
-      maxTextureSize: this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE),
+      maxTextureSize: this.maxTextureSize,
       quality: this.currentQuality,
       isLoading: this.isLoadingTexture,
       memory: {
@@ -1233,23 +1366,19 @@ export class WebGLImageViewerEngine {
         cacheSize: this.tileCache.size,
         visibleTiles: this.currentVisibleTiles.size,
         loadingTiles: this.loadingTiles.size,
-        pendingRequests: this.pendingTileRequests.length,
+        pendingRequests: this.pendingTileRequests.size,
         cacheLimit: TILE_CACHE_SIZE,
-        maxTilesPerFrame: MAX_TILES_PER_FRAME,
+        maxConcurrentRequests: MAX_CONCURRENT_TILE_REQUESTS,
         tileSize: TILE_SIZE,
         cacheKeys: Array.from(this.tileCache.keys()),
         visibleKeys: Array.from(this.currentVisibleTiles),
         loadingKeys: Array.from(this.loadingTiles.keys()),
-        pendingKeys: this.pendingTileRequests.map((request) => request.key),
+        pendingKeys: Array.from(this.pendingTileRequests.keys()),
       },
     })
   }
 
   private notifyZoomChange() {
-    if (!this.onZoomChange) {
-      return
-    }
-
     const originalScale = this.scale
     const fitToScreenScale = this.getFitToScreenScale()
     const relativeScale = this.scale / fitToScreenScale
@@ -1261,10 +1390,6 @@ export class WebGLImageViewerEngine {
     message?: string,
     quality?: 'high' | 'medium' | 'low' | 'unknown',
   ) {
-    if (!this.onLoadingStateChange) {
-      return
-    }
-
     this.onLoadingStateChange(
       isLoading,
       message,

@@ -130,8 +130,8 @@ const DebugInfoComponent = ({ ref }: DebugInfoProps) => {
           <span>{tileSystem.tileSize}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>Max Tiles/Frame:</span>
-          <span>{tileSystem.maxTilesPerFrame}</span>
+          <span>Max Concurrent:</span>
+          <span>{tileSystem.maxConcurrentRequests}</span>
         </div>
         <div style={{ fontSize: '10px', marginTop: 4, opacity: 0.7 }}>
           <div>

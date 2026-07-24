@@ -90,7 +90,7 @@ export interface DebugInfo {
     loadingTiles: number
     pendingRequests: number
     cacheLimit: number
-    maxTilesPerFrame: number
+    maxConcurrentRequests: number
     tileSize: number
     cacheKeys: string[]
     visibleKeys: string[]
