@@ -41,7 +41,6 @@ const AVIF_EXTENSION: &str = "avif";
 const AVIF_MIME: &str = "image/avif";
 const BT709: [f32; 3] = [0.2126, 0.7152, 0.0722];
 const MANIFEST_VERSION: u8 = 2;
-const STATE_VERSION: u8 = 1;
 const THUMBHASH_MAX_DIMENSION: u32 = 100;
 const PREVIEW_ORIENTATION_COMPARE_SIZE: u32 = 64;
 const CHECKPOINT_BATCH_MIN: usize = 8;
@@ -64,8 +63,10 @@ pub fn run() -> Result<BuildExit> {
     let root_dir = config.root_dir();
     let started_at = Instant::now();
 
-    if !source_dir.exists() {
-        bail!("source directory does not exist: {}", source_dir.display());
+    let source_metadata = fs::metadata(&source_dir)
+        .with_context(|| format!("failed to access source directory {}", source_dir.display()))?;
+    if !source_metadata.is_dir() {
+        bail!("source path is not a directory: {}", source_dir.display());
     }
 
     validate_path_isolation(&source_dir, &root_dir)?;
@@ -807,7 +808,6 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
 }
 
 fn extract_image_metadata(exif: Option<&Exif>, bit_depth: Option<u8>) -> ImageMetadata {
-    let has_hdr = bit_depth.map(|value| value > 8).unwrap_or(false);
     let color_space = exif
         .and_then(|exif| exif_display(exif, Tag::ColorSpace))
         .filter(|value| !value.is_empty())
@@ -816,7 +816,6 @@ fn extract_image_metadata(exif: Option<&Exif>, bit_depth: Option<u8>) -> ImageMe
     ImageMetadata {
         orientation: 1,
         color_space,
-        has_hdr,
         is_live_photo: false,
         bit_depth,
     }
@@ -946,7 +945,8 @@ fn compact_flash(exif: &Exif) -> Option<String> {
 
 fn exif_apex_aperture(exif: &Exif, tag: Tag) -> Option<f64> {
     let apex = rational_value(exif, tag)?;
-    (apex.is_finite()).then(|| 2_f64.powf(apex / 2.0))
+    let aperture = 2_f64.powf(apex / 2.0);
+    (aperture.is_finite() && aperture > 0.0).then_some(aperture)
 }
 
 fn lens_specification_max_aperture(exif: &Exif) -> Option<f64> {
@@ -960,20 +960,27 @@ fn lens_specification_max_aperture(exif: &Exif) -> Option<f64> {
 }
 
 fn rational_value(exif: &Exif, tag: Tag) -> Option<f64> {
-    match &exif.get_field(tag, In::PRIMARY)?.value {
+    let value = match &exif.get_field(tag, In::PRIMARY)?.value {
         Value::Rational(values) => values.first().map(|value| value.to_f64()),
         Value::SRational(values) => values.first().map(|value| value.to_f64()),
         _ => None,
-    }
+    }?;
+
+    value.is_finite().then_some(value)
 }
 
 fn rational_triplet(exif: &Exif, tag: Tag) -> Option<[f64; 3]> {
-    match &exif.get_field(tag, In::PRIMARY)?.value {
+    let values = match &exif.get_field(tag, In::PRIMARY)?.value {
         Value::Rational(values) if values.len() >= 3 => {
-            Some([values[0].to_f64(), values[1].to_f64(), values[2].to_f64()])
+            [values[0].to_f64(), values[1].to_f64(), values[2].to_f64()]
         }
-        _ => None,
-    }
+        _ => return None,
+    };
+
+    values
+        .iter()
+        .all(|value| value.is_finite())
+        .then_some(values)
 }
 
 fn signed_gps_coordinate(parts: [f64; 3], direction: &str) -> Option<f64> {
@@ -1861,7 +1868,6 @@ fn progress_style() -> Result<ProgressStyle> {
 fn load_previous_state(path: &Path) -> Result<StateFile> {
     if !path.exists() {
         return Ok(StateFile {
-            version: STATE_VERSION,
             updated_at: String::new(),
             files: BTreeMap::new(),
         });
@@ -1892,7 +1898,6 @@ fn checkpoint_outputs(
     write_json(
         &config.state_path(),
         &StateFileRef {
-            version: STATE_VERSION,
             updated_at: now,
             files,
         },
@@ -2030,13 +2035,11 @@ fn is_supported(path: &Path) -> bool {
 fn is_heif_family(path: &Path) -> bool {
     path.extension()
         .and_then(|extension| extension.to_str())
-        .map(|extension| {
-            matches!(
-                extension.to_ascii_lowercase().as_str(),
-                "hif" | "heif" | "heic"
-            )
+        .is_some_and(|extension| {
+            extension.eq_ignore_ascii_case("hif")
+                || extension.eq_ignore_ascii_case("heif")
+                || extension.eq_ignore_ascii_case("heic")
         })
-        .unwrap_or(false)
 }
 
 fn mime_from_format(format: ThumbnailFormat) -> &'static str {
@@ -2067,8 +2070,8 @@ struct ProcessContext<'a> {
     originals_dir: &'a Path,
     thumbnails_dir: &'a Path,
     avif_threads: usize,
-    full_res_limiter: &'a Arc<FullResLimiter>,
-    status: &'a Arc<BuildStatus>,
+    full_res_limiter: &'a FullResLimiter,
+    status: &'a BuildStatus,
 }
 
 struct ProcessedPhoto {
@@ -2136,7 +2139,6 @@ struct Asset {
 
 #[derive(Deserialize, Serialize)]
 struct StateFile {
-    version: u8,
     #[serde(rename = "updatedAt")]
     updated_at: String,
     files: BTreeMap<String, StateEntry>,
@@ -2144,7 +2146,6 @@ struct StateFile {
 
 #[derive(Serialize)]
 struct StateFileRef<'a> {
-    version: u8,
     #[serde(rename = "updatedAt")]
     updated_at: String,
     files: &'a BTreeMap<String, StateEntry>,
@@ -2213,8 +2214,6 @@ struct ImageMetadata {
     orientation: u8,
     #[serde(rename = "colorSpace")]
     color_space: String,
-    #[serde(rename = "hasHdr")]
-    has_hdr: bool,
     #[serde(rename = "isLivePhoto")]
     is_live_photo: bool,
     #[serde(rename = "bitDepth", skip_serializing_if = "Option::is_none")]

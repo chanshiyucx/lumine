@@ -52,7 +52,6 @@ const photoImageSchema = z
   .object({
     orientation: z.number().int().positive().optional(),
     colorSpace: z.string().min(1).optional(),
-    hasHdr: z.boolean().optional(),
     isLivePhoto: z.boolean().optional(),
     bitDepth: z.number().int().positive().optional(),
   })
@@ -177,7 +176,6 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
   const photos = manifest.photos.slice().reverse()
 
   return {
-    version: manifest.version,
     updatedAt: manifest.updatedAt,
     photos: photos.map((photo, index) => {
       const original = normalizeAsset(photo.original)

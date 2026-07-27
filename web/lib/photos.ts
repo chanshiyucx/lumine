@@ -31,7 +31,6 @@ export interface PhotoCamera {
 export interface PhotoImage {
   orientation?: number
   colorSpace?: string
-  hasHdr?: boolean
   isLivePhoto?: boolean
   bitDepth?: number
 }
@@ -65,7 +64,6 @@ export interface Photo extends PhotoManifestEntry {
 }
 
 export interface PhotoCollection {
-  version: number
   updatedAt: string
   photos: Photo[]
 }

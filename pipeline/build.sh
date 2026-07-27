@@ -10,4 +10,4 @@ if [[ ! -f "$PROJECT_DIR/Cargo.toml" ]]; then
 fi
 
 cd "$PROJECT_DIR"
-exec cargo run --manifest-path "$PROJECT_DIR/Cargo.toml" --release -- build "$@"
+exec cargo run --release

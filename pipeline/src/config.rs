@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Component, Path, PathBuf},
+};
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
@@ -8,13 +11,13 @@ const DEFAULT_CONFIG_PATH: &str = "pipeline.toml";
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     #[serde(rename = "targetPath")]
-    pub target_path: PathBuf,
+    target_path: PathBuf,
     #[serde(rename = "sourcePath")]
-    pub source_path: PathBuf,
+    source_path: PathBuf,
     #[serde(default, rename = "sourceTags")]
-    pub source_tags: Vec<String>,
-    pub originals_dir: PathBuf,
-    pub thumbnails_dir: PathBuf,
+    source_tags: Vec<String>,
+    originals_dir: PathBuf,
+    thumbnails_dir: PathBuf,
     pub thumbnail_width: u32,
     pub thumbnail_format: ThumbnailFormat,
     pub thumbnail_quality: u8,
@@ -47,6 +50,12 @@ impl Config {
             bail!("sourceTags must not contain empty values");
         }
 
+        validate_direct_child_dir("originals_dir", &self.originals_dir)?;
+        validate_direct_child_dir("thumbnails_dir", &self.thumbnails_dir)?;
+        if self.originals_dir == self.thumbnails_dir {
+            bail!("originals_dir and thumbnails_dir must be different");
+        }
+
         if self.thumbnail_width == 0 {
             bail!("thumbnail_width must be greater than 0");
         }
@@ -59,8 +68,8 @@ impl Config {
             bail!("avif_quality must be between 1 and 100");
         }
 
-        if self.avif_speed > 10 {
-            bail!("avif_speed must be between 0 and 10");
+        if self.avif_speed == 0 || self.avif_speed > 10 {
+            bail!("avif_speed must be between 1 and 10");
         }
 
         Ok(())
@@ -79,11 +88,11 @@ impl Config {
     }
 
     pub fn originals_path(&self) -> PathBuf {
-        resolve_under_root(&self.root_dir(), &self.originals_dir)
+        self.root_dir().join(&self.originals_dir)
     }
 
     pub fn thumbnails_path(&self) -> PathBuf {
-        resolve_under_root(&self.root_dir(), &self.thumbnails_dir)
+        self.root_dir().join(&self.thumbnails_dir)
     }
 
     pub fn manifest_path(&self) -> PathBuf {
@@ -93,6 +102,15 @@ impl Config {
     pub fn state_path(&self) -> PathBuf {
         self.root_dir().join("state.json")
     }
+}
+
+fn validate_direct_child_dir(field: &str, path: &Path) -> Result<()> {
+    let mut components = path.components();
+    if !matches!(components.next(), Some(Component::Normal(_))) || components.next().is_some() {
+        bail!("{field} must be a direct child directory name under targetPath");
+    }
+
+    Ok(())
 }
 
 impl ThumbnailFormat {
@@ -105,17 +123,9 @@ impl ThumbnailFormat {
     }
 }
 
-fn resolve_under_root(root: &std::path::Path, path: &PathBuf) -> PathBuf {
+fn resolve_from_cwd(path: &Path) -> PathBuf {
     if path.is_absolute() {
-        path.clone()
-    } else {
-        root.join(path)
-    }
-}
-
-fn resolve_from_cwd(path: &PathBuf) -> PathBuf {
-    if path.is_absolute() {
-        path.clone()
+        path.to_path_buf()
     } else {
         std::env::current_dir()
             .unwrap_or_else(|_| PathBuf::from("."))

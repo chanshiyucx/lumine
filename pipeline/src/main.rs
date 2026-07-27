@@ -1,15 +1,12 @@
 mod build;
-mod cli;
 mod config;
 
 use std::process::ExitCode;
 
 use anyhow::Result;
-use clap::Parser;
 use libheif_rs::integration::image::register_all_decoding_hooks;
 
 use crate::build::BuildExit;
-use crate::cli::{Cli, Commands};
 
 fn main() -> ExitCode {
     if let Err(error) = init_tracing() {
@@ -29,12 +26,7 @@ fn main() -> ExitCode {
 
 fn run() -> Result<BuildExit> {
     register_all_decoding_hooks();
-
-    let cli = Cli::parse();
-
-    match cli.command {
-        Commands::Build => build::run(),
-    }
+    build::run()
 }
 
 fn init_tracing() -> Result<()> {
