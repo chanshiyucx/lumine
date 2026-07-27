@@ -1,7 +1,15 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import { memo, useCallback, useState, type RefObject } from 'react'
+import {
+  memo,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import { WebGLImageViewer } from '@/components/webgl-viewer'
 import { isProd } from '@/lib/env'
 import type { Photo } from '@/lib/photos'
@@ -17,6 +25,8 @@ interface ProgressiveViewProps {
   loadingIndicatorRef: RefObject<LoadingIndicatorRef | null>
 }
 
+const SCALE_INDICATOR_DURATION = 1000
+
 export const ProgressiveView = memo(function ProgressiveView({
   photo,
   isActive,
@@ -24,6 +34,9 @@ export const ProgressiveView = memo(function ProgressiveView({
   loadingIndicatorRef,
 }: ProgressiveViewProps) {
   const [webglFailureKey, setWebglFailureKey] = useState<string | null>(null)
+  const [currentScale, setCurrentScale] = useState(1)
+  const [showScaleIndicator, setShowScaleIndicator] = useState(false)
+  const scaleIndicatorTimeoutRef = useRef<number | null>(null)
   const state = useProgressivePhoto(photo, {
     isActive,
     loadingIndicatorRef,
@@ -59,6 +72,31 @@ export const ProgressiveView = memo(function ProgressiveView({
     setWebglFailureKey(webglResourceKey)
   }, [webglResourceKey])
 
+  const handleZoomChange = useCallback((scale: number) => {
+    startTransition(() => {
+      setCurrentScale(scale)
+      setShowScaleIndicator(true)
+    })
+
+    if (scaleIndicatorTimeoutRef.current !== null) {
+      window.clearTimeout(scaleIndicatorTimeoutRef.current)
+    }
+
+    scaleIndicatorTimeoutRef.current = window.setTimeout(() => {
+      setShowScaleIndicator(false)
+      scaleIndicatorTimeoutRef.current = null
+    }, SCALE_INDICATOR_DURATION)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (scaleIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(scaleIndicatorTimeoutRef.current)
+      }
+    },
+    [],
+  )
+
   return (
     <div className={cn('relative h-full w-full overflow-hidden', className)}>
       <img
@@ -88,6 +126,7 @@ export const ProgressiveView = memo(function ProgressiveView({
               centerOnInit
               smooth
               debug={!isProd}
+              onZoomChange={handleZoomChange}
               onError={handleWebglError}
               onLoadingStateChange={handleWebglLoadingStateChange}
             />
@@ -101,6 +140,15 @@ export const ProgressiveView = memo(function ProgressiveView({
             onLoad={handleFallbackImageLoad}
           />
         ))}
+
+      <div
+        className={cn(
+          'pointer-events-none absolute bottom-4 left-4 z-20 translate-y-2 rounded bg-black/50 px-3 py-1 text-lg text-white tabular-nums opacity-0 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none',
+          showScaleIndicator && 'translate-y-0 opacity-100',
+        )}
+      >
+        {currentScale.toFixed(1)}x
+      </div>
     </div>
   )
 })

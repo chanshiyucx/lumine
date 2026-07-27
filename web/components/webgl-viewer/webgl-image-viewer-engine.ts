@@ -9,6 +9,7 @@ import type { DebugInfo, ResolvedWebGLImageViewerProps } from './types'
 const TILE_SIZE = 512
 const MAX_CONCURRENT_TILE_REQUESTS = 4
 const TILE_CACHE_SIZE = 32
+const TILE_UPDATE_INTERVAL = 100
 const MAX_PREVIEW_PIXELS = 4_194_304
 const FALLBACK_PREVIEW_LONG_EDGE = 1024
 
@@ -138,6 +139,7 @@ export class WebGLImageViewerEngine {
   private resizeObserver: ResizeObserver | null = null
   private lastTileUpdateTime = 0
   private animationFrameId: number | null = null
+  private tileProcessingFrameId: number | null = null
   private tileUpdateTimeoutId: number | null = null
   private destroyed = false
 
@@ -379,7 +381,7 @@ export class WebGLImageViewerEngine {
       if (!this.currentVisibleTiles.has(key)) {
         imageBitmap.close()
         this.loadingTiles.delete(key)
-        this.processPendingTileRequests()
+        this.schedulePendingTileRequests()
         return
       }
 
@@ -414,12 +416,12 @@ export class WebGLImageViewerEngine {
         this.loadingTiles.delete(key)
       }
 
-      this.processPendingTileRequests()
+      this.schedulePendingTileRequests()
     } else if (type === 'tile-error') {
       const { key, error } = payload
       console.warn(`Worker failed to create tile: ${key}`, error)
       this.loadingTiles.delete(key)
-      this.processPendingTileRequests()
+      this.schedulePendingTileRequests()
     }
   }
 
@@ -1117,6 +1119,21 @@ export class WebGLImageViewerEngine {
     }
   }
 
+  private schedulePendingTileRequests() {
+    if (
+      this.destroyed ||
+      this.pendingTileRequests.size === 0 ||
+      this.tileProcessingFrameId !== null
+    ) {
+      return
+    }
+
+    this.tileProcessingFrameId = window.requestAnimationFrame(() => {
+      this.tileProcessingFrameId = null
+      this.processPendingTileRequests()
+    })
+  }
+
   private render() {
     if (this.destroyed || !this.program) {
       return
@@ -1159,16 +1176,19 @@ export class WebGLImageViewerEngine {
 
     this.updateDebugInfo()
 
-    if (
-      !this.isAnimating &&
-      this.tileUpdateTimeoutId === null &&
-      performance.now() - this.lastTileUpdateTime > 100
-    ) {
-      this.lastTileUpdateTime = performance.now()
+    if (!this.isAnimating && this.tileUpdateTimeoutId === null) {
+      const elapsed = performance.now() - this.lastTileUpdateTime
+      const delay = Math.max(0, TILE_UPDATE_INTERVAL - elapsed)
+
       this.tileUpdateTimeoutId = window.setTimeout(() => {
         this.tileUpdateTimeoutId = null
+        if (this.destroyed || this.isAnimating) {
+          return
+        }
+
+        this.lastTileUpdateTime = performance.now()
         void this.updateTileCache()
-      }, 0)
+      }, delay)
     }
   }
 
@@ -1275,6 +1295,11 @@ export class WebGLImageViewerEngine {
     if (this.animationFrameId !== null) {
       window.cancelAnimationFrame(this.animationFrameId)
       this.animationFrameId = null
+    }
+
+    if (this.tileProcessingFrameId !== null) {
+      window.cancelAnimationFrame(this.tileProcessingFrameId)
+      this.tileProcessingFrameId = null
     }
 
     if (this.tileUpdateTimeoutId !== null) {
@@ -1635,31 +1660,35 @@ export class WebGLImageViewerEngine {
   }
 
   public zoomAt(x: number, y: number, scaleFactor: number, animated = false) {
-    const newScale = this.scale * scaleFactor
+    const requestedScale = this.scale * scaleFactor
     const fitToScreenScale = this.getFitToScreenScale()
     const absoluteMinScale = fitToScreenScale * this.config.minScale
     const originalSizeScale = 1
     const userMaxScale = fitToScreenScale * this.config.maxScale
     const effectiveMaxScale = Math.max(userMaxScale, originalSizeScale)
+    const targetScale = Math.max(
+      absoluteMinScale,
+      Math.min(effectiveMaxScale, requestedScale),
+    )
 
-    if (newScale < absoluteMinScale || newScale > effectiveMaxScale) {
+    if (targetScale === this.scale) {
       return
     }
 
     if (animated && this.config.smooth) {
       const zoomX = (x - this.canvasWidth / 2 - this.translateX) / this.scale
       const zoomY = (y - this.canvasHeight / 2 - this.translateY) / this.scale
-      const targetTranslateX = x - this.canvasWidth / 2 - zoomX * newScale
-      const targetTranslateY = y - this.canvasHeight / 2 - zoomY * newScale
+      const targetTranslateX = x - this.canvasWidth / 2 - zoomX * targetScale
+      const targetTranslateY = y - this.canvasHeight / 2 - zoomY * targetScale
 
-      this.startAnimation(newScale, targetTranslateX, targetTranslateY)
+      this.startAnimation(targetScale, targetTranslateX, targetTranslateY)
       return
     }
 
     const zoomX = (x - this.canvasWidth / 2 - this.translateX) / this.scale
     const zoomY = (y - this.canvasHeight / 2 - this.translateY) / this.scale
 
-    this.scale = newScale
+    this.scale = targetScale
     this.translateX = x - this.canvasWidth / 2 - zoomX * this.scale
     this.translateY = y - this.canvasHeight / 2 - zoomY * this.scale
 

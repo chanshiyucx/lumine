@@ -216,7 +216,7 @@ const DebugInfoComponent = ({ ref }: DebugInfoProps) => {
           <div style={{ marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Scale:</span>
-              <span>{debugInfo.scale.toFixed(2)}</span>
+              <span>{debugInfo.scale.toFixed(3)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>LOD:</span>
