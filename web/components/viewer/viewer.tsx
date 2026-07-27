@@ -1,6 +1,5 @@
 'use client'
 
-/* eslint-disable @next/next/no-img-element */
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,14 +8,24 @@ import {
   PanelRightOpen,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { useMobile } from '@/hooks/use-mobile'
+import { getPhotoAccentColor } from '@/lib/photo-accent-color'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
+import { getThumbHashAsset } from '@/lib/thumbhash'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
 import { useViewerKeyboardNavigation } from './hooks/use-photo-viewer-keyboard-navigation'
 import { LoadingIndicator, type LoadingIndicatorRef } from './loading-indicator'
 import { ProgressiveView } from './progressive-view'
+import { ThumbHashCrossfade } from './thumbhash-crossfade'
 import { ThumbnailRail } from './thumbnail-rail'
 import { ViewerInfoPanel } from './viewer-info-panel'
 
@@ -57,6 +66,13 @@ export function Viewer({
   const loadingIndicatorRef = useRef<LoadingIndicatorRef | null>(null)
 
   const currentPhoto = photos[activeIndex]
+  const viewerAccent = useMemo(
+    () =>
+      getPhotoAccentColor(
+        getThumbHashAsset(currentPhoto.thumbHash).averageColor,
+      ),
+    [currentPhoto.thumbHash],
+  )
   const canGoPrevious = activeIndex > 0
   const canGoNext = activeIndex < photos.length - 1
   const isInfoPanelOpen = isMobile
@@ -130,15 +146,14 @@ export function Viewer({
       role="dialog"
       aria-modal="true"
       aria-label={`Preview ${currentPhoto.title}`}
+      style={{ '--viewer-accent': viewerAccent } as CSSProperties}
     >
-      <div className="fixed inset-0">
-        <img
-          src={currentPhoto.blurDataUrl}
-          alt=""
-          aria-hidden
-          className="size-fill h-full w-full scale-110"
-        />
-      </div>
+      <ThumbHashCrossfade
+        photoId={currentPhoto.id}
+        thumbHash={currentPhoto.thumbHash}
+        className="bg-base fixed inset-0"
+        imageClassName="scale-110"
+      />
 
       <div className="fixed inset-0 flex min-h-0 min-w-0 flex-col lg:flex-row">
         <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">

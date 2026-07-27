@@ -64,7 +64,6 @@ export function LinearBlur({
               className="absolute inset-0"
               style={{
                 zIndex: i + 2,
-
                 mask: `linear-gradient(to ${oppositeSide[side]},rgba(0, 0, 0, 0) ${mainPercentage + i * step}%,rgba(0, 0, 0, 1) ${mainPercentage + (i + 1) * step}%,rgba(0, 0, 0, 1) ${mainPercentage + (i + 2) * step}%,rgba(0, 0, 0, 0) ${mainPercentage + (i + 3) * step}%)`,
                 backdropFilter: getBackdropFilter(i + 2),
                 WebkitBackdropFilter: getBackdropFilter(i + 2),

@@ -1,9 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { blurhashToDataUrl } from './blurhash'
 import { PHOTO_MANIFEST_URL_ENV } from './env'
-import { createPhotoAccentPalette } from './photo-accent-palette'
 import {
   createPhotoSlug,
   type PhotoAsset,
@@ -72,7 +70,7 @@ const photoManifestSchema = z
   .object({
     original: photoAssetSchema,
     thumbnail: photoAssetSchema,
-    blurhash: z.string().min(6),
+    thumbHash: z.base64().min(8).max(36),
     title: z.string().min(1),
     takenAt: z.string().min(1),
     location: photoLocationSchema.optional(),
@@ -83,7 +81,7 @@ const photoManifestSchema = z
 
 const manifestSchema = z
   .object({
-    version: z.number().int().positive(),
+    version: z.literal(2),
     updatedAt: z.string().min(1),
     photos: z.array(photoManifestSchema),
   })
@@ -149,22 +147,6 @@ function getFileNameFromAssetPath(pathname: string) {
   return rawFileName.replace(/\.[^/.]+$/, '')
 }
 
-function getBlurPreviewSize(width: number, height: number) {
-  const maxSide = 24
-
-  if (width >= height) {
-    return {
-      width: maxSide,
-      height: Math.max(1, Math.round((maxSide * height) / width)),
-    }
-  }
-
-  return {
-    width: Math.max(1, Math.round((maxSide * width) / height)),
-    height: maxSide,
-  }
-}
-
 async function fetchManifestJson() {
   const manifestUrl = getManifestUrl()
   const response = await fetch(manifestUrl, {
@@ -201,10 +183,6 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
       const album = parseAlbumPath(photo.original.url)
-      const blurPreviewSize = getBlurPreviewSize(
-        thumbnail.width,
-        thumbnail.height,
-      )
 
       return {
         ...photo,
@@ -215,12 +193,6 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
         albumKey: album?.key ?? DEFAULT_ALBUM_KEY,
         albumLabel: album?.label ?? DEFAULT_ALBUM_LABEL,
         locationLabel: album?.locationLabel ?? DEFAULT_LOCATION_LABEL,
-        blurDataUrl: blurhashToDataUrl(
-          photo.blurhash,
-          blurPreviewSize.width,
-          blurPreviewSize.height,
-        ),
-        accentPalette: createPhotoAccentPalette(photo.blurhash, thumbnail),
         aspectRatio: thumbnail.width / thumbnail.height,
         original,
         thumbnail,

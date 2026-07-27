@@ -241,7 +241,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 <ThumbnailImage
                   photo={photo}
                   loading="lazy"
-                  blurClassName="object-contain opacity-60"
+                  placeholderClassName="object-contain opacity-60"
                   imageClassName="absolute inset-0 h-full w-full object-contain"
                 />
               </button>

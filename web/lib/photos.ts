@@ -42,14 +42,10 @@ export interface PhotoLocation {
   alt?: number
 }
 
-export interface PhotoAccentPalette {
-  accent: string
-}
-
 export interface PhotoManifestEntry {
   original: PhotoAsset
   thumbnail: PhotoAsset
-  blurhash: string
+  thumbHash: string
   title: string
   takenAt: string
   camera: PhotoCamera
@@ -65,8 +61,6 @@ export interface Photo extends PhotoManifestEntry {
   albumKey: string
   albumLabel: string
   locationLabel: string
-  blurDataUrl: string
-  accentPalette: PhotoAccentPalette
   aspectRatio: number
 }
 

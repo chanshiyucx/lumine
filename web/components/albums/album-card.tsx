@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
+import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
 import { getAlbumPath, type Album } from '@/lib/albums'
 import { cn } from '@/lib/style'
 
@@ -38,18 +38,18 @@ export function AlbumCard({ album }: AlbumCardProps) {
               stackImageClassNames[index],
             )}
           >
-            <img
-              src={photo.blurDataUrl}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <img
-              src={photo.thumbnail.url}
-              alt=""
-              aria-hidden
+            <ThumbnailImage
+              photo={{
+                title: photo.title,
+                thumbHash: photo.thumbHash,
+                thumbnail: {
+                  url: photo.thumbnail.url,
+                  width: photo.thumbnail.width,
+                  height: photo.thumbnail.height,
+                },
+              }}
+              decorative
               loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
             />
             {index > 0 && (
               <div className="absolute inset-0 bg-black/20 transition-opacity duration-300 group-hover:opacity-0" />

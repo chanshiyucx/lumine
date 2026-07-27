@@ -191,12 +191,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blurhash"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e79769241dcd44edf79a732545e8b5cec84c247ac060f5252cd51885d093a8fc"
-
-[[package]]
 name = "built"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -803,7 +797,7 @@ name = "lumine-pipeline"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "blurhash",
+ "base64",
  "clap",
  "fast_image_resize",
  "image",
@@ -818,6 +812,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thumbhash",
  "time",
  "toml 0.8.23",
  "tracing",
@@ -1455,6 +1450,12 @@ checksum = "f60246a4944f24f6e018aa17cdeffb7818b76356965d03b07d6a9886e8962185"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "thumbhash"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b7726e0245a7331bd0c9a1fb4fd99fd695bcd478ca569f0eda2ff2cb14e7a00"
 
 [[package]]
 name = "tiff"

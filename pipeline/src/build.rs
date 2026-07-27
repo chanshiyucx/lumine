@@ -14,7 +14,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, anyhow, bail};
-use blurhash::encode;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use exif::{DateTime as ExifDateTime, Exif, In, Reader as ExifReader, Tag, Value};
 use fast_image_resize as fr;
 use image::{
@@ -28,6 +28,7 @@ use ravif::{BitDepth as AvifBitDepth, ColorModel as AvifColorModel, Encoder as R
 use rayon::prelude::*;
 use rgb::FromSlice;
 use serde::{Deserialize, Serialize};
+use thumbhash::rgba_to_thumb_hash;
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tracing::warn;
 use walkdir::WalkDir;
@@ -39,9 +40,9 @@ const FINDER_TAGS_XATTR: &str = "com.apple.metadata:_kMDItemUserTags";
 const AVIF_EXTENSION: &str = "avif";
 const AVIF_MIME: &str = "image/avif";
 const BT709: [f32; 3] = [0.2126, 0.7152, 0.0722];
-const BLURHASH_LONG_SIDE: u32 = 64;
-const BLURHASH_BLUR_SIGMA: f32 = 4.0;
-const BLURHASH_EDGE_CROP_RATIO: f32 = 0.035;
+const MANIFEST_VERSION: u8 = 2;
+const STATE_VERSION: u8 = 1;
+const THUMBHASH_MAX_DIMENSION: u32 = 100;
 const PREVIEW_ORIENTATION_COMPARE_SIZE: u32 = 64;
 const CHECKPOINT_BATCH_MIN: usize = 8;
 
@@ -599,9 +600,9 @@ fn process_one(context: &ProcessContext<'_>, item: &SourceItem) -> Result<Proces
         .with_context(|| format!("failed to read metadata for {}", thumbnail_path.display()))?;
     let (thumbnail_width, thumbnail_height) = thumbnail_image.dimensions();
 
-    let blurhash = {
+    let thumb_hash = {
         let _processing_scope = ScopedCounter::new(&status.processing);
-        compute_blurhash(&thumbnail_image)?
+        compute_thumb_hash(&thumbnail_image)?
     };
 
     let original_key = normalize_relative_path(root_dir, &original_path)?;
@@ -637,7 +638,7 @@ fn process_one(context: &ProcessContext<'_>, item: &SourceItem) -> Result<Proces
                 bytes: thumbnail_metadata.len(),
                 mime: mime_from_format(config.thumbnail_format).to_string(),
             },
-            blurhash,
+            thumb_hash,
             title,
             taken_at: extracted
                 .taken_at
@@ -1366,64 +1367,16 @@ fn save_thumbnail(
     Ok(())
 }
 
-fn compute_blurhash(image: &DynamicImage) -> Result<String> {
-    let source = crop_blurhash_edges(image);
-    let reduced = resize_to_fit(
-        &source,
-        blurhash_target_width(source.width(), source.height()),
-        blurhash_target_height(source.width(), source.height()),
-    )?;
-    let softened = reduced.blur(BLURHASH_BLUR_SIGMA).to_rgba8();
-    let width = softened.width();
-    let height = softened.height();
-    let pixels = softened.into_raw();
-    let (components_x, components_y) = blurhash_components(width, height);
+fn compute_thumb_hash(image: &DynamicImage) -> Result<String> {
+    let reduced =
+        resize_to_fit(image, THUMBHASH_MAX_DIMENSION, THUMBHASH_MAX_DIMENSION)?.to_rgba8();
+    let hash = rgba_to_thumb_hash(
+        reduced.width() as usize,
+        reduced.height() as usize,
+        reduced.as_raw(),
+    );
 
-    encode(components_x, components_y, width, height, &pixels)
-        .map_err(|error| anyhow!("failed to encode blurhash: {error}"))
-}
-
-fn crop_blurhash_edges(image: &DynamicImage) -> DynamicImage {
-    let width = image.width();
-    let height = image.height();
-    let crop_x =
-        ((width as f32 * BLURHASH_EDGE_CROP_RATIO).round() as u32).min(width.saturating_sub(1) / 2);
-    let crop_y = ((height as f32 * BLURHASH_EDGE_CROP_RATIO).round() as u32)
-        .min(height.saturating_sub(1) / 2);
-    let crop_width = width.saturating_sub(crop_x * 2).max(1);
-    let crop_height = height.saturating_sub(crop_y * 2).max(1);
-
-    image.crop_imm(crop_x, crop_y, crop_width, crop_height)
-}
-
-fn blurhash_target_width(width: u32, height: u32) -> u32 {
-    if width >= height {
-        BLURHASH_LONG_SIDE
-    } else {
-        ((width as u64 * BLURHASH_LONG_SIDE as u64 + (height as u64 / 2)) / height as u64).max(1)
-            as u32
-    }
-}
-
-fn blurhash_target_height(width: u32, height: u32) -> u32 {
-    if height >= width {
-        BLURHASH_LONG_SIDE
-    } else {
-        ((height as u64 * BLURHASH_LONG_SIDE as u64 + (width as u64 / 2)) / width as u64).max(1)
-            as u32
-    }
-}
-
-fn blurhash_components(width: u32, height: u32) -> (u32, u32) {
-    let aspect_ratio = width as f32 / height.max(1) as f32;
-
-    if aspect_ratio >= 1.35 {
-        (4, 3)
-    } else if aspect_ratio <= 0.74 {
-        (3, 4)
-    } else {
-        (3, 3)
-    }
+    Ok(BASE64.encode(hash))
 }
 
 fn build_preview_image(
@@ -1764,15 +1717,29 @@ fn build_thumbnail_path(thumbnails_dir: &Path, config: &Config, relative_source:
 
 fn load_previous_manifest(path: &Path) -> Result<LoadedManifest> {
     if !path.exists() {
-        return Ok(LoadedManifest {
-            photos_by_key: BTreeMap::new(),
-        });
+        return Ok(LoadedManifest::default());
     }
 
     let file = File::open(path)
         .with_context(|| format!("failed to open previous manifest {}", path.display()))?;
-    let manifest: ManifestFile = serde_json::from_reader(file)
+    let manifest_json: serde_json::Value = serde_json::from_reader(file)
         .with_context(|| format!("failed to parse previous manifest {}", path.display()))?;
+    let version = manifest_json
+        .get("version")
+        .and_then(|value| value.as_u64());
+
+    if version != Some(u64::from(MANIFEST_VERSION)) {
+        warn!(
+            "ignoring manifest version {}; rebuilding for version {MANIFEST_VERSION}",
+            version
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        );
+        return Ok(LoadedManifest::default());
+    }
+
+    let manifest: ManifestFile = serde_json::from_value(manifest_json)
+        .with_context(|| format!("failed to validate previous manifest {}", path.display()))?;
     let photos_by_key = manifest
         .photos
         .into_iter()
@@ -1894,7 +1861,7 @@ fn progress_style() -> Result<ProgressStyle> {
 fn load_previous_state(path: &Path) -> Result<StateFile> {
     if !path.exists() {
         return Ok(StateFile {
-            version: 1,
+            version: STATE_VERSION,
             updated_at: String::new(),
             files: BTreeMap::new(),
         });
@@ -1917,7 +1884,7 @@ fn checkpoint_outputs(
     write_json(
         &config.manifest_path(),
         &ManifestFileRef {
-            version: 1,
+            version: MANIFEST_VERSION,
             updated_at: now.clone(),
             photos: photos.values().collect(),
         },
@@ -1925,7 +1892,7 @@ fn checkpoint_outputs(
     write_json(
         &config.state_path(),
         &StateFileRef {
-            version: 1,
+            version: STATE_VERSION,
             updated_at: now,
             files,
         },
@@ -2122,6 +2089,7 @@ struct ExtractedMetadata {
     image: ImageMetadata,
 }
 
+#[derive(Default)]
 struct LoadedManifest {
     photos_by_key: BTreeMap<String, PhotoEntry>,
 }
@@ -2146,7 +2114,8 @@ struct ManifestFileRef<'a> {
 struct PhotoEntry {
     original: Asset,
     thumbnail: Asset,
-    blurhash: String,
+    #[serde(rename = "thumbHash")]
+    thumb_hash: String,
     title: String,
     #[serde(rename = "takenAt")]
     taken_at: String,

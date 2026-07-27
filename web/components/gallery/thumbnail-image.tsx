@@ -1,46 +1,64 @@
+'use client'
+
 /* eslint-disable @next/next/no-img-element */
-import type { Ref } from 'react'
-import type { Photo } from '@/lib/photos'
+import { useCallback } from 'react'
+import { ThumbHashImage } from '@/components/thumbhash'
+import type { PhotoAsset } from '@/lib/photos'
 import { cn } from '@/lib/style'
 
+interface ThumbnailImagePhoto {
+  title: string
+  thumbHash: string
+  thumbnail: Pick<PhotoAsset, 'height' | 'url' | 'width'>
+}
+
 interface ThumbnailImageProps {
-  photo: Pick<Photo, 'title' | 'blurDataUrl' | 'thumbnail'>
-  blurClassName?: string
+  photo: ThumbnailImagePhoto
+  decorative?: boolean
   imageClassName?: string
-  imageRef?: Ref<HTMLImageElement>
   loading?: 'eager' | 'lazy'
+  placeholderClassName?: string
 }
 
 export function ThumbnailImage({
   photo,
-  blurClassName,
+  decorative = false,
   imageClassName,
-  imageRef,
   loading = 'lazy',
+  placeholderClassName,
 }: ThumbnailImageProps) {
+  const handleImageRef = useCallback((image: HTMLImageElement | null) => {
+    if (image?.complete && image.naturalWidth > 0) {
+      image.dataset.loaded = 'true'
+    }
+  }, [])
+
   return (
     <>
-      <img
-        src={photo.blurDataUrl}
-        alt=""
-        aria-hidden
+      <ThumbHashImage
+        thumbHash={photo.thumbHash}
         className={cn(
           'absolute inset-0 h-full w-full object-cover',
-          blurClassName,
+          placeholderClassName,
         )}
       />
       <img
-        ref={imageRef}
+        key={photo.thumbnail.url}
+        ref={handleImageRef}
         src={photo.thumbnail.url}
-        alt={photo.title}
+        alt={decorative ? '' : photo.title}
+        aria-hidden={decorative || undefined}
         width={photo.thumbnail.width}
         height={photo.thumbnail.height}
         className={cn(
-          'absolute inset-0 h-full w-full object-cover',
+          'absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-200 ease-out data-[loaded=true]:opacity-100 motion-reduce:transition-none',
           imageClassName,
         )}
         decoding="async"
         loading={loading}
+        onLoad={(event) => {
+          event.currentTarget.dataset.loaded = 'true'
+        }}
       />
     </>
   )

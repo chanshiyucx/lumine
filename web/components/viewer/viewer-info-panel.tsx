@@ -11,6 +11,7 @@ import {
   getExposureRows,
   getPhotoInfoRows,
 } from './lib/viewer-metadata'
+import { ThumbHashCrossfade } from './thumbhash-crossfade'
 
 const VIEWER_ACCENT = 'var(--viewer-accent, var(--color-iris))'
 const PANEL_BACKGROUND_SCRIM = [
@@ -96,15 +97,9 @@ export function ViewerInfoPanel({
   isOpen = true,
   onClose,
 }: ViewerInfoPanelProps) {
-  const accentPalette = photo.accentPalette
   const panelStyle = {
-    '--viewer-accent': accentPalette.accent,
     backgroundColor:
       'color-mix(in srgb, var(--color-surface) 88%, transparent)',
-    backgroundImage: `${PANEL_BACKGROUND_SCRIM}, url("${photo.blurDataUrl}")`,
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: 'cover',
     boxShadow:
       '0 8px 32px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 13%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)',
   } as CSSProperties
@@ -113,13 +108,28 @@ export function ViewerInfoPanel({
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        'bg-surface fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0',
+        'bg-surface fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden backdrop-blur-2xl transition-[width,transform,opacity,box-shadow] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0',
         isOpen
           ? 'translate-y-0 opacity-100 lg:w-80'
           : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
       )}
       style={panelStyle}
     >
+      <ThumbHashCrossfade
+        photoId={photo.id}
+        thumbHash={photo.thumbHash}
+        className="absolute inset-0"
+        imageClassName="object-cover"
+      />
+
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden
+        style={{
+          backgroundImage: PANEL_BACKGROUND_SCRIM,
+        }}
+      />
+
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
