@@ -117,10 +117,6 @@ pub(crate) fn run() -> Result<BuildExit> {
 }
 
 fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
-    if !config.source_tags().is_empty() && !cfg!(target_os = "macos") {
-        bail!("sourceTags filtering currently only supports macOS");
-    }
-
     let source_dir = config.source_path();
     let root_dir = config.root_dir();
     let originals_dir = config.originals_path();
@@ -861,7 +857,7 @@ fn build_thumbnail_asset(
         } else {
             preview_image
         };
-        let thumbnail_image = resize_image(&preview_image, context.config.thumbnail_width)?;
+        let thumbnail_image = resize_image(preview_image, context.config.thumbnail_width)?;
         write_thumbnail(
             &thumbnail_image,
             &output_path,
@@ -1241,14 +1237,14 @@ fn round_to_hundredths_f32(value: f64) -> f32 {
 
 // Image decoding, resizing, and encoding
 
-fn resize_image(image: &DynamicImage, target_width: u32) -> Result<DynamicImage> {
+fn resize_image(image: DynamicImage, target_width: u32) -> Result<DynamicImage> {
     let width = image.width();
     if width <= target_width {
-        return Ok(image.clone());
+        return Ok(image);
     }
 
     resize_to_dimensions(
-        image,
+        &image,
         target_width,
         scaled_dimension(image.height(), target_width, width),
     )
@@ -1463,15 +1459,15 @@ fn write_original_avif(
     avif_threads: usize,
 ) -> Result<()> {
     let avif_file = if loaded.bit_depth > 8 {
-        encode_10_bit_avif(loaded, avif_quality, avif_speed, avif_threads)?
+        encode_avif_from_high_bit_depth_source(loaded, avif_quality, avif_speed, avif_threads)?
     } else {
-        encode_8_bit_avif(loaded, avif_quality, avif_speed, avif_threads)?
+        encode_avif_from_8_bit_source(loaded, avif_quality, avif_speed, avif_threads)?
     };
 
     write_bytes_atomic(path, &avif_file)
 }
 
-fn encode_10_bit_avif(
+fn encode_avif_from_high_bit_depth_source(
     loaded: &LoadedImage,
     quality: u8,
     speed: u8,
@@ -1552,12 +1548,13 @@ fn encode_10_bit_avif(
         .map_err(|error| anyhow!("failed to encode 10-bit AVIF: {error}"))
 }
 
-fn encode_8_bit_avif(
+fn encode_avif_from_8_bit_source(
     loaded: &LoadedImage,
     quality: u8,
     speed: u8,
     threads: usize,
 ) -> Result<Vec<u8>> {
+    // ravif recommends 10-bit internal precision even for 8-bit source pixels.
     let encoder = RavifEncoder::new()
         .with_quality(f32::from(quality))
         .with_alpha_quality(f32::from(quality))
@@ -1637,22 +1634,22 @@ fn build_preview_image(
     target_width: u32,
     source_orientation: u8,
 ) -> Result<DynamicImage> {
-    if cfg!(target_os = "macos") {
-        match build_preview_image_with_sips(source_path, target_width.max(1)) {
-            Ok(image) => return Ok(image),
-            Err(error) => warn!(
-                "failed to build preview with sips for {}: {error:#}; falling back to internal preview pipeline",
-                source_path.display()
-            ),
-        }
+    let target_width = target_width.max(1);
+    match build_sips_preview(source_path, target_width) {
+        Ok(image) => return Ok(image),
+        Err(error) => warn!(
+            "failed to build preview with sips for {}: {error:#}; falling back to internal preview pipeline",
+            source_path.display()
+        ),
     }
 
     let source_bytes = fs::read(source_path)
         .with_context(|| format!("failed to read preview source {}", source_path.display()))?;
     let mut loaded = decode_source_image(source_path, &source_bytes)
         .with_context(|| format!("failed to decode preview source {}", source_path.display()))?;
+    drop(source_bytes);
     apply_source_orientation(&mut loaded.image, source_orientation);
-    build_internal_preview(&loaded)
+    resize_image(build_internal_preview(loaded)?, target_width)
 }
 
 fn should_align_preview_orientation(source_path: &Path) -> bool {
@@ -1807,18 +1804,18 @@ fn apply_orientation_transform(
     }
 }
 
-fn build_internal_preview(loaded: &LoadedImage) -> Result<DynamicImage> {
+fn build_internal_preview(loaded: LoadedImage) -> Result<DynamicImage> {
     if loaded.bit_depth <= 8 {
         if loaded.has_alpha {
-            return Ok(DynamicImage::ImageRgba8(loaded.image.to_rgba8()));
+            return Ok(DynamicImage::ImageRgba8(loaded.image.into_rgba8()));
         }
 
-        return Ok(DynamicImage::ImageRgb8(loaded.image.to_rgb8()));
+        return Ok(DynamicImage::ImageRgb8(loaded.image.into_rgb8()));
     }
 
     let source_bit_depth = loaded.bit_depth.clamp(9, 16);
     if loaded.has_alpha {
-        let rgba16 = loaded.image.to_rgba16();
+        let rgba16 = loaded.image.into_rgba16();
         let pixels = rgba16
             .pixels()
             .flat_map(|pixel| {
@@ -1836,7 +1833,7 @@ fn build_internal_preview(loaded: &LoadedImage) -> Result<DynamicImage> {
         return Ok(DynamicImage::ImageRgba8(buffer));
     }
 
-    let rgb16 = loaded.image.to_rgb16();
+    let rgb16 = loaded.image.into_rgb16();
     let pixels = rgb16
         .pixels()
         .flat_map(|pixel| {
@@ -1852,28 +1849,15 @@ fn build_internal_preview(loaded: &LoadedImage) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgb8(buffer))
 }
 
-fn build_preview_image_with_sips(source_path: &Path, target_width: u32) -> Result<DynamicImage> {
-    let color_handling = if is_heif_family(source_path) {
-        SipsColorHandling::Preserve
-    } else {
-        SipsColorHandling::OptimizeForSharing
-    };
-
-    run_sips_preview(source_path, target_width, color_handling)
-}
-
-fn run_sips_preview(
-    source_path: &Path,
-    target_width: u32,
-    color_handling: SipsColorHandling,
-) -> Result<DynamicImage> {
+fn build_sips_preview(source_path: &Path, target_width: u32) -> Result<DynamicImage> {
+    let should_optimize_color = !is_heif_family(source_path);
     let temp_dir = tempfile::Builder::new()
         .prefix("lumine-pipeline-preview-")
         .tempdir()
         .context("failed to create temporary preview directory")?;
     let resized_path = temp_dir.path().join("resized.png");
     let preview_path = temp_dir.path().join("preview.png");
-    let resize_path = if color_handling == SipsColorHandling::OptimizeForSharing {
+    let resize_path = if should_optimize_color {
         &resized_path
     } else {
         &preview_path
@@ -1891,7 +1875,7 @@ fn run_sips_preview(
         .with_context(|| format!("failed to launch sips for {}", source_path.display()))?;
     ensure_sips_succeeded(&resize_output, source_path, "resize")?;
 
-    if color_handling == SipsColorHandling::OptimizeForSharing {
+    if should_optimize_color {
         let optimize_output = Command::new("sips")
             .arg("--optimizeColorForSharing")
             .arg(&resized_path)
@@ -2256,12 +2240,6 @@ struct BuiltPhoto {
 enum BuildOutcome {
     Success(Box<BuiltPhoto>),
     Failure { source_key: String, error: String },
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum SipsColorHandling {
-    Preserve,
-    OptimizeForSharing,
 }
 
 struct ExtractedMetadata {
