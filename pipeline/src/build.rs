@@ -1252,7 +1252,14 @@ fn save_original_avif(
         let bit_depth = loaded.bit_depth.clamp(10, 16);
 
         if loaded.has_alpha {
-            let rgba = loaded.image.to_rgba16();
+            let converted;
+            let rgba = match loaded.image.as_rgba16() {
+                Some(rgba) => rgba,
+                None => {
+                    converted = loaded.image.to_rgba16();
+                    &converted
+                }
+            };
             let width = rgba.width() as usize;
             let height = rgba.height() as usize;
             let planes = rgba.pixels().map(|pixel| {
@@ -1281,7 +1288,14 @@ fn save_original_avif(
                 .map_err(|error| anyhow!("failed to encode 10-bit AVIF: {error}"))?
                 .avif_file
         } else {
-            let rgb = loaded.image.to_rgb16();
+            let converted;
+            let rgb = match loaded.image.as_rgb16() {
+                Some(rgb) => rgb,
+                None => {
+                    converted = loaded.image.to_rgb16();
+                    &converted
+                }
+            };
             let width = rgb.width() as usize;
             let height = rgb.height() as usize;
             let planes = rgb.pixels().map(|pixel| {
@@ -1607,63 +1621,26 @@ fn build_preview_image_fallback(loaded: &LoadedImage) -> Result<DynamicImage> {
 }
 
 fn build_preview_image_with_sips(source_path: &Path, target_width: u32) -> Result<DynamicImage> {
-    if is_heif_family(source_path) {
-        return build_preview_image_with_heif_convert(source_path, target_width);
-    }
-
-    build_preview_image_with_sips_from_path(source_path, target_width)
-}
-
-fn build_preview_image_with_heif_convert(
-    source_path: &Path,
-    target_width: u32,
-) -> Result<DynamicImage> {
-    let temp_dir = tempfile::Builder::new()
-        .prefix("lumine-pipeline-preview-")
-        .tempdir()
-        .context("failed to create temporary preview directory")?;
-    let converted_path = temp_dir.path().join("converted.png");
-    let convert_output = Command::new("heif-convert")
-        .arg("--quiet")
-        .arg("--png-compression-level")
-        .arg("0")
-        .arg(source_path)
-        .arg(&converted_path)
-        .output()
-        .with_context(|| {
-            format!(
-                "failed to launch heif-convert for {}",
-                source_path.display()
-            )
-        })?;
-
-    if !convert_output.status.success() {
-        let stderr = String::from_utf8_lossy(&convert_output.stderr)
-            .trim()
-            .to_string();
-        if stderr.is_empty() {
-            bail!("heif-convert failed for {}", source_path.display());
-        }
-        bail!(
-            "heif-convert failed for {}: {stderr}",
-            source_path.display()
-        );
-    }
-
-    build_preview_image_with_sips_from_path(&converted_path, target_width)
+    build_preview_image_with_sips_from_path(source_path, target_width, !is_heif_family(source_path))
 }
 
 fn build_preview_image_with_sips_from_path(
     source_path: &Path,
     target_width: u32,
+    optimize_color_for_sharing: bool,
 ) -> Result<DynamicImage> {
     let temp_dir = tempfile::Builder::new()
         .prefix("lumine-pipeline-preview-")
         .tempdir()
         .context("failed to create temporary preview directory")?;
+    let resized_path = temp_dir.path().join("resized.png");
     let preview_path = temp_dir.path().join("preview.png");
-    let output = Command::new("sips")
-        .arg("--optimizeColorForSharing")
+    let resize_path = if optimize_color_for_sharing {
+        &resized_path
+    } else {
+        &preview_path
+    };
+    let resize_output = Command::new("sips")
         .arg("--resampleWidth")
         .arg(target_width.to_string())
         .arg("-s")
@@ -1671,31 +1648,63 @@ fn build_preview_image_with_sips_from_path(
         .arg("png")
         .arg(source_path)
         .arg("--out")
-        .arg(&preview_path)
+        .arg(resize_path)
         .output()
         .with_context(|| format!("failed to launch sips for {}", source_path.display()))?;
+    ensure_sips_succeeded(&resize_output, source_path, "resize")?;
 
-    (|| {
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            if stderr.is_empty() {
-                bail!("sips failed for {}", source_path.display());
-            }
-            bail!("sips failed for {}: {stderr}", source_path.display());
-        }
+    if optimize_color_for_sharing {
+        let optimize_output = Command::new("sips")
+            .arg("--optimizeColorForSharing")
+            .arg(&resized_path)
+            .arg("--out")
+            .arg(&preview_path)
+            .output()
+            .with_context(|| format!("failed to launch sips for {}", source_path.display()))?;
+        ensure_sips_succeeded(&optimize_output, source_path, "color optimization")?;
+    }
 
-        ImageReader::open(&preview_path)
-            .with_context(|| format!("failed to open preview {}", preview_path.display()))?
-            .with_guessed_format()
-            .with_context(|| {
-                format!(
-                    "failed to guess preview format for {}",
-                    preview_path.display()
-                )
-            })?
-            .decode()
-            .with_context(|| format!("failed to decode preview {}", preview_path.display()))
-    })()
+    let image = ImageReader::open(&preview_path)
+        .with_context(|| format!("failed to open preview {}", preview_path.display()))?
+        .with_guessed_format()
+        .with_context(|| {
+            format!(
+                "failed to guess preview format for {}",
+                preview_path.display()
+            )
+        })?
+        .decode()
+        .with_context(|| format!("failed to decode preview {}", preview_path.display()))?;
+
+    if image.width() != target_width {
+        bail!(
+            "sips returned unexpected preview width for {}: expected {target_width}, got {}x{}",
+            source_path.display(),
+            image.width(),
+            image.height()
+        );
+    }
+
+    Ok(image)
+}
+
+fn ensure_sips_succeeded(
+    output: &std::process::Output,
+    source_path: &Path,
+    operation: &str,
+) -> Result<()> {
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    if stderr.is_empty() {
+        bail!("sips {operation} failed for {}", source_path.display());
+    }
+    bail!(
+        "sips {operation} failed for {}: {stderr}",
+        source_path.display()
+    );
 }
 
 fn source_orientation(exif: Option<&Exif>) -> u8 {

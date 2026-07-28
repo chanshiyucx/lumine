@@ -138,5 +138,5 @@ fn default_avif_quality() -> u8 {
 }
 
 fn default_avif_speed() -> u8 {
-    7
+    6
 }
