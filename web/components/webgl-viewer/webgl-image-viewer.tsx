@@ -38,10 +38,11 @@ const noop = () => {}
 export const WebGLImageViewer = forwardRef<
   WebGLImageViewerRef,
   WebGLImageViewerProps &
-    Omit<React.HTMLAttributes<HTMLDivElement>, 'className'>
+    Omit<React.HTMLAttributes<HTMLDivElement>, keyof WebGLImageViewerProps>
 >(function WebGLImageViewer(
   {
     src,
+    alt,
     sourceBlob,
     className = '',
     width,
@@ -56,6 +57,7 @@ export const WebGLImageViewer = forwardRef<
     limitToBounds = true,
     centerOnInit = true,
     smooth = true,
+    onLoad,
     onZoomChange,
     onError,
     onLoadingStateChange,
@@ -81,28 +83,31 @@ export const WebGLImageViewer = forwardRef<
   const callbacksRef = useRef<
     Pick<
       ResolvedWebGLImageViewerProps,
-      'onError' | 'onLoadingStateChange' | 'onZoomChange'
+      'onError' | 'onLoad' | 'onLoadingStateChange' | 'onZoomChange'
     >
   >({
     onZoomChange: onZoomChange || noop,
+    onLoad: onLoad || noop,
     onError: onError || noop,
     onLoadingStateChange: onLoadingStateChange || noop,
   })
 
-  const interactionConfigRef = useRef<
-    Pick<
-      ResolvedWebGLImageViewerProps,
-      'doubleClick' | 'panning' | 'pinch' | 'wheel'
-    >
-  >(interactionConfig)
+  const interactionConfigRef =
+    useRef<
+      Pick<
+        ResolvedWebGLImageViewerProps,
+        'doubleClick' | 'panning' | 'pinch' | 'wheel'
+      >
+    >(interactionConfig)
 
   useEffect(() => {
     callbacksRef.current = {
       onZoomChange: onZoomChange || noop,
+      onLoad: onLoad || noop,
       onError: onError || noop,
       onLoadingStateChange: onLoadingStateChange || noop,
     }
-  }, [onError, onLoadingStateChange, onZoomChange])
+  }, [onError, onLoad, onLoadingStateChange, onZoomChange])
 
   useEffect(() => {
     interactionConfigRef.current = interactionConfig
@@ -151,6 +156,11 @@ export const WebGLImageViewer = forwardRef<
 
       webGLImageViewerEngine
         .loadImage(src, preknownWidth, preknownHeight, sourceBlob)
+        .then(() => {
+          if (viewerRef.current === webGLImageViewerEngine) {
+            callbacksRef.current.onLoad()
+          }
+        })
         .catch((error) => {
           console.error('Failed to load WebGL image:', error)
           callbacksRef.current.onError(
@@ -196,6 +206,8 @@ export const WebGLImageViewer = forwardRef<
     >
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label={alt}
         className={className}
         style={{
           display: 'block',

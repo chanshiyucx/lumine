@@ -61,10 +61,13 @@ export function useViewerHistory({
     const currentPath = window.location.pathname
 
     if (currentPath !== nextPath) {
+      const nextUrl = new URL(window.location.href)
+      nextUrl.pathname = nextPath
+
       window.history.pushState(
         { photoViewer: activeIndex !== null },
         '',
-        nextPath,
+        `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
       )
     }
   }, [activeIndex, basePath, photos])

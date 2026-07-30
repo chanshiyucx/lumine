@@ -10,10 +10,11 @@ import {
   useState,
   type RefObject,
 } from 'react'
+import { ImageViewer, type ImageViewerProps } from '@/components/image-viewer'
 import { WebGLImageViewer } from '@/components/webgl-viewer'
-import { isProd } from '@/lib/env'
 import type { Photo } from '@/lib/photos'
 import { cn } from '@/lib/style'
+import { useImageViewerRenderer } from './hooks/use-image-viewer-renderer'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
 import { useWebGLLoadingState } from './hooks/use-webgl-loading-state'
 import type { LoadingIndicatorRef } from './loading-indicator'
@@ -33,7 +34,9 @@ export const ProgressiveView = memo(function ProgressiveView({
   className,
   loadingIndicatorRef,
 }: ProgressiveViewProps) {
-  const [webglFailureKey, setWebglFailureKey] = useState<string | null>(null)
+  const rendererState = useImageViewerRenderer()
+  const renderer = rendererState?.renderer ?? null
+  const [viewerFailureKey, setViewerFailureKey] = useState<string | null>(null)
   const [currentScale, setCurrentScale] = useState(1)
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
   const scaleIndicatorTimeoutRef = useRef<number | null>(null)
@@ -42,14 +45,21 @@ export const ProgressiveView = memo(function ProgressiveView({
     loadingIndicatorRef,
   })
 
-  const webglResourceKey = `${photo.id}:${state.blobSrc ?? ''}`
-  const webglFailed = webglFailureKey === webglResourceKey
+  const viewerResourceKey = `${renderer ?? 'pending'}:${photo.id}:${state.blobSrc ?? ''}`
+  const webglUnavailable =
+    renderer === 'webgl' &&
+    state.resourceLoaded &&
+    Boolean(state.blobSrc) &&
+    typeof window !== 'undefined' &&
+    !window.WebGLRenderingContext
+  const viewerFailed =
+    viewerFailureKey === viewerResourceKey || webglUnavailable
 
-  const canUseWebgl = Boolean(
+  const webglSupported = Boolean(
+    renderer === 'webgl' &&
     state.resourceLoaded &&
     state.blob &&
     state.blobSrc &&
-    !webglFailed &&
     typeof window !== 'undefined' &&
     window.WebGLRenderingContext,
   )
@@ -60,7 +70,7 @@ export const ProgressiveView = memo(function ProgressiveView({
     photo.id,
   )
 
-  const handleFallbackImageLoad = () => {
+  const handleViewerLoad = () => {
     if (!isActive) {
       return
     }
@@ -68,9 +78,21 @@ export const ProgressiveView = memo(function ProgressiveView({
     loadingIndicatorRef.current?.resetLoadingState(photo.id)
   }
 
-  const handleWebglError = useCallback(() => {
-    setWebglFailureKey(webglResourceKey)
-  }, [webglResourceKey])
+  const handleViewerError = useCallback(
+    (error: Error) => {
+      console.error(`Failed to render image with ${renderer}:`, error)
+      setViewerFailureKey(viewerResourceKey)
+
+      if (isActive) {
+        loadingIndicatorRef.current?.updateLoadingState(photo.id, {
+          isVisible: true,
+          isError: true,
+          errorMessage: 'Failed to render image',
+        })
+      }
+    },
+    [isActive, loadingIndicatorRef, photo.id, renderer, viewerResourceKey],
+  )
 
   const handleZoomChange = useCallback((scale: number) => {
     startTransition(() => {
@@ -97,6 +119,36 @@ export const ProgressiveView = memo(function ProgressiveView({
     [],
   )
 
+  useEffect(() => {
+    if (!webglUnavailable || !isActive) {
+      return
+    }
+
+    console.error('Failed to render image with webgl: WebGL is not supported')
+    loadingIndicatorRef.current?.updateLoadingState(photo.id, {
+      isVisible: true,
+      isError: true,
+      errorMessage: 'Failed to render image',
+    })
+  }, [isActive, loadingIndicatorRef, photo.id, webglUnavailable])
+
+  const sharedViewerProps = {
+    src: state.blobSrc ?? '',
+    alt: photo.title,
+    width: photo.original.width,
+    height: photo.original.height,
+    className: 'absolute inset-0 h-full w-full',
+    initialScale: 1,
+    minScale: 1,
+    maxScale: 20,
+    limitToBounds: true,
+    centerOnInit: true,
+    smooth: true,
+    onLoad: handleViewerLoad,
+    onZoomChange: handleZoomChange,
+    onError: handleViewerError,
+  } satisfies ImageViewerProps
+
   return (
     <div className={cn('relative h-full w-full overflow-hidden', className)}>
       <img
@@ -111,34 +163,19 @@ export const ProgressiveView = memo(function ProgressiveView({
         state.blobSrc &&
         isActive &&
         !state.error &&
-        (canUseWebgl ? (
-          <div className="absolute inset-0 h-full w-full">
+        renderer &&
+        !viewerFailed &&
+        (renderer === 'webgl' ? (
+          webglSupported ? (
             <WebGLImageViewer
-              src={state.blobSrc}
+              {...sharedViewerProps}
               sourceBlob={state.blob ?? undefined}
-              width={photo.original.width}
-              height={photo.original.height}
-              className="absolute inset-0 h-full w-full"
-              initialScale={1}
-              minScale={1}
-              maxScale={20}
-              limitToBounds
-              centerOnInit
-              smooth
-              debug={!isProd}
-              onZoomChange={handleZoomChange}
-              onError={handleWebglError}
+              debug={rendererState?.debug}
               onLoadingStateChange={handleWebglLoadingStateChange}
             />
-          </div>
+          ) : null
         ) : (
-          <img
-            src={state.blobSrc}
-            alt={photo.title}
-            className="absolute inset-0 h-full w-full object-contain"
-            draggable={false}
-            onLoad={handleFallbackImageLoad}
-          />
+          <ImageViewer {...sharedViewerProps} />
         ))}
 
       <div
@@ -147,7 +184,7 @@ export const ProgressiveView = memo(function ProgressiveView({
           showScaleIndicator && 'translate-y-0 opacity-100',
         )}
       >
-        {currentScale.toFixed(1)}x
+        {currentScale < 1 ? currentScale.toFixed(2) : currentScale.toFixed(1)}x
       </div>
     </div>
   )

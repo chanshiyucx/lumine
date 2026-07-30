@@ -1,4 +1,5 @@
 import type * as React from 'react'
+import { DoubleTapRecognizer } from '../image-viewer/double-tap'
 import {
   createShader,
   FRAGMENT_SHADER_SOURCE,
@@ -81,10 +82,8 @@ export class WebGLImageViewerEngine {
   private lastTouchDistance = 0
   private lastDoubleClickTime = 0
   private isOriginalSize = false
-
-  private lastTouchTime = 0
-  private lastTouchX = 0
-  private lastTouchY = 0
+  private lastNotifiedScale: number | null = null
+  private readonly doubleTapRecognizer = new DoubleTapRecognizer()
 
   private isAnimating = false
   private animationStartTime = 0
@@ -128,6 +127,7 @@ export class WebGLImageViewerEngine {
   private boundHandleTouchStart: (event: TouchEvent) => void
   private boundHandleTouchMove: (event: TouchEvent) => void
   private boundHandleTouchEnd: (event: TouchEvent) => void
+  private boundHandleTouchCancel: (event: TouchEvent) => void
   private boundResizeCanvas: () => void
 
   private tileCache = new Map<TileKey, TileInfo>()
@@ -182,7 +182,9 @@ export class WebGLImageViewerEngine {
       this.handleTouchStart(event)
     this.boundHandleTouchMove = (event: TouchEvent) =>
       this.handleTouchMove(event)
-    this.boundHandleTouchEnd = () => this.handleTouchEnd()
+    this.boundHandleTouchEnd = (event: TouchEvent) => this.handleTouchEnd(event)
+    this.boundHandleTouchCancel = (event: TouchEvent) =>
+      this.handleTouchCancel(event)
     this.boundResizeCanvas = () => this.resizeCanvas()
 
     try {
@@ -1255,6 +1257,7 @@ export class WebGLImageViewerEngine {
   public resetView() {
     const fitToScreenScale = this.getFitToScreenScale()
     const targetScale = fitToScreenScale * this.config.initialScale
+    this.isOriginalSize = false
     this.startAnimation(targetScale, 0, 0)
   }
 
@@ -1281,6 +1284,9 @@ export class WebGLImageViewerEngine {
     }
     if (pinch.disabled) {
       this.lastTouchDistance = 0
+    }
+    if (doubleClick.disabled) {
+      this.doubleTapRecognizer.reset()
     }
   }
 
@@ -1318,6 +1324,7 @@ export class WebGLImageViewerEngine {
     this.canvas.removeEventListener('touchstart', this.boundHandleTouchStart)
     this.canvas.removeEventListener('touchmove', this.boundHandleTouchMove)
     this.canvas.removeEventListener('touchend', this.boundHandleTouchEnd)
+    this.canvas.removeEventListener('touchcancel', this.boundHandleTouchCancel)
 
     this.cleanupLODTextures()
     this.cleanupTileTextures()
@@ -1405,6 +1412,11 @@ export class WebGLImageViewerEngine {
 
   private notifyZoomChange() {
     const originalScale = this.scale
+    if (originalScale === this.lastNotifiedScale) {
+      return
+    }
+
+    this.lastNotifiedScale = originalScale
     const fitToScreenScale = this.getFitToScreenScale()
     const relativeScale = this.scale / fitToScreenScale
     this.onZoomChange(originalScale, relativeScale)
@@ -1435,6 +1447,9 @@ export class WebGLImageViewerEngine {
       passive: false,
     })
     this.canvas.addEventListener('touchend', this.boundHandleTouchEnd, {
+      passive: false,
+    })
+    this.canvas.addEventListener('touchcancel', this.boundHandleTouchCancel, {
       passive: false,
     })
   }
@@ -1521,27 +1536,16 @@ export class WebGLImageViewerEngine {
       return
     }
 
-    if (event.touches.length === 1 && !this.config.panning.disabled) {
-      const touch = event.touches[0]
-      const now = Date.now()
+    const touch = event.touches[0]
+    this.doubleTapRecognizer.start(
+      event.touches.length,
+      touch ? { x: touch.clientX, y: touch.clientY } : undefined,
+    )
 
-      if (
-        !this.config.doubleClick.disabled &&
-        now - this.lastTouchTime < 300 &&
-        Math.abs(touch.clientX - this.lastTouchX) < 50 &&
-        Math.abs(touch.clientY - this.lastTouchY) < 50
-      ) {
-        this.handleTouchDoubleTap(touch.clientX, touch.clientY)
-        this.lastTouchTime = 0
-        return
-      }
-
+    if (event.touches.length === 1 && touch && !this.config.panning.disabled) {
       this.isDragging = true
       this.lastMouseX = touch.clientX
       this.lastMouseY = touch.clientY
-      this.lastTouchTime = now
-      this.lastTouchX = touch.clientX
-      this.lastTouchY = touch.clientY
     } else if (event.touches.length === 2 && !this.config.pinch.disabled) {
       this.isDragging = false
       const touch1 = event.touches[0]
@@ -1555,6 +1559,12 @@ export class WebGLImageViewerEngine {
 
   private handleTouchMove(event: TouchEvent) {
     event.preventDefault()
+
+    const touch = event.touches[0]
+    this.doubleTapRecognizer.move(
+      event.touches.length,
+      touch ? { x: touch.clientX, y: touch.clientY } : undefined,
+    )
 
     if (
       event.touches.length === 1 &&
@@ -1592,9 +1602,30 @@ export class WebGLImageViewerEngine {
     }
   }
 
-  private handleTouchEnd() {
+  private handleTouchEnd(event: TouchEvent) {
+    event.preventDefault()
+
+    const touch = event.changedTouches[0]
+    const isDoubleTap = this.doubleTapRecognizer.end(
+      event.touches.length,
+      touch ? { x: touch.clientX, y: touch.clientY } : undefined,
+    )
+
+    if (event.touches.length === 0) {
+      this.isDragging = false
+      this.lastTouchDistance = 0
+    }
+
+    if (isDoubleTap && touch && !this.config.doubleClick.disabled) {
+      this.handleTouchDoubleTap(touch.clientX, touch.clientY)
+    }
+  }
+
+  private handleTouchCancel(event: TouchEvent) {
+    event.preventDefault()
     this.isDragging = false
     this.lastTouchDistance = 0
+    this.doubleTapRecognizer.reset()
   }
 
   private handleTouchDoubleTap(clientX: number, clientY: number) {

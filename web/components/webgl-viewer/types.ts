@@ -1,42 +1,14 @@
-export interface WheelConfig {
-  step: number
-  wheelDisabled?: boolean
-}
+import type {
+  DoubleClickConfig,
+  ImageViewerProps,
+  ImageViewerRef,
+  PanningConfig,
+  PinchConfig,
+  WheelConfig,
+} from '../image-viewer/types'
 
-export interface PinchConfig {
-  step: number
-  disabled?: boolean
-}
-
-export interface DoubleClickConfig {
-  step: number
-  disabled?: boolean
-  mode: 'toggle' | 'zoom'
-  animationTime: number
-}
-
-export interface PanningConfig {
-  disabled?: boolean
-}
-
-export interface WebGLImageViewerProps {
-  src: string
+export interface WebGLImageViewerProps extends ImageViewerProps {
   sourceBlob?: Blob
-  className?: string
-  width?: number
-  height?: number
-  initialScale?: number
-  minScale?: number
-  maxScale?: number
-  wheel?: WheelConfig
-  pinch?: PinchConfig
-  doubleClick?: DoubleClickConfig
-  panning?: PanningConfig
-  limitToBounds?: boolean
-  centerOnInit?: boolean
-  smooth?: boolean
-  onZoomChange?: (originalScale: number, relativeScale: number) => void
-  onError?: (error: Error) => void
   onLoadingStateChange?: (
     isLoading: boolean,
     message?: string,
@@ -51,12 +23,9 @@ export type ResolvedWebGLImageViewerProps = Required<
   sourceBlob?: Blob
 }
 
-export interface WebGLImageViewerRef {
-  zoomIn: (animated?: boolean) => void
-  zoomOut: (animated?: boolean) => void
-  resetView: () => void
-  getScale: () => number
-}
+export type WebGLImageViewerRef = ImageViewerRef
+
+export type { DoubleClickConfig, PanningConfig, PinchConfig, WheelConfig }
 
 export interface DebugInfo {
   scale: number

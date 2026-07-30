@@ -21,6 +21,7 @@
     "next": "16.2.12",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-zoom-pan-pinch": "4.0.3",
     "tailwind-merge": "^3.6.0",
     "thumbhash": "0.1.1",
     "zod": "^4.4.3"
