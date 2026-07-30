@@ -1,12 +1,10 @@
-'use client'
-
 import { X } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
-import { CaptureSettingChip } from '@/components/gallery/capture-setting-chip'
-import type { Photo } from '@/lib/photos'
+import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
+import type { Photo } from '@/lib/photo'
+import { getCaptureSettings } from '@/lib/photo/metadata'
 import { cn } from '@/lib/style'
 import {
-  getCaptureSettings,
   getDeviceInfoRows,
   getExposureRows,
   getPhotoInfoRows,
@@ -19,6 +17,17 @@ const PANEL_BACKGROUND_SCRIM = [
   'linear-gradient(to bottom, color-mix(in srgb, black 16%, transparent), transparent 44%, color-mix(in srgb, black 24%, transparent))',
 ].join(', ')
 const PANEL_INNER_GLOW = `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_ACCENT} 7%, transparent), transparent, color-mix(in srgb, ${VIEWER_ACCENT} 8%, transparent))`
+const PANEL_STYLE = {
+  backgroundColor: 'color-mix(in srgb, var(--color-surface) 88%, transparent)',
+  boxShadow:
+    '0 8px 32px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 13%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)',
+} satisfies CSSProperties
+const PANEL_BACKGROUND_SCRIM_STYLE = {
+  backgroundImage: PANEL_BACKGROUND_SCRIM,
+} satisfies CSSProperties
+const PANEL_INNER_GLOW_STYLE = {
+  background: PANEL_INNER_GLOW,
+} satisfies CSSProperties
 
 interface InfoRowProps {
   label: string
@@ -50,8 +59,8 @@ function InfoSection({ title, children }: InfoSectionProps) {
 
 interface ViewerInfoPanelProps {
   photo: Photo
-  isOpen?: boolean
-  onClose?: () => void
+  isOpen: boolean
+  onClose: () => void
 }
 
 function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
@@ -94,26 +103,19 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
 
 export function ViewerInfoPanel({
   photo,
-  isOpen = true,
+  isOpen,
   onClose,
 }: ViewerInfoPanelProps) {
-  const panelStyle = {
-    backgroundColor:
-      'color-mix(in srgb, var(--color-surface) 88%, transparent)',
-    boxShadow:
-      '0 8px 32px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 13%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)',
-  } as CSSProperties
-
   return (
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        'bg-surface fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden backdrop-blur-2xl transition-[width,transform,opacity,box-shadow] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0',
+        'bg-surface fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl transition-[width,transform,opacity,box-shadow] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0 lg:pb-0',
         isOpen
           ? 'translate-y-0 opacity-100 lg:w-80'
           : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
       )}
-      style={panelStyle}
+      style={PANEL_STYLE}
     >
       <ThumbHashCrossfade
         photoId={photo.id}
@@ -125,31 +127,25 @@ export function ViewerInfoPanel({
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={{
-          backgroundImage: PANEL_BACKGROUND_SCRIM,
-        }}
+        style={PANEL_BACKGROUND_SCRIM_STYLE}
       />
 
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={{
-          background: PANEL_INNER_GLOW,
-        }}
+        style={PANEL_INNER_GLOW_STYLE}
       />
 
       <div className="relative flex max-h-[40svh] flex-col lg:h-full lg:max-h-none lg:w-80">
         <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
-          {onClose ? (
-            <button
-              type="button"
-              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center transition"
-              onClick={onClose}
-              aria-label="Close information panel"
-            >
-              <X className="size-5" strokeWidth={1.8} />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center transition"
+            onClick={onClose}
+            aria-label="Close information panel"
+          >
+            <X className="size-5" strokeWidth={1.8} />
+          </button>
         </div>
         <div className="from-surface/80 pointer-events-none absolute bottom-0 left-0 z-10 h-10 w-screen bg-linear-to-t to-transparent lg:hidden"></div>
 

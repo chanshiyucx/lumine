@@ -1,40 +1,32 @@
-'use client'
-
 import { useEffect, useState, type RefObject } from 'react'
-import type { LoadingIndicatorRef } from '@/components/viewer/loading-indicator'
-import type { Photo } from '@/lib/photos'
+import type { Photo } from '@/lib/photo'
 import {
-  getCachedPhotoResource,
-  peekCachedPhotoResource,
-  setCachedPhotoResource,
+  getCachedPhotoUrl,
+  peekCachedPhotoUrl,
+  setCachedPhotoUrl,
 } from '../lib/progressive-photo-cache'
+import type { LoadingIndicatorHandle } from '../loading-indicator'
 
 interface ProgressiveState {
-  blob: Blob | null
   blobSrc: string | null
-  resourceLoaded: boolean
   error: boolean
 }
 
 interface UseProgressivePhotoOptions {
   isActive: boolean
-  loadingIndicatorRef: RefObject<LoadingIndicatorRef | null>
+  loadingIndicatorRef: RefObject<LoadingIndicatorHandle | null>
 }
 
 function createInitialState(): ProgressiveState {
   return {
-    blob: null,
     blobSrc: null,
-    resourceLoaded: false,
     error: false,
   }
 }
 
-function createCachedState(blob: Blob, objectUrl: string): ProgressiveState {
+function createCachedState(objectUrl: string): ProgressiveState {
   return {
-    blob,
     blobSrc: objectUrl,
-    resourceLoaded: true,
     error: false,
   }
 }
@@ -107,35 +99,43 @@ export function useProgressivePhoto(
   { isActive, loadingIndicatorRef }: UseProgressivePhotoOptions,
 ) {
   const [state, setState] = useState<ProgressiveState>(() => {
-    const cachedResource = peekCachedPhotoResource(photo.original.url)
+    const cachedPhotoUrl = peekCachedPhotoUrl(photo.original.url)
 
-    if (!cachedResource) {
+    if (!cachedPhotoUrl) {
       return createInitialState()
     }
 
-    return createCachedState(cachedResource.blob, cachedResource.objectUrl)
+    return createCachedState(cachedPhotoUrl)
   })
 
   useEffect(() => {
-    if (!isActive || state.resourceLoaded || state.error) {
+    if (!isActive && state.error) {
+      setState(createInitialState())
+    }
+  }, [isActive, state.error])
+
+  useEffect(() => {
+    if (!isActive || state.error) {
+      return
+    }
+
+    if (state.blobSrc) {
+      getCachedPhotoUrl(photo.original.url)
+      return
+    }
+
+    const cachedPhotoUrl = getCachedPhotoUrl(photo.original.url)
+    if (cachedPhotoUrl) {
+      setState(createCachedState(cachedPhotoUrl))
       return
     }
 
     const controller = new AbortController()
     const loadingIndicator = loadingIndicatorRef.current
-    const cachedResource = getCachedPhotoResource(photo.original.url)
 
-    if (cachedResource) {
-      setState(createCachedState(cachedResource.blob, cachedResource.objectUrl))
-      return () => {
-        controller.abort()
-      }
-    }
-
-    loadingIndicator?.updateLoadingState(photo.id, {
+    loadingIndicator?.updateLoadingState({
       isVisible: true,
       isError: false,
-      isWebGLLoading: false,
       loadingProgress: 0,
       loadedBytes: 0,
       totalBytes: photo.original.bytes,
@@ -158,10 +158,9 @@ export function useProgressivePhoto(
           (loadedBytes, totalBytes) => {
             const progressTotalBytes = totalBytes ?? photo.original.bytes
 
-            loadingIndicator?.updateLoadingState(photo.id, {
+            loadingIndicator?.updateLoadingState({
               isVisible: true,
               isError: false,
-              isWebGLLoading: false,
               loadingProgress:
                 progressTotalBytes > 0
                   ? Math.min(100, (loadedBytes / progressTotalBytes) * 100)
@@ -177,12 +176,8 @@ export function useProgressivePhoto(
         }
 
         const objectUrl = URL.createObjectURL(blob)
-        setCachedPhotoResource(photo.original.url, {
-          blob,
-          objectUrl,
-          totalBytes: blob.size,
-        })
-        setState(createCachedState(blob, objectUrl))
+        setCachedPhotoUrl(photo.original.url, objectUrl)
+        setState(createCachedState(objectUrl))
       } catch (error) {
         if (controller.signal.aborted) {
           return
@@ -190,12 +185,10 @@ export function useProgressivePhoto(
 
         console.error('Failed to load image:', error)
         setState({
-          blob: null,
           blobSrc: null,
-          resourceLoaded: false,
           error: true,
         })
-        loadingIndicator?.updateLoadingState(photo.id, {
+        loadingIndicator?.updateLoadingState({
           isVisible: true,
           isError: true,
           errorMessage: 'Failed to load image',
@@ -211,12 +204,11 @@ export function useProgressivePhoto(
   }, [
     isActive,
     loadingIndicatorRef,
-    photo.id,
     photo.original.bytes,
     photo.original.mime,
     photo.original.url,
+    state.blobSrc,
     state.error,
-    state.resourceLoaded,
   ])
 
   return state

@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useEffectEvent } from 'react'
 
 interface UseViewerKeyboardNavigationOptions {

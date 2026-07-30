@@ -2,7 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
 import { useMobile } from '@/hooks/use-mobile'
-import type { Photo } from '@/lib/photos'
+import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
 
@@ -181,7 +181,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
   return (
     <div
       ref={railShellRef}
-      className="bg-surface relative h-12 w-full shrink-0 lg:h-16"
+      className="bg-surface relative h-[calc(3rem+env(safe-area-inset-bottom))] w-full shrink-0 pb-[env(safe-area-inset-bottom)] lg:h-16 lg:pb-0"
     >
       {hoverPreview && hoverPreviewPhoto ? (
         <div

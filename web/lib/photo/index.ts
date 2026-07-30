@@ -1,4 +1,4 @@
-import { encodePathSegment, normalizePathSegment } from './url-segments'
+import { encodePathSegment, normalizePathSegment } from '../url-segments'
 
 export interface PhotoAsset {
   url: string

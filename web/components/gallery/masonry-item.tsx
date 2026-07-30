@@ -1,13 +1,13 @@
 'use client'
 
+import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
+import type { Photo } from '@/lib/photo'
 import {
   formatAlbumChip,
   formatBytes,
   formatMimeLabel,
-} from '@/components/viewer/lib/formatters'
-import { getAvailableCaptureSettings } from '@/components/viewer/lib/viewer-metadata'
-import type { Photo } from '@/lib/photos'
-import { CaptureSettingChip } from './capture-setting-chip'
+} from '@/lib/photo/formatters'
+import { getAvailableCaptureSettings } from '@/lib/photo/metadata'
 import { ThumbnailImage } from './thumbnail-image'
 
 interface MasonryItemProps {

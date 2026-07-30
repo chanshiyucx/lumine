@@ -1,51 +1,42 @@
-interface CachedPhotoResource {
-  blob: Blob
-  objectUrl: string
-  totalBytes: number | null
-}
-
 const MAX_CACHED_PHOTOS = 12
-const cachedPhotoResources = new Map<string, CachedPhotoResource>()
+const cachedPhotoUrls = new Map<string, string>()
 
-export function peekCachedPhotoResource(url: string) {
-  return cachedPhotoResources.get(url) ?? null
+export function peekCachedPhotoUrl(url: string) {
+  return cachedPhotoUrls.get(url) ?? null
 }
 
-export function getCachedPhotoResource(url: string) {
-  const cachedResource = cachedPhotoResources.get(url)
+export function getCachedPhotoUrl(url: string) {
+  const objectUrl = cachedPhotoUrls.get(url)
 
-  if (!cachedResource) {
+  if (!objectUrl) {
     return null
   }
 
-  cachedPhotoResources.delete(url)
-  cachedPhotoResources.set(url, cachedResource)
+  cachedPhotoUrls.delete(url)
+  cachedPhotoUrls.set(url, objectUrl)
 
-  return cachedResource
+  return objectUrl
 }
 
-export function setCachedPhotoResource(
-  url: string,
-  resource: CachedPhotoResource,
-) {
-  const existingResource = cachedPhotoResources.get(url)
+export function setCachedPhotoUrl(url: string, objectUrl: string) {
+  const existingObjectUrl = cachedPhotoUrls.get(url)
 
-  if (existingResource && existingResource.objectUrl !== resource.objectUrl) {
-    URL.revokeObjectURL(existingResource.objectUrl)
+  if (existingObjectUrl && existingObjectUrl !== objectUrl) {
+    URL.revokeObjectURL(existingObjectUrl)
   }
 
-  cachedPhotoResources.delete(url)
-  cachedPhotoResources.set(url, resource)
+  cachedPhotoUrls.delete(url)
+  cachedPhotoUrls.set(url, objectUrl)
 
-  while (cachedPhotoResources.size > MAX_CACHED_PHOTOS) {
-    const oldestEntry = cachedPhotoResources.entries().next().value
+  while (cachedPhotoUrls.size > MAX_CACHED_PHOTOS) {
+    const oldestEntry = cachedPhotoUrls.entries().next().value
 
     if (!oldestEntry) {
       break
     }
 
-    const [oldestUrl, oldestResource] = oldestEntry
-    cachedPhotoResources.delete(oldestUrl)
-    URL.revokeObjectURL(oldestResource.objectUrl)
+    const [oldestUrl, oldestObjectUrl] = oldestEntry
+    cachedPhotoUrls.delete(oldestUrl)
+    URL.revokeObjectURL(oldestObjectUrl)
   }
 }

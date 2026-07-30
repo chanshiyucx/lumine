@@ -4,8 +4,8 @@ import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { publishGalleryHeaderDetail } from '@/components/header/gallery-header-events'
 import { Viewer } from '@/components/viewer'
-import { useViewerHistory } from '@/components/viewer/hooks/use-photo-viewer-history'
-import type { Photo } from '@/lib/photos'
+import { useViewerHistory } from '@/components/viewer/hooks/use-viewer-history'
+import type { Photo } from '@/lib/photo'
 import type { MasonryGridProps } from './masonry-grid'
 
 const MasonryGrid = dynamic<MasonryGridProps>(
@@ -242,7 +242,7 @@ export function Masonry({
           photos={photos}
           activeIndex={activeIndex}
           onClose={() => setActiveIndex(null)}
-          onChange={setActiveIndex}
+          onActiveIndexChange={setActiveIndex}
         />
       )}
     </>

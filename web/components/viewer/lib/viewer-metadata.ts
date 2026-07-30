@@ -1,25 +1,18 @@
-import type { Photo } from '@/lib/photos'
+import type { Photo } from '@/lib/photo'
 import {
   formatApertureValue,
   formatBrightnessValue,
   formatBytes,
   formatDateTimeLabel,
   formatFocalLength,
-  formatIsoValue,
   formatMegapixels,
   formatMimeLabel,
   formatSentenceCase,
   formatTimeZoneLabel,
   NOT_AVAILABLE_LABEL,
-} from './formatters'
+} from '@/lib/photo/formatters'
 
-export interface InfoRowData {
-  label: string
-  value: string
-}
-
-export interface CaptureSetting {
-  key: 'focal' | 'aperture' | 'shutter' | 'iso'
+interface InfoRowData {
   label: string
   value: string
 }
@@ -48,39 +41,6 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
     { label: 'Taken At', value: formatDateTimeLabel(photo.takenAt) },
     { label: 'Time Zone', value: formatTimeZoneLabel(photo.takenAt) },
   ]
-}
-
-export function getCaptureSettings(photo: Photo): CaptureSetting[] {
-  return [
-    {
-      key: 'focal',
-      label: 'Focal',
-      value: formatFocalLength(
-        photo.camera?.focalLengthIn35mm ?? photo.camera?.focalLengthMm,
-      ),
-    },
-    {
-      key: 'aperture',
-      label: 'Aperture',
-      value: formatApertureValue(photo.camera?.aperture),
-    },
-    {
-      key: 'shutter',
-      label: 'Shutter',
-      value: photo.camera?.shutter ?? NOT_AVAILABLE_LABEL,
-    },
-    {
-      key: 'iso',
-      label: 'ISO',
-      value: formatIsoValue(photo.camera?.iso),
-    },
-  ]
-}
-
-export function getAvailableCaptureSettings(photo: Photo) {
-  return getCaptureSettings(photo).filter(
-    (setting) => setting.value !== NOT_AVAILABLE_LABEL,
-  )
 }
 
 export function getDeviceInfoRows(photo: Photo): InfoRowData[] {

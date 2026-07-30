@@ -1,6 +1,5 @@
 import { useMobile } from '@/hooks/use-mobile'
-import type { Photo } from '@/lib/photos'
-import { decodePathSegment } from '@/lib/url-segments'
+import type { Photo } from '@/lib/photo'
 
 export const MASONRY_GAP = 4
 const MOBILE_COLUMN_WIDTH = 150
@@ -51,17 +50,4 @@ export function getMasonryItemHeightEstimate(
     sortedAspectRatios[middleIndex] ?? FALLBACK_ESTIMATED_ASPECT_RATIO
 
   return Math.max(180, Math.round(columnWidth / medianAspectRatio))
-}
-
-export function getPhotoIndexFromPathname(
-  pathname: string,
-  slugToIndex: Map<string, number>,
-) {
-  const match = /^\/photos\/([^/]+)$/.exec(pathname)
-
-  if (!match) {
-    return null
-  }
-
-  return slugToIndex.get(decodePathSegment(match[1])) ?? null
 }

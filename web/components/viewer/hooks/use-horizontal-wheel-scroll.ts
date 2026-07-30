@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, type RefObject } from 'react'
 
 export function useHorizontalWheelScroll<T extends HTMLElement>(

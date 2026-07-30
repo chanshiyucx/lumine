@@ -1,4 +1,4 @@
-import type { Photo } from './photos'
+import type { Photo } from './photo'
 import { decodePathSegment, encodePathSegment } from './url-segments'
 
 export interface Album {

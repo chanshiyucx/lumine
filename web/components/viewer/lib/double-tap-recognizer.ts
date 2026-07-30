@@ -1,8 +1,8 @@
-export const DOUBLE_TAP_DELAY = 300
-export const DOUBLE_TAP_DISTANCE = 20
-export const TAP_MOVE_TOLERANCE = 10
+const DOUBLE_TAP_DELAY = 300
+const DOUBLE_TAP_DISTANCE = 20
+const TAP_MOVE_TOLERANCE = 10
 
-export interface TapPoint {
+interface TapPoint {
   x: number
   y: number
 }

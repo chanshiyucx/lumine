@@ -1,5 +1,5 @@
 import { getAlbums } from '@/lib/albums'
-import { getPhotoCollection } from '@/lib/photo-collection'
+import { getPhotoCollection } from '@/lib/photo/collection'
 import { AlbumCard } from './album-card'
 
 export async function AlbumsPage() {

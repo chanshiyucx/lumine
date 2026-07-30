@@ -2,7 +2,7 @@
 
 import type { RenderComponentProps } from 'masonic'
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
-import type { Photo } from '@/lib/photos'
+import type { Photo } from '@/lib/photo'
 import {
   getMasonryItemHeightEstimate,
   useMasonryConfig,

@@ -1,13 +1,24 @@
-'use client'
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getPhotoIndexFromPathname } from '@/components/gallery/lib/masonry-layout'
-import { getPhotoPath, type Photo } from '@/lib/photos'
+import { getPhotoPath, type Photo } from '@/lib/photo'
+import { decodePathSegment } from '@/lib/url-segments'
 
 interface UseViewerHistoryOptions {
   photos: Photo[]
   initialPhotoSlug?: string
   basePath?: string
+}
+
+function getPhotoIndexFromPathname(
+  pathname: string,
+  slugToIndex: Map<string, number>,
+) {
+  const match = /^\/photos\/([^/]+)$/.exec(pathname)
+
+  if (!match) {
+    return null
+  }
+
+  return slugToIndex.get(decodePathSegment(match[1])) ?? null
 }
 
 export function useViewerHistory({
@@ -61,13 +72,10 @@ export function useViewerHistory({
     const currentPath = window.location.pathname
 
     if (currentPath !== nextPath) {
-      const nextUrl = new URL(window.location.href)
-      nextUrl.pathname = nextPath
-
       window.history.pushState(
         { photoViewer: activeIndex !== null },
         '',
-        `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
+        nextPath,
       )
     }
   }, [activeIndex, basePath, photos])

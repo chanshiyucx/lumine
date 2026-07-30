@@ -1,4 +1,4 @@
-import type { ThumbHashAsset } from './thumbhash'
+import type { ThumbHashAsset } from '@/lib/thumbhash'
 
 interface RgbColor {
   r: number

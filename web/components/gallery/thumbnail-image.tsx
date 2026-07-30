@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useCallback } from 'react'
 import { ThumbHashImage } from '@/components/thumbhash'
-import type { PhotoAsset } from '@/lib/photos'
+import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
 
 interface ThumbnailImagePhoto {

@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useState } from 'react'
 import { ThumbHashImage } from '@/components/thumbhash'
 import { cn } from '@/lib/style'

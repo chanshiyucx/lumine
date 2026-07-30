@@ -1,14 +1,10 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { PHOTO_MANIFEST_URL_ENV } from './env'
-import {
-  createPhotoSlug,
-  type PhotoAsset,
-  type PhotoCollection,
-} from './photos'
-import { siteConfig } from './site-config'
-import { decodePathSegment } from './url-segments'
+import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
+import { PHOTO_MANIFEST_URL_ENV } from '../env'
+import { siteConfig } from '../site-config'
+import { decodePathSegment } from '../url-segments'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 const DEFAULT_ALBUM_KEY = 'gallery'

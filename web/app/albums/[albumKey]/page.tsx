@@ -6,7 +6,7 @@ import {
   getAlbums,
   normalizeAlbumKey,
 } from '@/lib/albums'
-import { getPhotoCollection } from '@/lib/photo-collection'
+import { getPhotoCollection } from '@/lib/photo/collection'
 
 export async function generateStaticParams() {
   const photoCollection = await getPhotoCollection()

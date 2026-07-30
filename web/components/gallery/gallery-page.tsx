@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
-import { getPhotoCollection } from '@/lib/photo-collection'
-import type { Photo } from '@/lib/photos'
+import type { Photo } from '@/lib/photo'
+import { getPhotoCollection } from '@/lib/photo/collection'
 import { Masonry } from './masonry'
 
 interface GalleryPageProps {
