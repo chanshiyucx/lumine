@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
+import { ThumbnailImage } from '@/components/photo'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'

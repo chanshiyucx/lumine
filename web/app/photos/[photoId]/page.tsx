@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { GalleryPage } from '@/components/gallery/gallery-page'
+import { notFound } from 'next/navigation'
+import { PhotoGallery } from '@/components/gallery'
 import { getPhotoCollection } from '@/lib/photo/collection'
 import { siteConfig } from '@/lib/site-config'
 
@@ -48,6 +49,17 @@ export async function generateMetadata({
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
   const { photoId } = await params
+  const photoCollection = await getPhotoCollection()
+  const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
 
-  return <GalleryPage initialPhotoSlug={photoId} />
+  if (!photo) {
+    notFound()
+  }
+
+  return (
+    <PhotoGallery
+      photos={photoCollection.photos}
+      initialPhotoSlug={photo.slug}
+    />
+  )
 }

@@ -1,11 +1,6 @@
 import { notFound } from 'next/navigation'
-import { Masonry } from '@/components/gallery/masonry'
-import {
-  getAlbumByKey,
-  getAlbumPath,
-  getAlbums,
-  normalizeAlbumKey,
-} from '@/lib/albums'
+import { PhotoGallery } from '@/components/gallery'
+import { getAlbumByKey, getAlbums, normalizeAlbumKey } from '@/lib/albums'
 import { getPhotoCollection } from '@/lib/photo/collection'
 
 export async function generateStaticParams() {
@@ -32,5 +27,5 @@ export default async function AlbumPage({
     notFound()
   }
 
-  return <Masonry photos={album.photos} basePath={getAlbumPath(album.key)} />
+  return <PhotoGallery photos={album.photos} />
 }

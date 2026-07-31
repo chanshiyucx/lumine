@@ -17,7 +17,6 @@ interface ViewerHistoryMarker {
 }
 
 interface UseViewerControllerOptions {
-  basePath?: string
   initialPhotoSlug?: string
   photos: Photo[]
 }
@@ -80,7 +79,6 @@ function createSessionId() {
 export function useViewerController({
   photos,
   initialPhotoSlug,
-  basePath = '/',
 }: UseViewerControllerOptions) {
   const slugToIndex = useMemo(
     () => new Map(photos.map((photo, index) => [photo.slug, index])),
@@ -97,7 +95,7 @@ export function useViewerController({
   )
   const stateRef = useRef(state)
   const sessionIdRef = useRef<string | null>(null)
-  const baseUrlRef = useRef(basePath)
+  const baseUrlRef = useRef('/')
   const restoreFocusElementRef = useRef<HTMLElement | null>(null)
 
   stateRef.current = state
@@ -238,7 +236,7 @@ export function useViewerController({
   }, [])
 
   useEffect(() => {
-    baseUrlRef.current = `${basePath}${window.location.search}${window.location.hash}`
+    baseUrlRef.current = `/${window.location.search}${window.location.hash}`
 
     const syncFromLocation = () => {
       const index = getPhotoIndexFromPathname(
@@ -274,7 +272,7 @@ export function useViewerController({
     return () => {
       window.removeEventListener('popstate', syncFromLocation)
     }
-  }, [applyAction, basePath, beginClose, photos, slugToIndex])
+  }, [applyAction, beginClose, photos, slugToIndex])
 
   return {
     close,

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ThumbnailImage } from '@/components/gallery/thumbnail-image'
+import { ThumbnailImage } from '@/components/photo'
 import { getAlbumPath, type Album } from '@/lib/albums'
 import { cn } from '@/lib/style'
 

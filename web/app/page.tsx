@@ -1,5 +1,8 @@
-import { GalleryPage } from '@/components/gallery/gallery-page'
+import { PhotoGallery } from '@/components/gallery'
+import { getPhotoCollection } from '@/lib/photo/collection'
 
-export default function Page() {
-  return <GalleryPage />
+export default async function Page() {
+  const photoCollection = await getPhotoCollection()
+
+  return <PhotoGallery photos={photoCollection.photos} />
 }

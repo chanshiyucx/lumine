@@ -1,6 +1,6 @@
 'use client'
 
-import { CaptureSettingChip } from '@/components/photo'
+import { CaptureSettingChip, ThumbnailImage } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
 import {
   formatAlbumChip,
@@ -8,7 +8,6 @@ import {
   formatMimeLabel,
 } from '@/lib/photo/formatters'
 import { getAvailableCaptureSettings } from '@/lib/photo/metadata'
-import { ThumbnailImage } from './thumbnail-image'
 
 interface MasonryItemProps {
   photo: Photo
