@@ -421,13 +421,20 @@ export function ZoomableImage({
     }
   }, [zoomByFactorAt])
 
-  const handleImageLoad = useCallback(() => {
+  const handleImageLoad = useCallback(async () => {
     measureImageLayout()
 
     const transform = transformRef.current
     if (transform) {
       notifyZoomChange(transform, true)
     }
+    try {
+      await imageRef.current?.decode()
+    } catch {
+      // The load event already proved the resource is renderable. Some browsers
+      // reject decode() when the element changes state during the same frame.
+    }
+
     onLoad?.()
   }, [measureImageLayout, notifyZoomChange, onLoad])
 

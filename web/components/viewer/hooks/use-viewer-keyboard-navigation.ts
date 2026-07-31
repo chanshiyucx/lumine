@@ -2,17 +2,19 @@ import { useEffect, useEffectEvent } from 'react'
 
 interface UseViewerKeyboardNavigationOptions {
   activeIndex: number
+  enabled?: boolean
   onClose: () => void
   onGoTo: (index: number) => void
 }
 
 export function useViewerKeyboardNavigation({
   activeIndex,
+  enabled = true,
   onClose,
   onGoTo,
 }: UseViewerKeyboardNavigationOptions) {
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.defaultPrevented) {
+    if (!enabled || event.defaultPrevented) {
       return
     }
 

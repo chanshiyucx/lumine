@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { m, type MotionStyle } from 'motion/react'
 import type { CSSProperties, ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
@@ -55,6 +56,7 @@ function InfoSection({ title, children }: InfoSectionProps) {
 interface ViewerInfoPanelProps {
   photo: Photo
   isOpen: boolean
+  mobileStyle?: MotionStyle
   onClose: () => void
 }
 
@@ -99,18 +101,24 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
 export function ViewerInfoPanel({
   photo,
   isOpen,
+  mobileStyle,
   onClose,
 }: ViewerInfoPanelProps) {
+  const isMobileMotionControlled = mobileStyle !== undefined
+
   return (
-    <aside
+    <m.aside
       aria-hidden={!isOpen}
+      inert={!isOpen}
       className={cn(
         'bg-surface fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
-        isOpen
-          ? 'translate-y-0 opacity-100 lg:w-80'
-          : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
+        isOpen ? 'lg:w-80' : 'pointer-events-none lg:w-0',
+        !isMobileMotionControlled &&
+          (isOpen
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-full opacity-0 lg:translate-y-0'),
       )}
-      style={PANEL_STYLE}
+      style={{ ...PANEL_STYLE, ...mobileStyle }}
     >
       <ThumbHashCrossfade
         photoId={photo.id}
@@ -141,6 +149,6 @@ export function ViewerInfoPanel({
           <ViewerInfoPanelContent photo={photo} />
         </div>
       </div>
-    </aside>
+    </m.aside>
   )
 }

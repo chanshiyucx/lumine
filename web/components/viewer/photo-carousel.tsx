@@ -10,7 +10,9 @@ interface PhotoCarouselProps {
   activeIndex: number
   isMobile: boolean
   isSwipeDisabled: boolean
+  isInteractionEnabled: boolean
   onActiveIndexChange: (index: number) => void
+  onZoomStateChange: (isZoomed: boolean) => void
 }
 
 interface ZoomState {
@@ -23,7 +25,9 @@ export function PhotoCarousel({
   activeIndex,
   isMobile,
   isSwipeDisabled,
+  isInteractionEnabled,
   onActiveIndexChange,
+  onZoomStateChange,
 }: PhotoCarouselProps) {
   const swiperRef = useRef<SwiperInstance | null>(null)
   const activePhotoId = photos[activeIndex]?.id ?? null
@@ -31,16 +35,18 @@ export function PhotoCarousel({
     photoId: activePhotoId,
     isZoomed: false,
   })
+  const [initialPhotoId] = useState(activePhotoId)
   const isImageZoomed =
     zoomState.photoId === activePhotoId && zoomState.isZoomed
-  const allowTouchMove = isMobile && !isImageZoomed && !isSwipeDisabled
+  const allowTouchMove =
+    isInteractionEnabled && isMobile && !isImageZoomed && !isSwipeDisabled
 
   useEffect(() => {
     const swiper = swiperRef.current
     if (swiper && swiper.activeIndex !== activeIndex) {
-      swiper.slideTo(activeIndex, isMobile ? 300 : 0)
+      swiper.slideTo(activeIndex, 300)
     }
-  }, [activeIndex, isMobile])
+  }, [activeIndex])
 
   useEffect(() => {
     if (swiperRef.current) {
@@ -63,8 +69,9 @@ export function PhotoCarousel({
           isZoomed,
         }
       })
+      onZoomStateChange(isZoomed)
     },
-    [activePhotoId],
+    [activePhotoId, onZoomStateChange],
   )
 
   return (
@@ -108,6 +115,8 @@ export function PhotoCarousel({
               key={photo.original.url}
               photo={photo}
               isActive={isActive}
+              loadDelayMs={photo.id === initialPhotoId ? 0 : 150}
+              shouldMountInteractiveImage={isInteractionEnabled}
               onZoomStateChange={isActive ? handleZoomStateChange : undefined}
             />
           </SwiperSlide>

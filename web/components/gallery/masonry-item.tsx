@@ -13,7 +13,7 @@ import { ThumbnailImage } from './thumbnail-image'
 interface MasonryItemProps {
   photo: Photo
   index: number
-  onOpen: (index: number) => void
+  onOpen: (index: number, triggerElement: HTMLElement) => void
 }
 
 export function MasonryItem({ photo, index, onOpen }: MasonryItemProps) {
@@ -29,7 +29,8 @@ export function MasonryItem({ photo, index, onOpen }: MasonryItemProps) {
       }}
       className="button-reset group bg-surface relative block w-full cursor-pointer overflow-hidden text-left"
       data-photo-index={index}
-      onClick={() => onOpen(index)}
+      data-viewer-trigger={photo.id}
+      onClick={(event) => onOpen(index, event.currentTarget)}
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
     >

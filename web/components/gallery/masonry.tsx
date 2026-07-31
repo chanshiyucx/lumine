@@ -1,10 +1,11 @@
 'use client'
 
+import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { publishGalleryHeaderDetail } from '@/components/header/gallery-header-events'
 import { Viewer } from '@/components/viewer'
-import { useViewerHistory } from '@/components/viewer/hooks/use-viewer-history'
+import { useViewerController } from '@/components/viewer/hooks/use-viewer-controller'
 import type { Photo } from '@/lib/photo'
 import type { MasonryGridProps } from './masonry-grid'
 
@@ -167,11 +168,12 @@ export function Masonry({
   initialPhotoSlug,
   basePath = '/',
 }: MasonryProps) {
-  const { activeIndex, setActiveIndex } = useViewerHistory({
+  const viewer = useViewerController({
     photos,
     initialPhotoSlug,
     basePath,
   })
+  const isViewerMounted = viewer.state.activeIndex !== null
   const [showHeaderDetail, setShowHeaderDetail] = useState(false)
   const [headerState, setHeaderState] = useState<GalleryHeaderState>({})
 
@@ -195,6 +197,19 @@ export function Masonry({
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
+
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>('[data-site-header]')
+    if (!header) {
+      return
+    }
+
+    header.inert = isViewerMounted
+
+    return () => {
+      header.inert = false
+    }
+  }, [isViewerMounted])
 
   useEffect(() => {
     publishGalleryHeaderDetail({
@@ -227,24 +242,32 @@ export function Masonry({
   const gridProps = useMemo<MasonryGridProps>(
     () => ({
       photos,
-      onOpen: setActiveIndex,
+      onOpen: viewer.open,
       onVisiblePhotosChange: handleVisiblePhotosChange,
     }),
-    [handleVisiblePhotosChange, photos, setActiveIndex],
+    [handleVisiblePhotosChange, photos, viewer.open],
   )
 
   return (
-    <>
-      <MasonryGrid {...gridProps} />
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion="user">
+        <div data-gallery-root inert={isViewerMounted} tabIndex={-1}>
+          <MasonryGrid {...gridProps} />
+        </div>
 
-      {activeIndex !== null && (
-        <Viewer
-          photos={photos}
-          activeIndex={activeIndex}
-          onClose={() => setActiveIndex(null)}
-          onActiveIndexChange={setActiveIndex}
-        />
-      )}
-    </>
+        {isViewerMounted && (
+          <Viewer
+            photos={photos}
+            state={viewer.state}
+            getRestoreFocusElement={viewer.getRestoreFocusElement}
+            onActiveIndexChange={viewer.select}
+            onClose={viewer.close}
+            onEntryComplete={viewer.completeEntry}
+            onExitComplete={viewer.completeExit}
+            onZoomStateChange={viewer.setZoomed}
+          />
+        )}
+      </MotionConfig>
+    </LazyMotion>
   )
 }

@@ -19,15 +19,62 @@ import { ZoomableImage } from './zoomable-image'
 interface ProgressivePhotoProps {
   photo: Photo
   isActive: boolean
+  loadDelayMs?: number
   onZoomStateChange?: (isZoomed: boolean) => void
+  shouldMountInteractiveImage?: boolean
 }
 
 const SCALE_INDICATOR_DURATION = 1000
 
+interface HighResolutionPhotoProps {
+  photo: Photo
+  src: string
+  loadingIndicatorRef: React.RefObject<LoadingIndicatorHandle | null>
+  onError: (error: Error) => void
+  onZoomChange: (scale: number) => void
+  onZoomStateChange?: (isZoomed: boolean) => void
+}
+
+function HighResolutionPhoto({
+  photo,
+  src,
+  loadingIndicatorRef,
+  onError,
+  onZoomChange,
+  onZoomStateChange,
+}: HighResolutionPhotoProps) {
+  const [isVisible, setIsVisible] = useState(false)
+
+  return (
+    <div
+      className={cn(
+        'absolute inset-0 opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none',
+        isVisible && 'opacity-100',
+      )}
+    >
+      <ZoomableImage
+        src={src}
+        alt={photo.title}
+        width={photo.original.width}
+        height={photo.original.height}
+        onLoad={() => {
+          loadingIndicatorRef.current?.resetLoadingState()
+          setIsVisible(true)
+        }}
+        onZoomChange={onZoomChange}
+        onZoomStateChange={onZoomStateChange}
+        onError={onError}
+      />
+    </div>
+  )
+}
+
 export const ProgressivePhoto = memo(function ProgressivePhoto({
   photo,
   isActive,
+  loadDelayMs = 0,
   onZoomStateChange,
+  shouldMountInteractiveImage = true,
 }: ProgressivePhotoProps) {
   const [failedResourceKey, setFailedResourceKey] = useState<string | null>(
     null,
@@ -38,19 +85,12 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
   const loadingIndicatorRef = useRef<LoadingIndicatorHandle | null>(null)
   const state = useProgressivePhoto(photo, {
     isActive,
+    loadDelayMs,
     loadingIndicatorRef,
   })
 
   const resourceKey = `${photo.id}:${state.blobSrc ?? ''}`
   const hasRenderFailed = failedResourceKey === resourceKey
-
-  const handleImageLoad = () => {
-    if (!isActive) {
-      return
-    }
-
-    loadingIndicatorRef.current?.resetLoadingState()
-  }
 
   const handleImageError = useCallback(
     (error: Error) => {
@@ -103,18 +143,21 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
         loading="eager"
       />
 
-      {state.blobSrc && isActive && !state.error && !hasRenderFailed && (
-        <ZoomableImage
-          src={state.blobSrc}
-          alt={photo.title}
-          width={photo.original.width}
-          height={photo.original.height}
-          onLoad={handleImageLoad}
-          onZoomChange={handleZoomChange}
-          onZoomStateChange={onZoomStateChange}
-          onError={handleImageError}
-        />
-      )}
+      {state.blobSrc &&
+        isActive &&
+        shouldMountInteractiveImage &&
+        !state.error &&
+        !hasRenderFailed && (
+          <HighResolutionPhoto
+            key={resourceKey}
+            photo={photo}
+            src={state.blobSrc}
+            loadingIndicatorRef={loadingIndicatorRef}
+            onError={handleImageError}
+            onZoomChange={handleZoomChange}
+            onZoomStateChange={onZoomStateChange}
+          />
+        )}
 
       <LoadingIndicator ref={loadingIndicatorRef} />
 

@@ -14,6 +14,7 @@ interface ProgressiveState {
 
 interface UseProgressivePhotoOptions {
   isActive: boolean
+  loadDelayMs?: number
   loadingIndicatorRef: RefObject<LoadingIndicatorHandle | null>
 }
 
@@ -96,7 +97,11 @@ async function readResponseAsBlob(
 
 export function useProgressivePhoto(
   photo: Photo,
-  { isActive, loadingIndicatorRef }: UseProgressivePhotoOptions,
+  {
+    isActive,
+    loadDelayMs = 0,
+    loadingIndicatorRef,
+  }: UseProgressivePhotoOptions,
 ) {
   const [state, setState] = useState<ProgressiveState>(() => {
     const cachedPhotoUrl = peekCachedPhotoUrl(photo.original.url)
@@ -120,7 +125,10 @@ export function useProgressivePhoto(
     }
 
     if (state.blobSrc) {
-      getCachedPhotoUrl(photo.original.url)
+      const cachedPhotoUrl = getCachedPhotoUrl(photo.original.url)
+      if (cachedPhotoUrl !== state.blobSrc) {
+        setState(createInitialState())
+      }
       return
     }
 
@@ -131,6 +139,7 @@ export function useProgressivePhoto(
     }
 
     const controller = new AbortController()
+    let loadTimer: number | null = null
     const loadingIndicator = loadingIndicatorRef.current
 
     loadingIndicator?.updateLoadingState({
@@ -196,13 +205,20 @@ export function useProgressivePhoto(
       }
     }
 
-    void loadImage()
+    loadTimer = window.setTimeout(() => {
+      loadTimer = null
+      void loadImage()
+    }, loadDelayMs)
 
     return () => {
+      if (loadTimer !== null) {
+        window.clearTimeout(loadTimer)
+      }
       controller.abort()
     }
   }, [
     isActive,
+    loadDelayMs,
     loadingIndicatorRef,
     photo.original.bytes,
     photo.original.mime,

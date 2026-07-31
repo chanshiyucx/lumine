@@ -15,7 +15,7 @@ const MASONRY_SCROLL_FPS = 12
 
 export interface MasonryGridProps {
   photos: Photo[]
-  onOpen: (index: number) => void
+  onOpen: (index: number, triggerElement: HTMLElement) => void
   onVisiblePhotosChange?: (photos: Photo[]) => void
 }
 

@@ -34,6 +34,12 @@ html {
   @apply overscroll-none;
 }
 
+@media (min-width: 48rem) {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
 body {
   @apply bg-base text-text min-h-screen font-sans font-medium tabular-nums antialiased;
 }
@@ -76,7 +82,6 @@ body {
 @theme inline {
   --animate-svg-text: svg-text 10s var(--delay, 0s) infinite ease-in-out
     backwards;
-  --animate-viewer-enter: viewer-enter 0.3s ease-out forwards;
   --animate-thumbhash-crossfade-enter: thumbhash-crossfade-enter 0.3s ease-out
     both;
   --animate-preview-enter: preview-enter 0.2s ease-out forwards;
@@ -103,16 +108,6 @@ body {
     100% {
       stroke-dashoffset: var(--path-length);
       fill-opacity: 0;
-    }
-  }
-
-  @keyframes viewer-enter {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
     }
   }
 
