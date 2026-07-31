@@ -1,8 +1,7 @@
 'use client'
 
 import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
-import dynamic from 'next/dynamic'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { publishGalleryHeaderDetail } from '@/components/header/gallery-header-events'
 import { useViewerController, Viewer } from '@/components/viewer'
 import type { Photo } from '@/lib/photo'
@@ -10,14 +9,7 @@ import {
   getGalleryHeaderState,
   type GalleryHeaderState,
 } from './lib/gallery-header-state'
-import type { MasonryGridProps } from './masonry-grid'
-
-const MasonryGrid = dynamic<MasonryGridProps>(
-  () => import('./masonry-grid').then((mod) => mod.MasonryGrid),
-  {
-    ssr: false,
-  },
-)
+import { PhotoMasonry } from './photo-masonry'
 
 interface PhotoGalleryProps {
   photos: Photo[]
@@ -97,20 +89,15 @@ export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
     })
   }, [])
 
-  const gridProps = useMemo<MasonryGridProps>(
-    () => ({
-      photos,
-      onOpen: viewer.open,
-      onVisiblePhotosChange: handleVisiblePhotosChange,
-    }),
-    [handleVisiblePhotosChange, photos, viewer.open],
-  )
-
   return (
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
         <div data-gallery-root inert={isViewerMounted} tabIndex={-1}>
-          <MasonryGrid {...gridProps} />
+          <PhotoMasonry
+            photos={photos}
+            onPhotoOpen={viewer.open}
+            onVisiblePhotosChange={handleVisiblePhotosChange}
+          />
         </div>
 
         {isViewerMounted && (

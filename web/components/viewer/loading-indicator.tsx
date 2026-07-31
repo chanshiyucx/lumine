@@ -1,6 +1,6 @@
 import { AlertCircle, LoaderCircle } from 'lucide-react'
 import { forwardRef, useImperativeHandle, useState } from 'react'
-import { formatBytes } from '@/lib/photo/formatters'
+import { formatLoadingBytes } from './lib/loading-indicator'
 
 interface ViewerLoadingState {
   isVisible: boolean
@@ -58,9 +58,9 @@ export const LoadingIndicator = forwardRef<LoadingIndicatorHandle>(
     const bytesLabel =
       totalBytes <= 0
         ? loadedBytes > 0
-          ? formatBytes(loadedBytes)
+          ? formatLoadingBytes(loadedBytes)
           : ''
-        : `${formatBytes(loadedBytes)} / ${formatBytes(totalBytes)}`
+        : `${formatLoadingBytes(loadedBytes)} / ${formatLoadingBytes(totalBytes)}`
 
     if (!loadingState.isVisible) {
       return null
@@ -74,12 +74,12 @@ export const LoadingIndicator = forwardRef<LoadingIndicatorHandle>(
           <LoaderCircle className="size-4 animate-spin" />
         )}
 
-        <div className="min-w-24 text-xs">
-          <p>
-            {loadingState.isError
-              ? (loadingState.errorMessage ?? 'Failed to load image')
-              : `Loading ${Math.round(loadingState.loadingProgress ?? 0)}%`}
-          </p>
+        <div className="w-28 text-xs tabular-nums">
+          {loadingState.isError ? (
+            <p>{loadingState.errorMessage ?? 'Failed to load image'}</p>
+          ) : (
+            <p>Loading {Math.round(loadingState.loadingProgress ?? 0)}%</p>
+          )}
           {!loadingState.isError && bytesLabel && <p>{bytesLabel}</p>}
         </div>
       </div>

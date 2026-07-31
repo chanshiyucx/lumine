@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
-import { m, useReducedMotion } from 'motion/react'
+import { m, useIsPresent, useReducedMotion } from 'motion/react'
 import {
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -8,24 +9,26 @@ import {
   type RefObject,
 } from 'react'
 import type { Photo } from '@/lib/photo'
+import { VIEWER_MOTION } from '../lib/viewer-motion'
+import type { ViewerPhase } from '../lib/viewer-state'
 import {
   fitMediaFrame,
   getFrameTransform,
   type ProjectedViewerFrame,
   type ViewerFrame,
-} from './lib/viewer-frame'
-import { VIEWER_MOTION } from './lib/viewer-motion'
-import type { ViewerPhase } from './lib/viewer-state'
+} from './viewer-frame'
 
 interface TransitionFrames {
   source: ViewerFrame
   target: ViewerFrame | ProjectedViewerFrame
 }
 
-interface ViewerTransitionMediaProps {
+interface SharedPhotoTransitionPreviewProps {
   mediaStageRef: RefObject<HTMLElement | null>
   onEntryComplete: (operationId: number) => void
+  onEntryHandoff: (operationId: number) => void
   onExitComplete: (operationId: number) => void
+  onPresenceExitComplete: (operationId: number) => void
   operationId: number
   phase: Extract<ViewerPhase, 'entering' | 'exiting'>
   photo: Photo
@@ -54,25 +57,31 @@ function setElementVisibility(element: HTMLElement, visibility: string) {
   element.style.visibility = visibility
 }
 
-export function ViewerTransitionMedia({
+export function SharedPhotoTransitionPreview({
   mediaStageRef,
   onEntryComplete,
+  onEntryHandoff,
   onExitComplete,
+  onPresenceExitComplete,
   operationId,
   phase,
   photo,
   sourceElement,
   viewerFrameOverride,
-}: ViewerTransitionMediaProps) {
+}: SharedPhotoTransitionPreviewProps) {
   const reduceMotion = useReducedMotion()
+  const isPresent = useIsPresent()
   const [frames, setFrames] = useState<TransitionFrames | null>(null)
   const completedOperationRef = useRef<number | null>(null)
+  const completedPresenceExitRef = useRef(false)
 
   useLayoutEffect(() => {
     const stage = mediaStageRef.current
     if (!stage || !sourceElement.isConnected) {
       if (phase === 'entering') {
+        onEntryHandoff(operationId)
         onEntryComplete(operationId)
+        onPresenceExitComplete(operationId)
       } else {
         onExitComplete(operationId)
       }
@@ -98,7 +107,9 @@ export function ViewerTransitionMedia({
       target.height <= 0
     ) {
       if (phase === 'entering') {
+        onEntryHandoff(operationId)
         onEntryComplete(operationId)
+        onPresenceExitComplete(operationId)
       } else {
         onExitComplete(operationId)
       }
@@ -123,7 +134,9 @@ export function ViewerTransitionMedia({
   }, [
     mediaStageRef,
     onEntryComplete,
+    onEntryHandoff,
     onExitComplete,
+    onPresenceExitComplete,
     operationId,
     phase,
     photo.original.height,
@@ -131,6 +144,24 @@ export function ViewerTransitionMedia({
     sourceElement,
     viewerFrameOverride,
   ])
+
+  useEffect(() => {
+    if (phase !== 'entering' || frames === null) {
+      return
+    }
+
+    if (reduceMotion) {
+      onEntryHandoff(operationId)
+      return
+    }
+
+    const timer = window.setTimeout(
+      () => onEntryHandoff(operationId),
+      VIEWER_MOTION.sharedEntryHandoffDelay * 1000,
+    )
+
+    return () => window.clearTimeout(timer)
+  }, [frames, onEntryHandoff, operationId, phase, reduceMotion])
 
   const transform = useMemo(
     () => (frames ? getFrameTransform(frames.source, frames.target) : null),
@@ -170,7 +201,8 @@ export function ViewerTransitionMedia({
 
   return (
     <m.div
-      className="pointer-events-none fixed z-300 overflow-hidden bg-black"
+      data-viewer-transition={phase}
+      className="pointer-events-none fixed z-40 overflow-hidden bg-black"
       style={{
         height: frames.target.height,
         left: frames.target.left,
@@ -193,6 +225,10 @@ export function ViewerTransitionMedia({
             ? targetPresentation
             : sourcePresentation
       }
+      exit={{
+        opacity: 0,
+        transition: VIEWER_MOTION.contentFade,
+      }}
       transition={
         reduceMotion
           ? VIEWER_MOTION.contentFade
@@ -201,6 +237,14 @@ export function ViewerTransitionMedia({
             : VIEWER_MOTION.sharedExit
       }
       onAnimationComplete={() => {
+        if (!isPresent) {
+          if (!completedPresenceExitRef.current) {
+            completedPresenceExitRef.current = true
+            onPresenceExitComplete(operationId)
+          }
+          return
+        }
+
         if (completedOperationRef.current === operationId) {
           return
         }

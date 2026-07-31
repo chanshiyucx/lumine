@@ -10,6 +10,7 @@ import {
   getExposureRows,
   getPhotoInfoRows,
 } from './lib/viewer-metadata'
+import { VIEWER_MOTION } from './lib/viewer-motion'
 import { ThumbHashCrossfade } from './thumbhash-crossfade'
 
 const VIEWER_ACCENT = 'var(--viewer-accent, var(--color-iris))'
@@ -56,6 +57,8 @@ function InfoSection({ title, children }: InfoSectionProps) {
 interface ViewerInfoPanelProps {
   photo: Photo
   isOpen: boolean
+  isViewerInteractive: boolean
+  isViewerVisible: boolean
   mobileStyle?: MotionStyle
   onClose: () => void
 }
@@ -101,54 +104,91 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
 export function ViewerInfoPanel({
   photo,
   isOpen,
+  isViewerInteractive,
+  isViewerVisible,
   mobileStyle,
   onClose,
 }: ViewerInfoPanelProps) {
   const isMobileMotionControlled = mobileStyle !== undefined
+  const isInteractive = isOpen && isViewerVisible && isViewerInteractive
 
   return (
-    <m.aside
-      aria-hidden={!isOpen}
-      inert={!isOpen}
+    <aside
+      data-viewer-info-panel
+      aria-hidden={!isInteractive}
+      inert={!isInteractive}
       className={cn(
-        'bg-surface fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
+        'fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] transition-[width] duration-200 ease-out motion-reduce:transition-none lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
         isOpen ? 'lg:w-80' : 'pointer-events-none lg:w-0',
-        !isMobileMotionControlled &&
-          (isOpen
-            ? 'translate-y-0 opacity-100'
-            : 'translate-y-full opacity-0 lg:translate-y-0'),
       )}
-      style={{ ...PANEL_STYLE, ...mobileStyle }}
+      style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
     >
-      <ThumbHashCrossfade
-        photoId={photo.id}
-        thumbHash={photo.thumbHash}
-        imageClassName="object-cover"
-      />
+      <m.div
+        data-viewer-chrome="info-panel"
+        className="h-full"
+        initial={
+          isMobileMotionControlled
+            ? { opacity: 0, y: 24 }
+            : { opacity: 0, x: 32 }
+        }
+        animate={
+          isMobileMotionControlled
+            ? {
+                opacity: isViewerVisible ? 1 : 0,
+                y: isViewerVisible ? 0 : 24,
+              }
+            : {
+                opacity: isViewerVisible ? 1 : 0,
+                x: isViewerVisible ? 0 : 32,
+              }
+        }
+        transition={
+          isViewerVisible
+            ? VIEWER_MOTION.chrome.panel.enter
+            : VIEWER_MOTION.chrome.panel.exit
+        }
+      >
+        <m.div
+          className={cn(
+            'bg-surface relative flex max-h-[40svh] flex-col overflow-hidden backdrop-blur-2xl lg:h-full lg:max-h-none lg:w-80',
+            !isMobileMotionControlled &&
+              (isOpen
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-full opacity-0 lg:translate-y-0'),
+          )}
+          style={{ ...PANEL_STYLE, ...mobileStyle }}
+        >
+          <ThumbHashCrossfade
+            photoId={photo.id}
+            thumbHash={photo.thumbHash}
+            imageClassName="object-cover"
+          />
 
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={PANEL_OVERLAY_STYLE}
-      />
+          <div
+            className="pointer-events-none absolute inset-0"
+            aria-hidden
+            style={PANEL_OVERLAY_STYLE}
+          />
 
-      <div className="relative flex max-h-[40svh] flex-col lg:h-full lg:max-h-none lg:w-80">
-        <div className="flex justify-end px-3 pt-3 lg:hidden">
-          <button
-            type="button"
-            className="inline-flex size-8 cursor-pointer items-center justify-center"
-            onClick={onClose}
-            aria-label="Close information panel"
-          >
-            <X className="size-5" strokeWidth={1.8} />
-          </button>
-        </div>
-        <div className="from-surface/80 pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t to-transparent lg:hidden" />
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div className="flex justify-end px-3 pt-3 lg:hidden">
+              <button
+                type="button"
+                className="inline-flex size-8 cursor-default items-center justify-center"
+                onClick={onClose}
+                aria-label="Close information panel"
+              >
+                <X className="size-5" strokeWidth={1.8} />
+              </button>
+            </div>
+            <div className="from-surface/80 pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t to-transparent lg:hidden" />
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <ViewerInfoPanelContent photo={photo} />
-        </div>
-      </div>
-    </m.aside>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <ViewerInfoPanelContent photo={photo} />
+            </div>
+          </div>
+        </m.div>
+      </m.div>
+    </aside>
   )
 }

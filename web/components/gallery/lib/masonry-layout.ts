@@ -1,53 +1,64 @@
-import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 
 export const MASONRY_GAP = 4
-const MOBILE_COLUMN_WIDTH = 150
-const DESKTOP_COLUMN_WIDTH = 250
+const DESKTOP_BREAKPOINT = 1024
+const MOBILE_MIN_COLUMN_WIDTH = 150
+const DESKTOP_MIN_COLUMN_WIDTH = 250
 const DESKTOP_MAX_COLUMNS = 8
-const FALLBACK_ESTIMATED_ASPECT_RATIO = 1.5
 
-export interface MasonryConfig {
-  columnGutter: number
-  rowGutter: number
+export interface MasonryLayout {
+  columnCount: number
   columnWidth: number
-  maxColumns?: number
 }
 
-const MOBILE_MASONRY_CONFIG: MasonryConfig = {
-  columnGutter: MASONRY_GAP,
-  rowGutter: MASONRY_GAP,
-  columnWidth: MOBILE_COLUMN_WIDTH,
+interface MasonryPosition {
+  index: number
+  start: number
+  end: number
 }
 
-const DESKTOP_MASONRY_CONFIG: MasonryConfig = {
-  columnGutter: MASONRY_GAP,
-  rowGutter: MASONRY_GAP,
-  columnWidth: DESKTOP_COLUMN_WIDTH,
-  maxColumns: DESKTOP_MAX_COLUMNS,
-}
+export function getMasonryLayout(containerWidth: number): MasonryLayout {
+  const minColumnWidth =
+    containerWidth < DESKTOP_BREAKPOINT
+      ? MOBILE_MIN_COLUMN_WIDTH
+      : DESKTOP_MIN_COLUMN_WIDTH
+  const maxColumns =
+    containerWidth < DESKTOP_BREAKPOINT
+      ? Number.POSITIVE_INFINITY
+      : DESKTOP_MAX_COLUMNS
+  const columnCount = Math.max(
+    1,
+    Math.min(
+      Math.floor(
+        (containerWidth + MASONRY_GAP) / (minColumnWidth + MASONRY_GAP),
+      ),
+      maxColumns,
+    ),
+  )
 
-export function useMasonryConfig(): MasonryConfig {
-  const isMobile = useMobile()
-
-  return isMobile ? MOBILE_MASONRY_CONFIG : DESKTOP_MASONRY_CONFIG
-}
-
-export function getMasonryItemHeightEstimate(
-  photos: Photo[],
-  columnWidth: number,
-) {
-  if (photos.length === 0 || columnWidth <= 0) {
-    return Math.round(columnWidth / FALLBACK_ESTIMATED_ASPECT_RATIO) || 240
+  return {
+    columnCount,
+    columnWidth:
+      (containerWidth - MASONRY_GAP * (columnCount - 1)) / columnCount,
   }
+}
 
-  const sortedAspectRatios = photos
-    .slice(0, 48)
-    .map((photo) => photo.aspectRatio)
-    .sort((left, right) => left - right)
-  const middleIndex = Math.floor(sortedAspectRatios.length / 2)
-  const medianAspectRatio =
-    sortedAspectRatios[middleIndex] ?? FALLBACK_ESTIMATED_ASPECT_RATIO
+export function getVisibleMasonryIndexes(
+  positions: readonly MasonryPosition[],
+  viewportStart: number,
+  viewportEnd: number,
+): number[] {
+  return positions
+    .filter(
+      (position) =>
+        position.end > viewportStart && position.start < viewportEnd,
+    )
+    .map((position) => position.index)
+}
 
-  return Math.max(180, Math.round(columnWidth / medianAspectRatio))
+export function getPhotoMasonryHeight(
+  photo: Pick<Photo, 'aspectRatio'>,
+  columnWidth: number,
+): number {
+  return columnWidth / photo.aspectRatio
 }

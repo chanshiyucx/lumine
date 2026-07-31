@@ -1,4 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useReducedMotion } from 'motion/react'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { ThumbnailImage } from '@/components/photo'
 import { useMobile } from '@/hooks/use-mobile'
@@ -67,6 +68,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
   const railShellRef = useRef<HTMLDivElement>(null)
   const railViewportRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
+  const reduceMotion = useReducedMotion()
   const thumbnailHeight = isMobile
     ? MOBILE_FALLBACK_THUMBNAIL_HEIGHT
     : DESKTOP_FALLBACK_THUMBNAIL_HEIGHT
@@ -106,7 +108,10 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     const frame = window.requestAnimationFrame(() => {
       virtualizer.scrollToIndex(activeIndex, {
         align: 'center',
-        behavior: hasCenteredInitialItemRef.current ? 'smooth' : 'auto',
+        behavior:
+          hasCenteredInitialItemRef.current && !reduceMotion
+            ? 'smooth'
+            : 'auto',
       })
 
       hasCenteredInitialItemRef.current = true
@@ -115,7 +120,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     return () => {
       window.cancelAnimationFrame(frame)
     }
-  }, [activeIndex, photos.length, virtualizer])
+  }, [activeIndex, photos.length, reduceMotion, virtualizer])
 
   const updateHoverPreview = useCallback(
     (index: number, button: HTMLButtonElement) => {
@@ -224,7 +229,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 key={photo.id}
                 type="button"
                 className={cn(
-                  'button-reset transition-filter focus-visible:ring-iris absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
+                  'button-reset transition-filter focus-visible:ring-iris absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none',
                   !isActive && !isHover && 'grayscale',
                 )}
                 style={{

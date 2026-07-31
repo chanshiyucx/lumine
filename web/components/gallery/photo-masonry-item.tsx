@@ -9,13 +9,17 @@ import {
 } from '@/lib/photo/formatters'
 import { getAvailableCaptureSettings } from '@/lib/photo/metadata'
 
-interface MasonryItemProps {
+interface PhotoMasonryItemProps {
   photo: Photo
   index: number
   onOpen: (index: number, triggerElement: HTMLElement) => void
 }
 
-export function MasonryItem({ photo, index, onOpen }: MasonryItemProps) {
+export function PhotoMasonryItem({
+  photo,
+  index,
+  onOpen,
+}: PhotoMasonryItemProps) {
   const mimeLabel = formatMimeLabel(photo)
   const albumChip = formatAlbumChip(photo.albumKey)
   const captureSettings = getAvailableCaptureSettings(photo)
@@ -26,8 +30,7 @@ export function MasonryItem({ photo, index, onOpen }: MasonryItemProps) {
       style={{
         aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
       }}
-      className="button-reset group bg-surface relative block w-full cursor-pointer overflow-hidden text-left"
-      data-photo-index={index}
+      className="button-reset group bg-surface relative block w-full overflow-hidden text-left"
       data-viewer-trigger={photo.id}
       onClick={(event) => onOpen(index, event.currentTarget)}
       aria-label={`Open ${photo.title}`}

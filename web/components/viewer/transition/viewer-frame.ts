@@ -1,4 +1,4 @@
-export interface RectLike {
+interface RectLike {
   height: number
   left: number
   top: number
