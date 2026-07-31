@@ -70,7 +70,7 @@ export function PhotoCarousel({
   return (
     <Swiper
       modules={[A11y, Virtual]}
-      className="absolute inset-0 h-full w-full"
+      className="size-full"
       initialSlide={activeIndex}
       slidesPerView={1}
       speed={300}
@@ -102,14 +102,12 @@ export function PhotoCarousel({
           <SwiperSlide
             key={photo.id}
             virtualIndex={index}
-            className="relative h-full w-full"
             aria-label={`${index + 1} / ${photos.length}: ${photo.title}`}
           >
             <ProgressivePhoto
               key={photo.original.url}
               photo={photo}
               isActive={isActive}
-              className="absolute inset-0"
               onZoomStateChange={isActive ? handleZoomStateChange : undefined}
             />
           </SwiperSlide>

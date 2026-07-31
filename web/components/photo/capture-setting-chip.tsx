@@ -7,7 +7,7 @@ import {
 import type { CaptureSetting } from '@/lib/photo/metadata'
 import { cn } from '@/lib/style'
 
-const captureSettingIcons: Record<
+const CAPTURE_SETTING_ICONS: Record<
   CaptureSetting['key'],
   React.ComponentType<React.SVGProps<SVGSVGElement>>
 > = {
@@ -26,7 +26,7 @@ export function CaptureSettingChip({
   setting,
   className,
 }: CaptureSettingChipProps) {
-  const Icon = captureSettingIcons[setting.key]
+  const Icon = CAPTURE_SETTING_ICONS[setting.key]
 
   return (
     <div

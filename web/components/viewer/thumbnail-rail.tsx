@@ -187,12 +187,12 @@ export const ThumbnailRail = memo(function ThumbnailRail({
         <div
           className="bg-base motion-safe:animate-preview-enter pointer-events-none absolute bottom-full z-100 hidden origin-bottom overflow-hidden lg:block"
           style={{
-            left: `${hoverPreview.left}px`,
-            width: `${hoverPreview.width}px`,
-            height: `${hoverPreview.height}px`,
+            left: hoverPreview.left,
+            width: hoverPreview.width,
+            height: hoverPreview.height,
           }}
         >
-          <div className="relative size-full overflow-hidden">
+          <div className="relative size-full">
             <ThumbnailImage photo={hoverPreviewPhoto} loading="eager" />
           </div>
         </div>
@@ -207,8 +207,8 @@ export const ThumbnailRail = memo(function ThumbnailRail({
         <div
           className="relative"
           style={{
-            height: `${thumbnailHeight}px`,
-            width: `${virtualizer.getTotalSize()}px`,
+            height: thumbnailHeight,
+            width: virtualizer.getTotalSize(),
           }}
         >
           {virtualizer.getVirtualItems().map((virtualItem) => {
@@ -224,12 +224,12 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 key={photo.id}
                 type="button"
                 className={cn(
-                  'button-reset group transition-filter absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out outline-none',
-                  !(isActive || isHover) && 'grayscale',
+                  'button-reset transition-filter focus-visible:ring-iris absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
+                  !isActive && !isHover && 'grayscale',
                 )}
                 style={{
-                  width: `${virtualItem.size}px`,
-                  height: `${thumbnailHeight}px`,
+                  width: virtualItem.size,
+                  height: thumbnailHeight,
                   transform: `translateX(${virtualItem.start}px)`,
                 }}
                 onClick={() => onSelect(index)}
@@ -242,7 +242,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                   photo={photo}
                   loading="lazy"
                   placeholderClassName="object-contain opacity-60"
-                  imageClassName="absolute inset-0 h-full w-full object-contain"
+                  imageClassName="absolute inset-0 size-full object-contain"
                 />
               </button>
             )

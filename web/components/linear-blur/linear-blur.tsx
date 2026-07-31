@@ -1,6 +1,7 @@
-import * as React from 'react'
+import type { HTMLAttributes } from 'react'
+import { cn } from '@/lib/style'
 
-interface LinearBlurProps extends React.HTMLAttributes<HTMLDivElement> {
+interface LinearBlurProps extends HTMLAttributes<HTMLDivElement> {
   strength?: number
   steps?: number
   falloffPercentage?: number
@@ -15,6 +16,13 @@ const oppositeSide = {
   bottom: 'top',
 }
 
+const transformOriginClass = {
+  left: 'origin-left',
+  right: 'origin-right',
+  top: 'origin-top',
+  bottom: 'origin-bottom',
+}
+
 export function LinearBlur({
   strength = 64,
   steps = 8,
@@ -23,31 +31,29 @@ export function LinearBlur({
   side = 'top',
   ...props
 }: LinearBlurProps) {
-  const actualSteps = Math.max(1, steps)
-  const step = falloffPercentage / actualSteps
+  const step = falloffPercentage / steps
 
   const factor = 0.5
 
-  const base = Math.pow(strength / factor, 1 / (actualSteps - 1))
+  const base = Math.pow(strength / factor, 1 / (steps - 1))
 
   const mainPercentage = 100 - falloffPercentage
 
   const getBackdropFilter = (i: number) =>
-    `blur(${factor * base ** (actualSteps - i - 1)}px)`
+    `blur(${factor * base ** (steps - i - 1)}px)`
 
   return (
     <div
       {...props}
-      style={{
-        // This has to be set on the top level element to prevent pointer events
-        pointerEvents: 'none',
-        transformOrigin: side,
-        ...props.style,
-      }}
+      className={cn(
+        props.className,
+        'pointer-events-none',
+        transformOriginClass[side],
+      )}
     >
       <div className="absolute z-0 size-full">
         {/* Full blur at 100-falloffPercentage% */}
-        {actualSteps > 1 && (
+        {steps > 1 && (
           <div
             className="absolute inset-0 z-1"
             style={{
@@ -57,8 +63,8 @@ export function LinearBlur({
             }}
           />
         )}
-        {actualSteps > 2 &&
-          Array.from({ length: actualSteps - 2 }).map((_, i) => (
+        {steps > 2 &&
+          Array.from({ length: steps - 2 }).map((_, i) => (
             <div
               key={i}
               className="absolute inset-0"

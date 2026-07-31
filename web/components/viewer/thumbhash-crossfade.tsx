@@ -12,14 +12,12 @@ interface BackgroundLayer {
 interface ThumbHashCrossfadeProps {
   photoId: string
   thumbHash: string
-  className?: string
   imageClassName?: string
 }
 
 export function ThumbHashCrossfade({
   photoId,
   thumbHash,
-  className,
   imageClassName,
 }: ThumbHashCrossfadeProps) {
   const nextKeyRef = useRef(1)
@@ -56,7 +54,7 @@ export function ThumbHashCrossfade({
   }
 
   return (
-    <div className={cn('pointer-events-none overflow-hidden', className)}>
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {layers.map((layer) => (
         <ThumbHashImage
           key={layer.key}

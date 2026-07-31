@@ -1,6 +1,6 @@
 'use client'
 
-import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
+import { CaptureSettingChip } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
 import {
   formatAlbumChip,

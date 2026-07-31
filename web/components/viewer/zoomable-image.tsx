@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent,
   type TouchEvent,
 } from 'react'
@@ -24,6 +25,14 @@ const SCALE_EPSILON = 0.0001
 const TRANSFORM_ANIMATION = 'easeOutQuart'
 const WHEEL_STEP = 0.1
 const ZOOM_STATE_EPSILON = 0.01
+
+const TRANSFORM_WRAPPER_STYLE = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  touchAction: 'none',
+} satisfies CSSProperties
 
 interface ZoomableImageProps {
   src: string
@@ -469,7 +478,7 @@ export function ZoomableImage({
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 h-full w-full select-none [-webkit-touch-callout:none]"
+      className="absolute inset-0 select-none [-webkit-touch-callout:none]"
       onDoubleClick={handleMouseDoubleClick}
       onContextMenu={(event) => event.preventDefault()}
       onTouchStartCapture={handleTouchStart}
@@ -514,9 +523,7 @@ export function ZoomableImage({
         onTransform={(transform) => notifyZoomChange(transform)}
       >
         <TransformComponent
-          wrapperClass="!absolute !inset-0 !h-full !w-full"
-          contentClass="shrink-0"
-          wrapperStyle={{ touchAction: 'none' }}
+          wrapperStyle={TRANSFORM_WRAPPER_STYLE}
           contentStyle={{
             width: imageLayout?.contentWidth ?? '100%',
             height: imageLayout?.contentHeight ?? '100%',
@@ -526,7 +533,7 @@ export function ZoomableImage({
             ref={imageRef}
             src={src}
             alt={alt}
-            className="block h-full w-full object-contain"
+            className="block size-full object-contain"
             draggable={false}
             loading="eager"
             decoding="async"

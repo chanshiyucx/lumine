@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
-import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
+import { CaptureSettingChip } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
 import { getCaptureSettings } from '@/lib/photo/metadata'
 import { cn } from '@/lib/style'
@@ -12,21 +12,16 @@ import {
 import { ThumbHashCrossfade } from './thumbhash-crossfade'
 
 const VIEWER_ACCENT = 'var(--viewer-accent, var(--color-iris))'
-const PANEL_BACKGROUND_SCRIM = [
-  'linear-gradient(to bottom right, color-mix(in srgb, var(--color-base) 64%, transparent), color-mix(in srgb, var(--color-overlay) 58%, transparent) 52%, color-mix(in srgb, var(--color-base) 72%, transparent))',
-  'linear-gradient(to bottom, color-mix(in srgb, black 16%, transparent), transparent 44%, color-mix(in srgb, black 24%, transparent))',
-].join(', ')
-const PANEL_INNER_GLOW = `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_ACCENT} 7%, transparent), transparent, color-mix(in srgb, ${VIEWER_ACCENT} 8%, transparent))`
 const PANEL_STYLE = {
   backgroundColor: 'color-mix(in srgb, var(--color-surface) 88%, transparent)',
-  boxShadow:
-    '0 8px 32px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 13%, transparent), 0 4px 16px color-mix(in srgb, var(--viewer-accent, var(--color-iris)) 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)',
+  boxShadow: `0 8px 32px color-mix(in srgb, ${VIEWER_ACCENT} 13%, transparent), 0 4px 16px color-mix(in srgb, ${VIEWER_ACCENT} 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)`,
 } satisfies CSSProperties
-const PANEL_BACKGROUND_SCRIM_STYLE = {
-  backgroundImage: PANEL_BACKGROUND_SCRIM,
-} satisfies CSSProperties
-const PANEL_INNER_GLOW_STYLE = {
-  background: PANEL_INNER_GLOW,
+const PANEL_OVERLAY_STYLE = {
+  backgroundImage: [
+    `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_ACCENT} 7%, transparent), transparent, color-mix(in srgb, ${VIEWER_ACCENT} 8%, transparent))`,
+    'linear-gradient(to bottom right, color-mix(in srgb, var(--color-base) 64%, transparent), color-mix(in srgb, var(--color-overlay) 58%, transparent) 52%, color-mix(in srgb, var(--color-base) 72%, transparent))',
+    'linear-gradient(to bottom, color-mix(in srgb, black 16%, transparent), transparent 44%, color-mix(in srgb, black 24%, transparent))',
+  ].join(', '),
 } satisfies CSSProperties
 
 interface InfoRowProps {
@@ -38,7 +33,7 @@ function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div className="flex justify-between py-1 text-sm">
       <dt className="text-subtle pr-3">{label}</dt>
-      <dd className="text-text break-all">{value}</dd>
+      <dd className="break-all">{value}</dd>
     </div>
   )
 }
@@ -110,7 +105,7 @@ export function ViewerInfoPanel({
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        'bg-surface fixed inset-x-0 bottom-0 z-200 max-h-[40svh] overflow-hidden pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl transition-[width,transform,opacity,box-shadow] duration-200 ease-out lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:h-full lg:max-h-none lg:shrink-0 lg:pb-0',
+        'bg-surface fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl transition-[width,transform,opacity] duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
         isOpen
           ? 'translate-y-0 opacity-100 lg:w-80'
           : 'pointer-events-none translate-y-full opacity-0 lg:w-0 lg:translate-y-0',
@@ -120,34 +115,27 @@ export function ViewerInfoPanel({
       <ThumbHashCrossfade
         photoId={photo.id}
         thumbHash={photo.thumbHash}
-        className="absolute inset-0"
         imageClassName="object-cover"
       />
 
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={PANEL_BACKGROUND_SCRIM_STYLE}
-      />
-
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={PANEL_INNER_GLOW_STYLE}
+        style={PANEL_OVERLAY_STYLE}
       />
 
       <div className="relative flex max-h-[40svh] flex-col lg:h-full lg:max-h-none lg:w-80">
-        <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
+        <div className="flex justify-end px-3 pt-3 lg:hidden">
           <button
             type="button"
-            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center transition"
+            className="inline-flex size-8 cursor-pointer items-center justify-center"
             onClick={onClose}
             aria-label="Close information panel"
           >
             <X className="size-5" strokeWidth={1.8} />
           </button>
         </div>
-        <div className="from-surface/80 pointer-events-none absolute bottom-0 left-0 z-10 h-10 w-screen bg-linear-to-t to-transparent lg:hidden"></div>
+        <div className="from-surface/80 pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t to-transparent lg:hidden" />
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <ViewerInfoPanelContent photo={photo} />

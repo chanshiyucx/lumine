@@ -43,10 +43,14 @@ body {
 }
 
 @utility circle-button {
-  @apply bg-overlay/80 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full backdrop-blur-sm duration-200;
+  @apply bg-overlay/80 inline-flex size-8 cursor-pointer items-center justify-center rounded-full backdrop-blur-sm transition-[background-color,opacity] duration-200 ease-out;
 
   @variant hover {
     @apply bg-overlay/90;
+  }
+
+  @variant focus-visible {
+    @apply outline-iris outline-2 outline-offset-2;
   }
 
   @variant disabled {

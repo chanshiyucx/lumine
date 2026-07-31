@@ -67,28 +67,20 @@ export const LoadingIndicator = forwardRef<LoadingIndicatorHandle>(
     }
 
     return (
-      <div className="pointer-events-none absolute right-4 bottom-4 z-40">
-        <div className="bg-overlay/80 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
-          {loadingState.isError ? (
-            <AlertCircle className="text-text size-4" />
-          ) : (
-            <LoaderCircle className="text-text size-4 animate-spin" />
-          )}
+      <div className="bg-overlay/80 pointer-events-none absolute right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
+        {loadingState.isError ? (
+          <AlertCircle className="size-4" />
+        ) : (
+          <LoaderCircle className="size-4 animate-spin" />
+        )}
 
-          <div className="min-w-24 text-xs">
-            {loadingState.isError ? (
-              <p className="font-medium">
-                {loadingState.errorMessage ?? 'Failed to load image'}
-              </p>
-            ) : (
-              <>
-                <p className="font-medium tabular-nums">
-                  Loading {Math.round(loadingState.loadingProgress ?? 0)}%
-                </p>
-                {bytesLabel && <p className="tabular-nums">{bytesLabel}</p>}
-              </>
-            )}
-          </div>
+        <div className="min-w-24 text-xs">
+          <p>
+            {loadingState.isError
+              ? (loadingState.errorMessage ?? 'Failed to load image')
+              : `Loading ${Math.round(loadingState.loadingProgress ?? 0)}%`}
+          </p>
+          {!loadingState.isError && bytesLabel && <p>{bytesLabel}</p>}
         </div>
       </div>
     )

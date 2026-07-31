@@ -51,7 +51,7 @@ export function ThumbnailImage({
         width={photo.thumbnail.width}
         height={photo.thumbnail.height}
         className={cn(
-          'absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-200 ease-out data-[loaded=true]:opacity-100 motion-reduce:transition-none',
+          'absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-200 ease-out data-loaded:opacity-100 motion-reduce:transition-none',
           imageClassName,
         )}
         decoding="async"

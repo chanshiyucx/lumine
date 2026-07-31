@@ -19,7 +19,6 @@ import { ZoomableImage } from './zoomable-image'
 interface ProgressivePhotoProps {
   photo: Photo
   isActive: boolean
-  className?: string
   onZoomStateChange?: (isZoomed: boolean) => void
 }
 
@@ -28,7 +27,6 @@ const SCALE_INDICATOR_DURATION = 1000
 export const ProgressivePhoto = memo(function ProgressivePhoto({
   photo,
   isActive,
-  className,
   onZoomStateChange,
 }: ProgressivePhotoProps) {
   const [failedResourceKey, setFailedResourceKey] = useState<string | null>(
@@ -96,12 +94,12 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
   )
 
   return (
-    <div className={cn('relative h-full w-full overflow-hidden', className)}>
+    <div className="relative size-full overflow-hidden">
       <img
         src={photo.thumbnail.url}
         alt=""
         aria-hidden
-        className="absolute inset-0 h-full w-full object-contain"
+        className="absolute inset-0 size-full object-contain"
         loading="eager"
       />
 
@@ -122,7 +120,7 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
 
       <div
         className={cn(
-          'pointer-events-none absolute bottom-4 left-4 z-20 translate-y-2 rounded bg-black/50 px-3 py-1 text-lg text-white tabular-nums opacity-0 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none',
+          'pointer-events-none absolute bottom-4 left-4 z-20 translate-y-2 rounded bg-black/50 px-3 py-1 text-lg text-white opacity-0 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none',
           showScaleIndicator && 'translate-y-0 opacity-100',
         )}
       >

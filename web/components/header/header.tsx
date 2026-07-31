@@ -7,7 +7,7 @@ export function Header() {
   return (
     <header className="fixed top-0 right-0 left-0 z-100">
       <LinearBlur
-        className="pointer-events-none absolute inset-x-0 z-[-1] h-15"
+        className="absolute inset-x-0 -z-1 h-15"
         tint="var(--color-base)"
         strength={128}
         side="top"

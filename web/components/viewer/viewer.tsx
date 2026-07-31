@@ -17,6 +17,7 @@ import {
 } from 'react'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
+import { cn } from '@/lib/style'
 import { getThumbHashAsset } from '@/lib/thumbhash'
 import { useBodyScrollLock } from './hooks/use-body-scroll-lock'
 import { useDialogFocus } from './hooks/use-dialog-focus'
@@ -26,6 +27,9 @@ import { PhotoCarousel } from './photo-carousel'
 import { ThumbHashCrossfade } from './thumbhash-crossfade'
 import { ThumbnailRail } from './thumbnail-rail'
 import { ViewerInfoPanel } from './viewer-info-panel'
+
+const NAVIGATION_BUTTON_CLASS =
+  'circle-button absolute top-1/2 z-50 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 lg:inline-flex'
 
 interface ViewerProps {
   photos: Photo[]
@@ -115,14 +119,13 @@ export function Viewer({
       <ThumbHashCrossfade
         photoId={currentPhoto.id}
         thumbHash={currentPhoto.thumbHash}
-        className="bg-base fixed inset-0"
         imageClassName="scale-110"
       />
 
-      <div className="fixed inset-0 flex min-h-0 min-w-0 flex-col lg:flex-row">
-        <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
+      <div className="absolute inset-0 flex flex-col lg:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <section className="group relative min-h-0 min-w-0 flex-1 overflow-hidden">
-            <div className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] right-[calc(env(safe-area-inset-right)+0.5rem)] z-50 flex items-start justify-between gap-2">
+            <div className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] right-[calc(env(safe-area-inset-right)+0.5rem)] z-50 flex gap-2">
               <button
                 ref={infoButtonRef}
                 type="button"
@@ -165,7 +168,7 @@ export function Viewer({
             <button
               type="button"
               disabled={!canGoPrevious}
-              className="circle-button absolute top-1/2 left-4 z-50 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 lg:inline-flex"
+              className={cn(NAVIGATION_BUTTON_CLASS, 'left-4')}
               onClick={() => goToPhoto(activeIndex - 1)}
               aria-label="Previous photo"
             >
@@ -175,7 +178,7 @@ export function Viewer({
             <button
               type="button"
               disabled={!canGoNext}
-              className="circle-button absolute top-1/2 right-4 z-50 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 lg:inline-flex"
+              className={cn(NAVIGATION_BUTTON_CLASS, 'right-4')}
               onClick={() => goToPhoto(activeIndex + 1)}
               aria-label="Next photo"
             >
