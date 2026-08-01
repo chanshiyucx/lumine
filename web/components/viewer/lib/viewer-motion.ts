@@ -6,6 +6,7 @@ const VIEWER_EXIT_EASE = [0.4, 0, 0.2, 1] as const
 export const VIEWER_MOTION = {
   backdropEnter: { duration: 0.18, ease: 'easeOut' } satisfies Transition,
   backdropExit: { duration: 0.24, ease: 'easeOut' } satisfies Transition,
+  photoSwitch: { duration: 0.3, ease: 'linear' } satisfies Transition,
   chrome: {
     panel: {
       enter: {

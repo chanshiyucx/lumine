@@ -82,8 +82,6 @@ body {
 @theme inline {
   --animate-svg-text: svg-text 10s var(--delay, 0s) infinite ease-in-out
     backwards;
-  --animate-thumbhash-crossfade-enter: thumbhash-crossfade-enter 0.3s ease-out
-    both;
   --animate-preview-enter: preview-enter 0.2s ease-out forwards;
 
   @keyframes svg-text {
@@ -108,16 +106,6 @@ body {
     100% {
       stroke-dashoffset: var(--path-length);
       fill-opacity: 0;
-    }
-  }
-
-  @keyframes thumbhash-crossfade-enter {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
     }
   }
 

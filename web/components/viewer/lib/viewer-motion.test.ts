@@ -52,3 +52,8 @@ test('backdrop motion frames the shared transition without delaying chrome', () 
       VIEWER_MOTION.sharedExit.duration,
   )
 })
+
+test('photo backdrop crossfade stays aligned with carousel navigation', () => {
+  assert.equal(VIEWER_MOTION.photoSwitch.duration, 0.3)
+  assert.equal(VIEWER_MOTION.photoSwitch.ease, 'linear')
+})

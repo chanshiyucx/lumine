@@ -9,29 +9,20 @@ import {
   X,
 } from 'lucide-react'
 import { m } from 'motion/react'
-import {
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
-import { getThumbHashAsset } from '@/lib/thumbhash'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 import {
   useMobileViewerInteractions,
   type MobileDismissSnapshot,
 } from './hooks/use-mobile-viewer-interactions'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
-import { getPhotoAccentColor } from './lib/accent-color'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 import type { ViewerState } from './lib/viewer-state'
 import { PhotoCarousel } from './photo-carousel'
-import { ThumbHashCrossfade } from './thumbhash-crossfade'
 import { ThumbnailRail } from './thumbnail-rail'
 import {
   resolveSharedPhotoTransition,
@@ -48,6 +39,7 @@ import {
   hasViewerRevealStage,
   type ViewerRevealStage,
 } from './transition/viewer-reveal-state'
+import { ViewerBackdrop } from './viewer-backdrop'
 import { ViewerInfoPanel } from './viewer-info-panel'
 
 const NAVIGATION_BUTTON_CLASS =
@@ -109,14 +101,6 @@ export function Viewer({
     : isDesktopInfoPanelOpen
   const canGoPrevious = activeIndex > 0
   const canGoNext = activeIndex < photos.length - 1
-  const viewerAccent = useMemo(
-    () =>
-      getPhotoAccentColor(
-        getThumbHashAsset(currentPhoto.thumbHash).averageColor,
-      ),
-    [currentPhoto.thumbHash],
-  )
-
   const advanceReveal = useCallback(
     (operationId: number, stage: ViewerRevealStage) => {
       setRevealState((current) =>
@@ -241,7 +225,6 @@ export function Viewer({
           aria-modal="true"
           aria-label={`Preview ${currentPhoto.title}`}
           tabIndex={-1}
-          style={{ '--viewer-accent': viewerAccent } as CSSProperties}
           initial={state.entryMode === 'fade' ? { opacity: 0 } : false}
           animate={{
             opacity:
@@ -277,11 +260,7 @@ export function Viewer({
               animate={{ opacity: 1 }}
               transition={VIEWER_MOTION.backdropEnter}
             >
-              <ThumbHashCrossfade
-                photoId={currentPhoto.id}
-                thumbHash={currentPhoto.thumbHash}
-                imageClassName="scale-110"
-              />
+              <ViewerBackdrop photo={currentPhoto} />
             </m.div>
           </m.div>
 

@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { m, type MotionStyle } from 'motion/react'
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
 import { getCaptureSettings } from '@/lib/photo/metadata'
@@ -11,20 +11,6 @@ import {
   getPhotoInfoRows,
 } from './lib/viewer-metadata'
 import { VIEWER_MOTION } from './lib/viewer-motion'
-import { ThumbHashCrossfade } from './thumbhash-crossfade'
-
-const VIEWER_ACCENT = 'var(--viewer-accent, var(--color-iris))'
-const PANEL_STYLE = {
-  backgroundColor: 'color-mix(in srgb, var(--color-surface) 88%, transparent)',
-  boxShadow: `0 8px 32px color-mix(in srgb, ${VIEWER_ACCENT} 13%, transparent), 0 4px 16px color-mix(in srgb, ${VIEWER_ACCENT} 10%, transparent), 0 2px 8px color-mix(in srgb, black 10%, transparent)`,
-} satisfies CSSProperties
-const PANEL_OVERLAY_STYLE = {
-  backgroundImage: [
-    `linear-gradient(to bottom right, color-mix(in srgb, ${VIEWER_ACCENT} 7%, transparent), transparent, color-mix(in srgb, ${VIEWER_ACCENT} 8%, transparent))`,
-    'linear-gradient(to bottom right, color-mix(in srgb, var(--color-base) 64%, transparent), color-mix(in srgb, var(--color-overlay) 58%, transparent) 52%, color-mix(in srgb, var(--color-base) 72%, transparent))',
-    'linear-gradient(to bottom, color-mix(in srgb, black 16%, transparent), transparent 44%, color-mix(in srgb, black 24%, transparent))',
-  ].join(', '),
-} satisfies CSSProperties
 
 interface InfoRowProps {
   label: string
@@ -150,26 +136,17 @@ export function ViewerInfoPanel({
       >
         <m.div
           className={cn(
-            'bg-surface relative flex max-h-[40svh] flex-col overflow-hidden backdrop-blur-2xl lg:h-full lg:max-h-none lg:w-80',
+            'relative flex max-h-[40svh] flex-col overflow-hidden border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:max-h-none lg:w-80 lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
             !isMobileMotionControlled &&
               (isOpen
                 ? 'translate-y-0 opacity-100'
                 : 'translate-y-full opacity-0 lg:translate-y-0'),
           )}
-          style={{ ...PANEL_STYLE, ...mobileStyle }}
+          style={{
+            backgroundColor: 'rgb(40 40 40 / 0.56)',
+            ...mobileStyle,
+          }}
         >
-          <ThumbHashCrossfade
-            photoId={photo.id}
-            thumbHash={photo.thumbHash}
-            imageClassName="object-cover"
-          />
-
-          <div
-            className="pointer-events-none absolute inset-0"
-            aria-hidden
-            style={PANEL_OVERLAY_STYLE}
-          />
-
           <div className="relative flex min-h-0 flex-1 flex-col">
             <div className="flex justify-end px-3 pt-3 lg:hidden">
               <button
@@ -181,7 +158,7 @@ export function ViewerInfoPanel({
                 <X className="size-5" strokeWidth={1.8} />
               </button>
             </div>
-            <div className="from-surface/80 pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t to-transparent lg:hidden" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t from-black/35 to-transparent lg:hidden" />
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <ViewerInfoPanelContent photo={photo} />
