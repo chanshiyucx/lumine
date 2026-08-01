@@ -30,7 +30,7 @@ export function PhotoMasonryItem({
       style={{
         aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
       }}
-      className="button-reset group bg-surface relative block w-full overflow-hidden text-left"
+      className="photo-masonry-card button-reset group bg-surface relative block w-full overflow-hidden text-left"
       data-viewer-trigger={photo.id}
       onClick={(event) => onOpen(index, event.currentTarget)}
       aria-label={`Open ${photo.title}`}
@@ -44,7 +44,7 @@ export function PhotoMasonryItem({
 
       <div className="pointer-events-none">
         <div className="from-base/80 via-base/60 pointer-events-none absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="absolute inset-x-0 bottom-0 p-2">
+        <div className="absolute inset-x-0 bottom-0 max-h-full overflow-hidden p-2">
           <h3 className="truncate font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             {photo.title}
           </h3>
@@ -57,13 +57,13 @@ export function PhotoMasonryItem({
             <span>•</span>
             <span>{formatBytes(photo.original.bytes)}</span>
           </div>
-          <div>
+          <div className="photo-masonry-expanded-info">
             <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md duration-300 group-hover:opacity-100">
               {albumChip}
             </span>
           </div>
           {captureSettings.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="photo-masonry-expanded-info grid grid-cols-2 gap-2 text-xs">
               {captureSettings.map((setting) => (
                 <CaptureSettingChip
                   key={setting.key}

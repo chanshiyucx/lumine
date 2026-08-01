@@ -14,11 +14,16 @@ import { PhotoMasonry } from './photo-masonry'
 interface PhotoGalleryProps {
   photos: Photo[]
   initialPhotoSlug?: string
+  fixedHeaderDetail?: GalleryHeaderState
 }
 
 const HEADER_SCROLL_THRESHOLD = 500
 
-export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
+export function PhotoGallery({
+  photos,
+  initialPhotoSlug,
+  fixedHeaderDetail,
+}: PhotoGalleryProps) {
   const viewer = useViewerController({
     photos,
     initialPhotoSlug,
@@ -26,8 +31,13 @@ export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
   const isViewerMounted = viewer.state.activeIndex !== null
   const [showHeaderDetail, setShowHeaderDetail] = useState(false)
   const [headerState, setHeaderState] = useState<GalleryHeaderState>({})
+  const displayedHeaderState = fixedHeaderDetail ?? headerState
 
   useEffect(() => {
+    if (fixedHeaderDetail) {
+      return
+    }
+
     const handleScroll = () => {
       const nextShowHeaderDetail = window.scrollY > HEADER_SCROLL_THRESHOLD
 
@@ -46,7 +56,7 @@ export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [])
+  }, [fixedHeaderDetail])
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>('[data-site-header]')
@@ -63,10 +73,12 @@ export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
 
   useEffect(() => {
     publishGalleryHeaderDetail({
-      ...headerState,
-      showDateRange: showHeaderDetail && !!headerState.dateRange,
+      ...displayedHeaderState,
+      showDateRange:
+        !!displayedHeaderState.dateRange &&
+        (fixedHeaderDetail !== undefined || showHeaderDetail),
     })
-  }, [headerState, showHeaderDetail])
+  }, [displayedHeaderState, fixedHeaderDetail, showHeaderDetail])
 
   useEffect(() => {
     return () => {
@@ -75,6 +87,10 @@ export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
   }, [])
 
   const handleVisiblePhotosChange = useCallback((visiblePhotos: Photo[]) => {
+    if (fixedHeaderDetail) {
+      return
+    }
+
     const nextHeaderState = getGalleryHeaderState(visiblePhotos)
 
     setHeaderState((currentState) => {
@@ -87,12 +103,17 @@ export function PhotoGallery({ photos, initialPhotoSlug }: PhotoGalleryProps) {
 
       return nextHeaderState
     })
-  }, [])
+  }, [fixedHeaderDetail])
 
   return (
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
-        <div data-gallery-root inert={isViewerMounted} tabIndex={-1}>
+        <div
+          className="flow-root"
+          data-gallery-root
+          inert={isViewerMounted}
+          tabIndex={-1}
+        >
           <PhotoMasonry
             photos={photos}
             onPhotoOpen={viewer.open}

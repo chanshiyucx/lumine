@@ -6,18 +6,59 @@ import {
   getVisibleMasonryIndexes,
 } from './masonry-layout'
 
-test('fills the available width with responsive masonry columns', () => {
+test('uses monotonic responsive masonry columns', () => {
+  const expectedColumnCounts = [
+    [319, 1],
+    [320, 2],
+    [639, 2],
+    [640, 3],
+    [767, 3],
+    [768, 3],
+    [959, 3],
+    [960, 4],
+    [1023, 4],
+    [1024, 4],
+    [1199, 4],
+    [1200, 5],
+    [1439, 5],
+    [1440, 6],
+    [1728, 6],
+    [1799, 6],
+    [1800, 7],
+    [2047, 7],
+    [2048, 8],
+  ] as const
+
+  expectedColumnCounts.forEach(([width, columnCount]) => {
+    assert.equal(getMasonryLayout(width).columnCount, columnCount)
+  })
+
+  let previousColumnCount = 1
+
+  for (let width = 1; width <= 2560; width += 1) {
+    const { columnCount } = getMasonryLayout(width)
+
+    assert.ok(columnCount >= previousColumnCount)
+    previousColumnCount = columnCount
+  }
+})
+
+test('fills the available width with evenly sized columns', () => {
   assert.deepEqual(getMasonryLayout(390), {
     columnCount: 2,
     columnWidth: 193,
   })
   assert.deepEqual(getMasonryLayout(1023), {
-    columnCount: 6,
-    columnWidth: 1003 / 6,
+    columnCount: 4,
+    columnWidth: 252.75,
   })
   assert.deepEqual(getMasonryLayout(1024), {
     columnCount: 4,
     columnWidth: 253,
+  })
+  assert.deepEqual(getMasonryLayout(1728), {
+    columnCount: 6,
+    columnWidth: 854 / 3,
   })
 })
 

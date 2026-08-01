@@ -145,6 +145,8 @@ export function ViewerInfoPanel({
           )}
           style={{
             backgroundColor: 'rgb(40 40 40 / 0.56)',
+            opacity: 1,
+            y: 0,
             ...mobileStyle,
           }}
         >

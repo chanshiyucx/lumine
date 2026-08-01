@@ -19,7 +19,7 @@ export function HeaderCenter() {
     <div
       aria-hidden={!visible}
       className={[
-        'absolute left-1/2 hidden -translate-x-1/2 flex-col items-center transition-[opacity,filter,transform] duration-300 ease-out lg:flex',
+        'absolute left-1/2 flex -translate-x-1/2 flex-col items-center transition-[opacity,filter,transform] duration-300 ease-out',
         visible
           ? 'blur-0 translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-5 opacity-0 blur-sm',

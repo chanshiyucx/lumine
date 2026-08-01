@@ -35,8 +35,9 @@ export function HeaderNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              'text-subtle hover:bg-overlay/70 hover:text-text inline-flex size-8 items-center justify-center rounded-lg transition-colors',
-              isActive && 'bg-overlay/80 text-text',
+              'text-subtle hover:bg-text/10 hover:text-text inline-flex size-8 items-center justify-center rounded-lg transition-colors',
+              isActive &&
+                'bg-text/10 text-text hover:bg-text/10 backdrop-blur-md',
             )}
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
