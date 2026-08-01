@@ -43,6 +43,18 @@ export const VIEWER_MOTION = {
   },
   contentFade: { duration: 0.1, ease: 'easeOut' } satisfies Transition,
   fadeExit: { duration: 0.16, ease: 'easeOut' } satisfies Transition,
+  inspector: {
+    close: {
+      type: 'spring',
+      duration: 0.28,
+      bounce: 0,
+    } satisfies Transition,
+    open: {
+      type: 'spring',
+      duration: 0.32,
+      bounce: 0,
+    } satisfies Transition,
+  },
   sharedEntryHandoffDelay: 0.3,
   sharedEnter: {
     duration: 0.48,

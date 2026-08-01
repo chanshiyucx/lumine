@@ -19,8 +19,8 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use exif::{DateTime as ExifDateTime, Exif, In, Reader as ExifReader, Tag, Value};
 use fast_image_resize as fr;
 use image::{
-    ColorType, DynamicImage, GenericImageView, ImageBuffer, ImageFormat, ImageReader, Rgb, Rgba,
-    codecs::jpeg::JpegEncoder, imageops, metadata::Orientation,
+    ColorType, DynamicImage, GenericImageView, ImageBuffer, ImageDecoder, ImageFormat, ImageReader,
+    Rgb, Rgba, codecs::jpeg::JpegEncoder, metadata::Orientation,
 };
 use indicatif::{ProgressBar, ProgressStyle};
 use libheif_rs::{ColorSpace, HeifContext, LibHeif, RgbChroma};
@@ -40,10 +40,10 @@ const SUPPORTED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "heif", "h
 const FINDER_TAGS_XATTR: &str = "com.apple.metadata:_kMDItemUserTags";
 const AVIF_EXTENSION: &str = "avif";
 const AVIF_MIME: &str = "image/avif";
+const SIPS_PATH: &str = "/usr/bin/sips";
 const BT709: [f32; 3] = [0.2126, 0.7152, 0.0722];
 const MANIFEST_VERSION: u8 = 2;
 const THUMBHASH_MAX_DIMENSION: u32 = 100;
-const PREVIEW_ORIENTATION_COMPARE_SIZE: u32 = 64;
 const CHECKPOINT_BATCH_MIN: usize = 8;
 
 // Build orchestration and concurrency
@@ -65,7 +65,7 @@ struct BuildPlan {
     checkpoint_interval: usize,
     photos: BTreeMap<String, PhotoEntry>,
     files: BTreeMap<String, StateEntry>,
-    pending: Vec<SourceItem>,
+    pending: Vec<PhotoBuildItem>,
     reused: usize,
 }
 
@@ -88,6 +88,7 @@ impl BuildSummary {
 
 pub(crate) fn run() -> Result<BuildExit> {
     let config = Config::load()?;
+    validate_runtime()?;
     let started_at = Instant::now();
     let mut plan = prepare_build_plan(&config)?;
 
@@ -114,6 +115,22 @@ pub(crate) fn run() -> Result<BuildExit> {
     }
 
     Ok(summary.exit_status())
+}
+
+fn validate_runtime() -> Result<()> {
+    if !cfg!(target_os = "macos") {
+        bail!("the image build pipeline is supported only on macOS");
+    }
+
+    let output = Command::new(SIPS_PATH)
+        .arg("--version")
+        .output()
+        .context("failed to launch /usr/bin/sips")?;
+    if !output.status.success() {
+        bail!("/usr/bin/sips is unavailable");
+    }
+
+    Ok(())
 }
 
 fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
@@ -155,22 +172,22 @@ fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
     let mut pending = Vec::new();
     let mut reused_count = 0usize;
 
-    for item in sources {
-        if let Some((photo, state_entry)) =
-            find_reusable_photo(&root_dir, &item, &previous_manifest, &previous_state)
-        {
-            photos.insert(photo.original.url.clone(), photo);
-            files.insert(item.source_key, state_entry);
+    for source in sources {
+        let previous = find_previous_build(&root_dir, &source, &previous_manifest, &previous_state);
+        if let Some(previous) = previous.as_ref().filter(|previous| previous.is_complete()) {
+            photos.insert(previous.photo.original.url.clone(), previous.photo.clone());
+            files.insert(source.source_key, previous.state_entry.clone());
             reused_count += 1;
         } else {
-            pending.push(item);
+            pending.push(PhotoBuildItem { source, previous });
         }
     }
     pending.sort_by(|left, right| {
         right
+            .source
             .size
-            .cmp(&left.size)
-            .then_with(|| left.source_key.cmp(&right.source_key))
+            .cmp(&left.source.size)
+            .then_with(|| left.source.source_key.cmp(&right.source.source_key))
     });
 
     let total = reused_count + pending.len();
@@ -355,7 +372,7 @@ fn run_build_worker(context: &BuildWorkerContext, outcomes: &mpsc::Sender<BuildO
         let outcome = match result {
             Ok(photo) => BuildOutcome::Success(Box::new(photo)),
             Err(error) => BuildOutcome::Failure {
-                source_key: item.source_key,
+                source_key: item.source.source_key,
                 error: format!("{error:#}"),
             },
         };
@@ -429,7 +446,7 @@ struct BuildWorkerContext {
     avif_threads: usize,
     full_res_limiter: FullResLimiter,
     status: BuildStatus,
-    pending: Mutex<VecDeque<SourceItem>>,
+    pending: Mutex<VecDeque<PhotoBuildItem>>,
 }
 
 #[derive(Default)]
@@ -641,28 +658,14 @@ fn normalize_finder_tag(tag: String) -> String {
         .unwrap_or(tag)
 }
 
-fn find_reusable_photo(
+fn find_previous_build(
     root_dir: &Path,
     item: &SourceItem,
     previous_manifest: &LoadedManifest,
     previous_state: &StateFile,
-) -> Option<(PhotoEntry, StateEntry)> {
+) -> Option<PreviousBuild> {
     let state_entry = previous_state.files.get(&item.source_key)?;
-    if state_entry.original.is_empty() {
-        return None;
-    }
-
     if state_entry.size != item.size || state_entry.mtime_ms != item.mtime_ms {
-        return None;
-    }
-
-    let original_path = root_dir.join(&state_entry.original);
-    if !original_path.exists() {
-        return None;
-    }
-
-    let thumbnail_path = root_dir.join(&state_entry.thumbnail);
-    if !thumbnail_path.exists() {
         return None;
     }
 
@@ -670,8 +673,21 @@ fn find_reusable_photo(
         .photos_by_key
         .get(&state_entry.original)?
         .clone();
+    let reuse_original = !state_entry.original.is_empty()
+        && photo_entry.original.url == state_entry.original
+        && root_dir.join(&state_entry.original).is_file()
+        && photo_entry.image.bit_depth.is_some();
+    let reuse_thumbnail = !state_entry.thumbnail.is_empty()
+        && photo_entry.thumbnail.url == state_entry.thumbnail
+        && root_dir.join(&state_entry.thumbnail).is_file()
+        && !photo_entry.thumb_hash.is_empty();
 
-    Some((photo_entry, state_entry.clone()))
+    Some(PreviousBuild {
+        photo: photo_entry,
+        state_entry: state_entry.clone(),
+        reuse_original,
+        reuse_thumbnail,
+    })
 }
 
 fn remove_stale_outputs(
@@ -737,25 +753,40 @@ fn remove_output_if_exists(
 
 // Per-photo build pipeline
 
-fn build_photo(context: &PhotoBuildContext<'_>, item: &SourceItem) -> Result<BuiltPhoto> {
-    let exif = read_exif(&item.path);
+fn build_photo(context: &PhotoBuildContext<'_>, item: &PhotoBuildItem) -> Result<BuiltPhoto> {
+    let source = &item.source;
+    let exif = read_exif(&source.path);
     let source_orientation = source_orientation(exif.as_ref());
-    let original = build_original_asset(context, item, source_orientation)?;
-    let thumbnail = build_thumbnail_asset(context, item, source_orientation, &original)?;
-    let title = item
+    let original = match item
+        .previous
+        .as_ref()
+        .and_then(PreviousBuild::reusable_original)
+    {
+        Some(original) => original,
+        None => build_original_asset(context, source, source_orientation)?,
+    };
+    let thumbnail = match item
+        .previous
+        .as_ref()
+        .and_then(PreviousBuild::reusable_thumbnail)
+    {
+        Some(thumbnail) => thumbnail,
+        None => build_thumbnail_asset(context, source, source_orientation, &original)?,
+    };
+    let title = source
         .path
         .file_stem()
         .map(|stem| stem.to_string_lossy().into_owned())
-        .ok_or_else(|| anyhow!("missing file stem for {}", item.path.display()))?;
+        .ok_or_else(|| anyhow!("missing file stem for {}", source.path.display()))?;
     let extracted = extract_source_metadata(exif.as_ref(), Some(original.bit_depth));
     let original_key = original.asset.url.clone();
     let thumbnail_key = thumbnail.asset.url.clone();
 
     Ok(BuiltPhoto {
-        state_key: item.source_key.clone(),
+        state_key: source.source_key.clone(),
         state_entry: StateEntry {
-            size: item.size,
-            mtime_ms: item.mtime_ms,
+            size: source.size,
+            mtime_ms: source.mtime_ms,
             original: original_key,
             thumbnail: thumbnail_key,
             processed_at: now_rfc3339()?,
@@ -767,7 +798,7 @@ fn build_photo(context: &PhotoBuildContext<'_>, item: &SourceItem) -> Result<Bui
             title,
             taken_at: extracted
                 .taken_at
-                .unwrap_or(timestamp_ms_rfc3339(item.mtime_ms)?),
+                .unwrap_or(timestamp_ms_rfc3339(source.mtime_ms)?),
             location: extracted.location,
             camera: extracted.camera.unwrap_or_default(),
             image: extracted.image,
@@ -783,7 +814,7 @@ fn build_original_asset(
     let output_path = build_original_path(context.originals_dir, &item.relative_path);
     create_parent_directory(&output_path)?;
 
-    let (width, height, bit_depth, orientation_reference) = {
+    let (width, height, bit_depth) = {
         let full_res_permit = context.full_res_limiter.acquire();
         let _processing_scope = ScopedCounter::new(&context.status.processing);
         let source_bytes = fs::read(&item.path)
@@ -795,12 +826,6 @@ fn build_original_asset(
         apply_source_orientation(&mut loaded.image, source_orientation);
         let (width, height) = loaded.image.dimensions();
         let bit_depth = loaded.bit_depth;
-        let orientation_reference = if should_align_preview_orientation(&item.path) {
-            Some(build_orientation_reference(&loaded.image)?)
-        } else {
-            None
-        };
-
         {
             let _encoding_scope = ScopedCounter::new(&context.status.encoding);
             write_original_avif(
@@ -815,7 +840,7 @@ fn build_original_asset(
         drop(loaded);
         drop(full_res_permit);
 
-        (width, height, bit_depth, orientation_reference)
+        (width, height, bit_depth)
     };
 
     let output_metadata = fs::metadata(&output_path)
@@ -830,7 +855,6 @@ fn build_original_asset(
             mime: AVIF_MIME.to_string(),
         },
         bit_depth,
-        orientation_reference,
     })
 }
 
@@ -851,13 +875,8 @@ fn build_thumbnail_asset(
             .width
             .min(context.config.thumbnail_width)
             .max(1);
-        let preview_image = build_preview_image(&item.path, preview_width, source_orientation)?;
-        let preview_image = if let Some(reference) = original.orientation_reference.as_ref() {
-            align_preview_orientation(preview_image, reference)?
-        } else {
-            preview_image
-        };
-        let thumbnail_image = resize_image(preview_image, context.config.thumbnail_width)?;
+        let swaps_dimensions = source_swaps_dimensions(&item.path, source_orientation)?;
+        let thumbnail_image = build_preview_image(&item.path, preview_width, swaps_dimensions)?;
         write_thumbnail(
             &thumbnail_image,
             &output_path,
@@ -1237,19 +1256,6 @@ fn round_to_hundredths_f32(value: f64) -> f32 {
 
 // Image decoding, resizing, and encoding
 
-fn resize_image(image: DynamicImage, target_width: u32) -> Result<DynamicImage> {
-    let width = image.width();
-    if width <= target_width {
-        return Ok(image);
-    }
-
-    resize_to_dimensions(
-        &image,
-        target_width,
-        scaled_dimension(image.height(), target_width, width),
-    )
-}
-
 fn resize_to_fit(image: &DynamicImage, max_width: u32, max_height: u32) -> Result<DynamicImage> {
     let width = image.width();
     let height = image.height();
@@ -1606,11 +1612,21 @@ fn write_thumbnail(
             cursor.into_inner()
         }
         ThumbnailFormat::Webp => {
-            let rgba = image.to_rgba8();
-            let encoder = webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height());
-            encoder
-                .encode(f32::from(quality).clamp(1.0, 100.0))
-                .to_vec()
+            let quality = f32::from(quality).clamp(1.0, 100.0);
+            if let Some(rgb) = image.as_rgb8() {
+                webp::Encoder::from_rgb(rgb.as_raw(), rgb.width(), rgb.height())
+                    .encode(quality)
+                    .to_vec()
+            } else if let Some(rgba) = image.as_rgba8() {
+                webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
+                    .encode(quality)
+                    .to_vec()
+            } else {
+                let rgba = image.to_rgba8();
+                webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
+                    .encode(quality)
+                    .to_vec()
+            }
         }
     };
 
@@ -1632,224 +1648,16 @@ fn compute_thumb_hash(image: &DynamicImage) -> Result<String> {
 fn build_preview_image(
     source_path: &Path,
     target_width: u32,
-    source_orientation: u8,
+    swaps_dimensions: bool,
 ) -> Result<DynamicImage> {
-    let target_width = target_width.max(1);
-    match build_sips_preview(source_path, target_width) {
-        Ok(image) => return Ok(image),
-        Err(error) => warn!(
-            "failed to build preview with sips for {}: {error:#}; falling back to internal preview pipeline",
-            source_path.display()
-        ),
-    }
-
-    let source_bytes = fs::read(source_path)
-        .with_context(|| format!("failed to read preview source {}", source_path.display()))?;
-    let mut loaded = decode_source_image(source_path, &source_bytes)
-        .with_context(|| format!("failed to decode preview source {}", source_path.display()))?;
-    drop(source_bytes);
-    apply_source_orientation(&mut loaded.image, source_orientation);
-    resize_image(build_internal_preview(loaded)?, target_width)
+    build_sips_preview(source_path, target_width.max(1), swaps_dimensions)
 }
 
-fn should_align_preview_orientation(source_path: &Path) -> bool {
-    !is_heif_family(source_path)
-}
-
-fn build_orientation_reference(reference_image: &DynamicImage) -> Result<OrientationReference> {
-    let (canvas_width, canvas_height) =
-        orientation_compare_dimensions(reference_image.width(), reference_image.height());
-    let probe = normalize_orientation_compare_image(reference_image, canvas_width, canvas_height)?
-        .to_rgb8();
-
-    Ok(OrientationReference {
-        canvas_width,
-        canvas_height,
-        probe,
-    })
-}
-
-fn align_preview_orientation(
-    preview_image: DynamicImage,
-    reference: &OrientationReference,
+fn build_sips_preview(
+    source_path: &Path,
+    target_width: u32,
+    swaps_dimensions: bool,
 ) -> Result<DynamicImage> {
-    let transform = best_orientation_transform(&preview_image, reference)?;
-    Ok(apply_orientation_transform(preview_image, transform))
-}
-
-fn best_orientation_transform(
-    preview_image: &DynamicImage,
-    reference: &OrientationReference,
-) -> Result<OrientationTransform> {
-    let preview_probe = resize_to_fit(
-        preview_image,
-        PREVIEW_ORIENTATION_COMPARE_SIZE,
-        PREVIEW_ORIENTATION_COMPARE_SIZE,
-    )?;
-    let mut best: Option<(u64, OrientationTransform)> = None;
-
-    for transform in OrientationTransform::ALL {
-        let candidate = apply_orientation_transform(preview_probe.clone(), transform);
-        let score = orientation_similarity_score(
-            &candidate,
-            &reference.probe,
-            reference.canvas_width,
-            reference.canvas_height,
-        )?;
-        if score == 0 {
-            return Ok(transform);
-        }
-
-        let replace = match best {
-            Some((best_score, _)) => score < best_score,
-            None => true,
-        };
-
-        if replace {
-            best = Some((score, transform));
-        }
-    }
-
-    best.map(|(_, transform)| transform)
-        .ok_or_else(|| anyhow!("failed to select preview orientation"))
-}
-
-fn orientation_similarity_score(
-    candidate: &DynamicImage,
-    reference: &image::RgbImage,
-    canvas_width: u32,
-    canvas_height: u32,
-) -> Result<u64> {
-    let candidate =
-        normalize_orientation_compare_image(candidate, canvas_width, canvas_height)?.to_rgb8();
-
-    Ok(candidate
-        .pixels()
-        .zip(reference.pixels())
-        .map(|(left, right)| {
-            left.0
-                .iter()
-                .zip(right.0.iter())
-                .map(|(l, r)| u64::from(u8::abs_diff(*l, *r)))
-                .sum::<u64>()
-        })
-        .sum())
-}
-
-fn normalize_orientation_compare_image(
-    image: &DynamicImage,
-    canvas_width: u32,
-    canvas_height: u32,
-) -> Result<DynamicImage> {
-    let resized = resize_to_fit(image, canvas_width, canvas_height)?.to_rgba8();
-    let mut canvas = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(canvas_width, canvas_height);
-    let offset_x = i64::from((canvas_width - resized.width()) / 2);
-    let offset_y = i64::from((canvas_height - resized.height()) / 2);
-    imageops::overlay(&mut canvas, &resized, offset_x, offset_y);
-    Ok(DynamicImage::ImageRgba8(canvas))
-}
-
-fn orientation_compare_dimensions(width: u32, height: u32) -> (u32, u32) {
-    let longest = width.max(height).max(1);
-    (
-        scaled_dimension(width, PREVIEW_ORIENTATION_COMPARE_SIZE, longest),
-        scaled_dimension(height, PREVIEW_ORIENTATION_COMPARE_SIZE, longest),
-    )
-}
-
-#[derive(Clone, Copy)]
-enum OrientationTransform {
-    Identity,
-    Rotate90,
-    Rotate180,
-    Rotate270,
-    FlipH,
-    FlipHRotate90,
-    FlipHRotate180,
-    FlipHRotate270,
-}
-
-struct OrientationReference {
-    canvas_width: u32,
-    canvas_height: u32,
-    probe: image::RgbImage,
-}
-
-impl OrientationTransform {
-    const ALL: [Self; 8] = [
-        Self::Identity,
-        Self::Rotate90,
-        Self::Rotate180,
-        Self::Rotate270,
-        Self::FlipH,
-        Self::FlipHRotate90,
-        Self::FlipHRotate180,
-        Self::FlipHRotate270,
-    ];
-}
-
-fn apply_orientation_transform(
-    image: DynamicImage,
-    transform: OrientationTransform,
-) -> DynamicImage {
-    match transform {
-        OrientationTransform::Identity => image,
-        OrientationTransform::Rotate90 => image.rotate90(),
-        OrientationTransform::Rotate180 => image.rotate180(),
-        OrientationTransform::Rotate270 => image.rotate270(),
-        OrientationTransform::FlipH => image.fliph(),
-        OrientationTransform::FlipHRotate90 => image.fliph().rotate90(),
-        OrientationTransform::FlipHRotate180 => image.fliph().rotate180(),
-        OrientationTransform::FlipHRotate270 => image.fliph().rotate270(),
-    }
-}
-
-fn build_internal_preview(loaded: LoadedImage) -> Result<DynamicImage> {
-    if loaded.bit_depth <= 8 {
-        if loaded.has_alpha {
-            return Ok(DynamicImage::ImageRgba8(loaded.image.into_rgba8()));
-        }
-
-        return Ok(DynamicImage::ImageRgb8(loaded.image.into_rgb8()));
-    }
-
-    let source_bit_depth = loaded.bit_depth.clamp(9, 16);
-    if loaded.has_alpha {
-        let rgba16 = loaded.image.into_rgba16();
-        let pixels = rgba16
-            .pixels()
-            .flat_map(|pixel| {
-                pixel
-                    .0
-                    .iter()
-                    .map(|component| map_preview_sample_to_8_bit(*component, source_bit_depth))
-            })
-            .collect::<Vec<_>>();
-
-        let buffer =
-            ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(rgba16.width(), rgba16.height(), pixels)
-                .ok_or_else(|| anyhow!("failed to build preview RGBA image buffer"))?;
-
-        return Ok(DynamicImage::ImageRgba8(buffer));
-    }
-
-    let rgb16 = loaded.image.into_rgb16();
-    let pixels = rgb16
-        .pixels()
-        .flat_map(|pixel| {
-            pixel
-                .0
-                .iter()
-                .map(|component| map_preview_sample_to_8_bit(*component, source_bit_depth))
-        })
-        .collect::<Vec<_>>();
-    let buffer = ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(rgb16.width(), rgb16.height(), pixels)
-        .ok_or_else(|| anyhow!("failed to build preview RGB image buffer"))?;
-
-    Ok(DynamicImage::ImageRgb8(buffer))
-}
-
-fn build_sips_preview(source_path: &Path, target_width: u32) -> Result<DynamicImage> {
     let should_optimize_color = !is_heif_family(source_path);
     let temp_dir = tempfile::Builder::new()
         .prefix("lumine-pipeline-preview-")
@@ -1862,8 +1670,12 @@ fn build_sips_preview(source_path: &Path, target_width: u32) -> Result<DynamicIm
     } else {
         &preview_path
     };
-    let resize_output = Command::new("sips")
-        .arg("--resampleWidth")
+    let resize_output = Command::new(SIPS_PATH)
+        .arg(if swaps_dimensions {
+            "--resampleHeight"
+        } else {
+            "--resampleWidth"
+        })
         .arg(target_width.to_string())
         .arg("-s")
         .arg("format")
@@ -1876,7 +1688,7 @@ fn build_sips_preview(source_path: &Path, target_width: u32) -> Result<DynamicIm
     ensure_sips_succeeded(&resize_output, source_path, "resize")?;
 
     if should_optimize_color {
-        let optimize_output = Command::new("sips")
+        let optimize_output = Command::new(SIPS_PATH)
             .arg("--optimizeColorForSharing")
             .arg(&resized_path)
             .arg("--out")
@@ -1886,17 +1698,7 @@ fn build_sips_preview(source_path: &Path, target_width: u32) -> Result<DynamicIm
         ensure_sips_succeeded(&optimize_output, source_path, "color optimization")?;
     }
 
-    let image = ImageReader::open(&preview_path)
-        .with_context(|| format!("failed to open preview {}", preview_path.display()))?
-        .with_guessed_format()
-        .with_context(|| {
-            format!(
-                "failed to guess preview format for {}",
-                preview_path.display()
-            )
-        })?
-        .decode()
-        .with_context(|| format!("failed to decode preview {}", preview_path.display()))?;
+    let image = decode_preview_image(&preview_path)?;
 
     if image.width() != target_width {
         bail!(
@@ -1907,6 +1709,23 @@ fn build_sips_preview(source_path: &Path, target_width: u32) -> Result<DynamicIm
         );
     }
 
+    Ok(image)
+}
+
+fn decode_preview_image(path: &Path) -> Result<DynamicImage> {
+    let reader = ImageReader::open(path)
+        .with_context(|| format!("failed to open preview {}", path.display()))?
+        .with_guessed_format()
+        .with_context(|| format!("failed to guess preview format for {}", path.display()))?;
+    let mut decoder = reader
+        .into_decoder()
+        .with_context(|| format!("failed to create preview decoder for {}", path.display()))?;
+    let orientation = decoder
+        .orientation()
+        .with_context(|| format!("failed to read preview orientation for {}", path.display()))?;
+    let mut image = DynamicImage::from_decoder(decoder)
+        .with_context(|| format!("failed to decode preview {}", path.display()))?;
+    image.apply_orientation(orientation);
     Ok(image)
 }
 
@@ -1933,6 +1752,49 @@ fn source_orientation(exif: Option<&Exif>) -> u8 {
     exif.and_then(|exif| exif_uint(exif, Tag::Orientation))
         .and_then(|value| u8::try_from(value).ok())
         .unwrap_or(1)
+}
+
+fn source_swaps_dimensions(path: &Path, source_orientation: u8) -> Result<bool> {
+    let container_swaps = if is_heif_family(path) {
+        heif_container_swaps_dimensions(path)?
+    } else {
+        false
+    };
+    let exif_swaps = matches!(source_orientation, 5..=8);
+    Ok(container_swaps != exif_swaps)
+}
+
+fn heif_container_swaps_dimensions(path: &Path) -> Result<bool> {
+    let path = path
+        .to_str()
+        .ok_or_else(|| anyhow!("HEIF source path is not valid UTF-8: {}", path.display()))?;
+    let context = HeifContext::read_from_file(path)
+        .with_context(|| format!("failed to open HEIF container {path}"))?;
+    let handle = context
+        .primary_image_handle()
+        .with_context(|| format!("failed to read primary image handle {path}"))?;
+    let stored_width = u32::try_from(handle.ispe_width())
+        .with_context(|| format!("invalid stored HEIF width for {path}"))?;
+    let stored_height = u32::try_from(handle.ispe_height())
+        .with_context(|| format!("invalid stored HEIF height for {path}"))?;
+    let display_width = handle.width();
+    let display_height = handle.height();
+
+    if stored_width == 0 || stored_height == 0 || display_width == 0 || display_height == 0 {
+        bail!("invalid HEIF dimensions for {path}");
+    }
+
+    if (display_width, display_height) == (stored_width, stored_height) {
+        return Ok(false);
+    }
+
+    if (display_width, display_height) == (stored_height, stored_width) {
+        return Ok(true);
+    }
+
+    bail!(
+        "unsupported HEIF dimension transformation for {path}: stored {stored_width}x{stored_height}, displayed {display_width}x{display_height}"
+    )
 }
 
 fn apply_source_orientation(image: &mut DynamicImage, source_orientation: u8) {
@@ -2115,20 +1977,6 @@ fn scale_sample_to_10_bit(value: u16, source_bit_depth: u8) -> u16 {
     u16::try_from(scaled).expect("10-bit sample must fit in u16")
 }
 
-#[allow(
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    reason = "sample values are clamped to the target 8-bit range before conversion"
-)]
-fn map_preview_sample_to_8_bit(value: u16, source_bit_depth: u8) -> u8 {
-    let source_bit_depth = source_bit_depth.clamp(1, 16);
-    let source_max = ((1u32 << source_bit_depth) - 1).max(1);
-    let normalized = (u32::from(value).min(source_max) as f32 / source_max as f32).clamp(0.0, 1.0);
-    let gamma_mapped = normalized.powf(1.0 / 2.2);
-    (gamma_mapped * 255.0).round().clamp(0.0, 255.0) as u8
-}
-
 fn rgb_to_10_bit_ycbcr(rgb: [u16; 3], matrix: [f32; 3]) -> [u16; 3] {
     let scale = 1023.0f32;
     let shift = (scale * 0.5).round();
@@ -2204,6 +2052,42 @@ struct SourceItem {
     mtime_ms: u64,
 }
 
+struct PhotoBuildItem {
+    source: SourceItem,
+    previous: Option<PreviousBuild>,
+}
+
+struct PreviousBuild {
+    photo: PhotoEntry,
+    state_entry: StateEntry,
+    reuse_original: bool,
+    reuse_thumbnail: bool,
+}
+
+impl PreviousBuild {
+    fn is_complete(&self) -> bool {
+        self.reuse_original && self.reuse_thumbnail
+    }
+
+    fn reusable_original(&self) -> Option<BuiltOriginal> {
+        if !self.reuse_original {
+            return None;
+        }
+
+        Some(BuiltOriginal {
+            asset: self.photo.original.clone(),
+            bit_depth: self.photo.image.bit_depth?,
+        })
+    }
+
+    fn reusable_thumbnail(&self) -> Option<BuiltThumbnail> {
+        self.reuse_thumbnail.then(|| BuiltThumbnail {
+            asset: self.photo.thumbnail.clone(),
+            thumb_hash: self.photo.thumb_hash.clone(),
+        })
+    }
+}
+
 struct LoadedImage {
     image: DynamicImage,
     bit_depth: u8,
@@ -2213,7 +2097,6 @@ struct LoadedImage {
 struct BuiltOriginal {
     asset: Asset,
     bit_depth: u8,
-    orientation_reference: Option<OrientationReference>,
 }
 
 struct BuiltThumbnail {

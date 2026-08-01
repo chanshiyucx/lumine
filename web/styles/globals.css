@@ -79,6 +79,69 @@ body {
   scrollbar-width: none;
 }
 
+@property --viewer-info-mask-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --viewer-info-mask-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 30px;
+}
+
+.viewer-info-scroll-mask {
+  --viewer-info-mask-top: 0px;
+  --viewer-info-mask-bottom: 30px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent calc(var(--viewer-info-mask-top) - 30px),
+    black var(--viewer-info-mask-top),
+    black calc(100% - var(--viewer-info-mask-bottom)),
+    transparent calc(100% - var(--viewer-info-mask-bottom) + 30px)
+  );
+}
+
+@supports (animation-timeline: scroll(self block)) {
+  .viewer-info-scroll-mask {
+    animation-name: viewer-info-mask-top, viewer-info-mask-bottom;
+    animation-duration: 1s, 1s;
+    animation-timing-function: linear, linear;
+    animation-fill-mode: both, both;
+    animation-timeline: scroll(self block), scroll(self block);
+    animation-range:
+      0 50px,
+      calc(100% - 50px) 100%;
+  }
+}
+
+@supports (animation-timeline: scroll()) and
+  (not (animation-timeline: scroll(self block))) {
+  .viewer-info-scroll-mask {
+    animation-name: viewer-info-mask-top, viewer-info-mask-bottom;
+    animation-duration: 1s, 1s;
+    animation-timing-function: linear, linear;
+    animation-fill-mode: both, both;
+    animation-timeline: scroll(), scroll();
+    animation-range:
+      0 50px,
+      calc(100% - 50px) 100%;
+  }
+}
+
+@keyframes viewer-info-mask-top {
+  to {
+    --viewer-info-mask-top: 30px;
+  }
+}
+
+@keyframes viewer-info-mask-bottom {
+  to {
+    --viewer-info-mask-bottom: 0px;
+  }
+}
+
 @theme inline {
   --animate-svg-text: svg-text 10s var(--delay, 0s) infinite ease-in-out
     backwards;

@@ -68,7 +68,6 @@ export function Viewer({
 }: ViewerProps) {
   const isMobile = useMobile()
   const [isDesktopInfoPanelOpen, setIsDesktopInfoPanelOpen] = useState(true)
-  const [isMobileInfoPanelOpen, setIsMobileInfoPanelOpen] = useState(false)
   const [dragExitFrame, setDragExitFrame] =
     useState<ProjectedViewerFrame | null>(null)
   const [revealState, setRevealState] = useState(() =>
@@ -96,9 +95,6 @@ export function Viewer({
   const backdropEntryKey =
     state.phase === 'entering' ? state.operationId : revealState.operationId
   const sharedTransition = resolveSharedPhotoTransition(state)
-  const isInfoPanelOpen = isMobile
-    ? isMobileInfoPanelOpen
-    : isDesktopInfoPanelOpen
   const canGoPrevious = activeIndex > 0
   const canGoNext = activeIndex < photos.length - 1
   const advanceReveal = useCallback(
@@ -155,11 +151,10 @@ export function Viewer({
 
   const mobile = useMobileViewerInteractions({
     enabled: isMobile && state.phase !== 'entering',
-    infoOpen: isMobileInfoPanelOpen,
     isZoomed: state.isZoomed,
     onDismiss: handleMobileDismiss,
-    onInfoOpenChange: setIsMobileInfoPanelOpen,
   })
+  const isInfoPanelOpen = isMobile ? mobile.infoOpen : isDesktopInfoPanelOpen
 
   const handleClose = useCallback(() => {
     setDragExitFrame(null)
@@ -188,7 +183,7 @@ export function Viewer({
 
   const toggleInfoPanel = () => {
     if (isMobile) {
-      mobile.settleInspector(!isMobileInfoPanelOpen)
+      mobile.settleInspector(!mobile.infoOpen)
       return
     }
 
@@ -355,7 +350,7 @@ export function Viewer({
                     photos={photos}
                     activeIndex={activeIndex}
                     isMobile={isMobile}
-                    isSwipeDisabled={isMobileInfoPanelOpen}
+                    isSwipeDisabled={mobile.infoOpen}
                     isInteractionEnabled={isInteractionEnabled}
                     onActiveIndexChange={goToPhoto}
                     onZoomStateChange={onZoomStateChange}

@@ -10,6 +10,12 @@ export function getMobileGestureMetrics(viewportHeight: number) {
   }
 }
 
+export function getInspectorSettleVelocity(open: boolean, velocity: number) {
+  const clampedVelocity = clamp(velocity, -2.2, 2.2)
+
+  return open ? Math.max(clampedVelocity, 0) : Math.min(clampedVelocity, 0)
+}
+
 export function shouldDismissViewer({
   distance,
   directionY,

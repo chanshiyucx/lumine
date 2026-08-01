@@ -1,4 +1,3 @@
-import { X } from 'lucide-react'
 import { m, type MotionStyle } from 'motion/react'
 import type { ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/photo'
@@ -20,7 +19,7 @@ interface InfoRowProps {
 function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div className="flex justify-between py-1 text-sm">
-      <dt className="text-subtle pr-3">{label}</dt>
+      <dt className="text-text/50 pr-3">{label}</dt>
       <dd className="break-all">{value}</dd>
     </div>
   )
@@ -114,18 +113,20 @@ export function ViewerInfoPanel({
         className="h-full"
         initial={
           isMobileMotionControlled
-            ? { opacity: 0, y: 24 }
-            : { opacity: 0, x: 32 }
+            ? { opacity: 0, x: 0, y: 24 }
+            : { opacity: 0, x: 32, y: 0 }
         }
         animate={
           isMobileMotionControlled
             ? {
                 opacity: isViewerVisible ? 1 : 0,
+                x: 0,
                 y: isViewerVisible ? 0 : 24,
               }
             : {
                 opacity: isViewerVisible ? 1 : 0,
                 x: isViewerVisible ? 0 : 32,
+                y: 0,
               }
         }
         transition={
@@ -136,7 +137,7 @@ export function ViewerInfoPanel({
       >
         <m.div
           className={cn(
-            'relative flex max-h-[40svh] flex-col overflow-hidden border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:max-h-none lg:w-80 lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
+            'relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:w-80 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
             !isMobileMotionControlled &&
               (isOpen
                 ? 'translate-y-0 opacity-100'
@@ -148,19 +149,20 @@ export function ViewerInfoPanel({
           }}
         >
           <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className="flex justify-end px-3 pt-3 lg:hidden">
+            <div className="relative flex h-6 shrink-0 items-start justify-center px-3 pt-2.5 lg:hidden">
               <button
                 type="button"
-                className="inline-flex size-8 cursor-default items-center justify-center"
+                className="absolute inset-x-0 top-0 flex h-6 cursor-default items-start justify-center pt-2.5"
                 onClick={onClose}
                 aria-label="Close information panel"
               >
-                <X className="size-5" strokeWidth={1.8} />
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-11 rounded-full bg-white/25"
+                />
               </button>
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t from-black/35 to-transparent lg:hidden" />
-
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="viewer-info-scroll-mask min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <ViewerInfoPanelContent photo={photo} />
             </div>
           </div>

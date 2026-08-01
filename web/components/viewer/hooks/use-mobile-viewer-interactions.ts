@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   clamp,
   getDismissPresentation,
+  getInspectorSettleVelocity,
   getMobileGestureMetrics,
   shouldDismissViewer,
 } from '../lib/mobile-viewer-gesture'
@@ -25,10 +26,8 @@ interface GestureMemo {
 
 interface UseMobileViewerInteractionsOptions {
   enabled: boolean
-  infoOpen: boolean
   isZoomed: boolean
   onDismiss: (snapshot: MobileDismissSnapshot) => void
-  onInfoOpenChange: (open: boolean) => void
 }
 
 function getViewport() {
@@ -40,15 +39,14 @@ function getViewport() {
 
 export function useMobileViewerInteractions({
   enabled,
-  infoOpen,
   isZoomed,
   onDismiss,
-  onInfoOpenChange,
 }: UseMobileViewerInteractionsOptions) {
   const [viewport, setViewport] = useState(getViewport)
+  const [infoOpen, setInfoOpen] = useState(false)
   const dismissX = useMotionValue(0)
   const dismissY = useMotionValue(0)
-  const inspectorProgress = useMotionValue(infoOpen ? 1 : 0)
+  const inspectorProgress = useMotionValue(0)
   const closingRef = useRef(false)
   const gestureActiveRef = useRef(false)
   const animationsRef = useRef<ReturnType<typeof animate>[]>([])
@@ -85,11 +83,11 @@ export function useMobileViewerInteractions({
   const settleInspector = useCallback(
     (open: boolean, velocity = 0) => {
       stopAnimations()
-      onInfoOpenChange(open)
+      setInfoOpen(open)
       registerAnimation(
         animate(inspectorProgress, open ? 1 : 0, {
-          ...VIEWER_MOTION.settle,
-          velocity: clamp(velocity, -2.2, 2.2),
+          ...VIEWER_MOTION.inspector[open ? 'open' : 'close'],
+          velocity: getInspectorSettleVelocity(open, velocity),
         }),
       )
       settle(dismissX, 0)
@@ -99,7 +97,6 @@ export function useMobileViewerInteractions({
       dismissX,
       dismissY,
       inspectorProgress,
-      onInfoOpenChange,
       registerAnimation,
       settle,
       stopAnimations,
@@ -112,8 +109,8 @@ export function useMobileViewerInteractions({
     gestureActiveRef.current = false
     dismissX.set(0)
     dismissY.set(0)
-    inspectorProgress.set(0)
-  }, [dismissX, dismissY, inspectorProgress, stopAnimations])
+    inspectorProgress.set(infoOpen ? 1 : 0)
+  }, [dismissX, dismissY, infoOpen, inspectorProgress, stopAnimations])
 
   useEffect(() => {
     const handleResize = () => setViewport(getViewport())
@@ -126,17 +123,6 @@ export function useMobileViewerInteractions({
       reset()
     }
   }, [enabled, reset])
-
-  useEffect(() => {
-    if (!enabled || gestureActiveRef.current || closingRef.current) {
-      return
-    }
-
-    stopAnimations()
-    registerAnimation(
-      animate(inspectorProgress, infoOpen ? 1 : 0, VIEWER_MOTION.settle),
-    )
-  }, [enabled, infoOpen, inspectorProgress, registerAnimation, stopAnimations])
 
   const dismissWithThrow = useCallback(
     (velocityX: number, velocityY: number) => {
@@ -341,9 +327,7 @@ export function useMobileViewerInteractions({
     () => dismissPresentation.get().borderRadius + inspectorProgress.get() * 14,
   )
   const backdropOpacity = useTransform(
-    () =>
-      dismissPresentation.get().backdropOpacity -
-      inspectorProgress.get() * 0.08,
+    () => dismissPresentation.get().backdropOpacity,
   )
   const chromeOpacity = useTransform(
     () =>
@@ -354,9 +338,10 @@ export function useMobileViewerInteractions({
     () =>
       dismissPresentation.get().chromeOpacity * (1 - inspectorProgress.get()),
   )
-  const infoPanelY = useTransform(
-    () => (1 - inspectorProgress.get()) * viewport.height * 0.42,
-  )
+  const infoPanelY = useTransform(() => {
+    const hiddenProgress = 1 - inspectorProgress.get()
+    return `calc(${hiddenProgress * 100}% + ${hiddenProgress * 28}px)`
+  })
   const infoPanelOpacity = useTransform(() =>
     clamp(inspectorProgress.get() * 1.6, 0, 1),
   )
@@ -366,6 +351,7 @@ export function useMobileViewerInteractions({
     bindStage,
     chromeOpacity,
     dismissX,
+    infoOpen,
     infoPanelOpacity,
     infoPanelY,
     inspectorProgress,

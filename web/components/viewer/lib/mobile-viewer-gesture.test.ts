@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   getDismissPresentation,
+  getInspectorSettleVelocity,
   getMobileGestureMetrics,
   shouldDismissViewer,
 } from './mobile-viewer-gesture'
@@ -10,6 +11,13 @@ test('clamps dismiss thresholds across short and tall viewports', () => {
   assert.equal(getMobileGestureMetrics(500).dismissThreshold, 120)
   assert.equal(getMobileGestureMetrics(844).dismissThreshold, 151.92)
   assert.equal(getMobileGestureMetrics(1400).dismissThreshold, 180)
+})
+
+test('prevents inspector release velocity from opposing its settle target', () => {
+  assert.equal(getInspectorSettleVelocity(true, -1.2), 0)
+  assert.equal(getInspectorSettleVelocity(true, 1.2), 1.2)
+  assert.equal(getInspectorSettleVelocity(false, 1.2), 0)
+  assert.equal(getInspectorSettleVelocity(false, -1.2), -1.2)
 })
 
 test('dismisses by distance or by a deliberate downward throw', () => {
@@ -49,4 +57,10 @@ test('keeps mobile dismiss presentation intentionally restrained', () => {
   assert.equal(presentation.rotate, 3)
   assert.equal(presentation.borderRadius, 20)
   assert.equal(presentation.backdropOpacity, 0.14)
+})
+
+test('keeps the backdrop opaque before a downward dismiss gesture', () => {
+  const presentation = getDismissPresentation(0, 0, 1004, 390)
+
+  assert.equal(presentation.backdropOpacity, 1)
 })

@@ -57,3 +57,12 @@ test('photo backdrop crossfade stays aligned with carousel navigation', () => {
   assert.equal(VIEWER_MOTION.photoSwitch.duration, 0.3)
   assert.equal(VIEWER_MOTION.photoSwitch.ease, 'linear')
 })
+
+test('inspector settles without elastic overshoot', () => {
+  assert.equal(VIEWER_MOTION.inspector.open.type, 'spring')
+  assert.equal(VIEWER_MOTION.inspector.open.duration, 0.32)
+  assert.equal(VIEWER_MOTION.inspector.open.bounce, 0)
+  assert.equal(VIEWER_MOTION.inspector.close.type, 'spring')
+  assert.equal(VIEWER_MOTION.inspector.close.duration, 0.28)
+  assert.equal(VIEWER_MOTION.inspector.close.bounce, 0)
+})
