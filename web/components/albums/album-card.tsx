@@ -8,10 +8,12 @@ interface AlbumCardProps {
 }
 
 const stackImageClassNames = [
-  'z-30 translate-x-0 translate-y-0 rotate-0 opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:rotate-0',
-  'z-20 -translate-x-1.5 -translate-y-1 -rotate-3 opacity-90 group-hover:-translate-x-3 group-hover:-translate-y-2 group-hover:-rotate-6 group-hover:opacity-100',
-  'z-10 translate-x-2 -translate-y-1.5 rotate-4 opacity-80 group-hover:translate-x-4 group-hover:-translate-y-3 group-hover:rotate-8 group-hover:opacity-100',
+  'z-30 shadow-lg',
+  'z-20 -translate-x-1 -translate-y-1.5 -rotate-4 scale-[0.99] opacity-95 shadow-md group-hover:-rotate-6 group-hover:scale-[0.995] group-hover:opacity-100 group-hover:shadow-lg',
+  'z-10 translate-x-1 -translate-y-1 rotate-4 scale-[0.98] opacity-85 shadow-sm group-hover:rotate-7 group-hover:scale-[0.985] group-hover:opacity-100 group-hover:shadow-lg',
 ]
+
+const stackOverlayClassNames = ['', 'bg-black/10', 'bg-black/20']
 
 function getAlbumDisplayInfo(album: Album) {
   const [location, date] = album.label.split(' · ')
@@ -28,13 +30,16 @@ export function AlbumCard({ album }: AlbumCardProps) {
   const photoCountLabel = `${album.photos.length} ${album.photos.length === 1 ? 'photo' : 'photos'}`
 
   return (
-    <Link href={getAlbumPath(album.key)} className="group block">
-      <div className="relative mb-4 h-48">
+    <Link
+      href={getAlbumPath(album.key)}
+      className="group block w-full max-w-80"
+    >
+      <div className="relative mb-4 aspect-3/2 w-full">
         {displayPhotos.map((photo, index) => (
           <div
             key={photo.id}
             className={cn(
-              'bg-surface absolute inset-0 overflow-hidden rounded-lg shadow-lg transition-all duration-300 ease-out',
+              'bg-surface absolute inset-0 origin-bottom overflow-hidden rounded-lg transition-[rotate,scale,opacity,box-shadow] duration-240 ease-out motion-reduce:transition-none',
               stackImageClassNames[index],
             )}
           >
@@ -52,7 +57,12 @@ export function AlbumCard({ album }: AlbumCardProps) {
               loading="lazy"
             />
             {index > 0 && (
-              <div className="absolute inset-0 bg-black/20 transition-opacity duration-300 group-hover:opacity-0" />
+              <div
+                className={cn(
+                  'absolute inset-0 transition-opacity duration-240 ease-out group-hover:opacity-0 motion-reduce:transition-none',
+                  stackOverlayClassNames[index],
+                )}
+              />
             )}
           </div>
         ))}
