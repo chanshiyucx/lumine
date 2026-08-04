@@ -1,10 +1,11 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import { cn } from '@/lib/style'
 import {
   getGalleryHeaderDetail,
   subscribeGalleryHeaderDetail,
-} from './lib/gallery-header-events'
+} from './lib/gallery-header-store'
 
 export function HeaderCenter() {
   const detail = useSyncExternalStore(
@@ -13,20 +14,20 @@ export function HeaderCenter() {
     getGalleryHeaderDetail,
   )
 
-  const visible = detail.showDateRange && detail.dateRange
+  const isVisible = detail.showDate && Boolean(detail.date)
 
   return (
     <div
-      aria-hidden={!visible}
-      className={[
-        'absolute left-1/2 flex -translate-x-1/2 flex-col items-center transition-[opacity,filter,transform] duration-300 ease-out',
-        visible
+      aria-hidden={!isVisible}
+      className={cn(
+        'absolute left-1/2 flex -translate-x-1/2 flex-col items-center transition-[opacity,filter,transform] duration-300 ease-out motion-reduce:transition-none',
+        isVisible
           ? 'blur-0 translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-5 opacity-0 blur-sm',
-      ].join(' ')}
+      )}
     >
       <span className="text-xs font-semibold text-white lg:text-sm">
-        {detail.dateRange}
+        {detail.date}
       </span>
       {detail.location && (
         <span className="text-[10px] text-white/60 lg:text-xs">

@@ -50,7 +50,10 @@ function getHistoryMarker(): ViewerHistoryMarker | null {
     return null
   }
 
-  return marker as unknown as ViewerHistoryMarker
+  return {
+    baseUrl: marker.baseUrl,
+    sessionId: marker.sessionId,
+  }
 }
 
 function withHistoryMarker(marker: ViewerHistoryMarker) {

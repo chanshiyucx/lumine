@@ -1,5 +1,3 @@
-'use client'
-
 import { CaptureSettingChip, ThumbnailImage } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
 import {
@@ -30,7 +28,7 @@ export function PhotoMasonryItem({
       style={{
         aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
       }}
-      className="photo-masonry-card button-reset group bg-surface relative block w-full overflow-hidden text-left"
+      className="photo-masonry-card group bg-surface relative block w-full appearance-none overflow-hidden text-left"
       data-viewer-trigger={photo.id}
       onClick={(event) => onOpen(index, event.currentTarget)}
       aria-label={`Open ${photo.title}`}
@@ -38,17 +36,16 @@ export function PhotoMasonryItem({
     >
       <ThumbnailImage
         photo={photo}
-        loading="lazy"
-        imageClassName="origin-center duration-300 transition-transform group-hover:scale-105"
+        imageClassName="origin-center transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
       />
 
       <div className="pointer-events-none">
-        <div className="from-base/80 via-base/60 pointer-events-none absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none" />
         <div className="absolute inset-x-0 bottom-0 max-h-full overflow-hidden p-2">
-          <h3 className="truncate font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <h3 className="truncate font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
             {photo.title}
           </h3>
-          <div className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
             <span>{mimeLabel}</span>
             <span>•</span>
             <span>
@@ -58,7 +55,7 @@ export function PhotoMasonryItem({
             <span>{formatBytes(photo.original.bytes)}</span>
           </div>
           <div className="photo-masonry-expanded-info">
-            <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
+            <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
               {albumChip}
             </span>
           </div>
@@ -68,7 +65,7 @@ export function PhotoMasonryItem({
                 <CaptureSettingChip
                   key={setting.key}
                   setting={setting}
-                  className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100"
+                  className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
                 />
               ))}
             </div>

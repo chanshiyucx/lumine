@@ -1,5 +1,3 @@
-'use client'
-
 import { useWindowVirtualizer, type Virtualizer } from '@tanstack/react-virtual'
 import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
@@ -19,7 +17,7 @@ interface MeasuredMasonryLayout extends MasonryLayout {
   scrollMargin: number
 }
 
-export interface PhotoMasonryProps {
+interface PhotoMasonryProps {
   photos: Photo[]
   onPhotoOpen: (index: number, triggerElement: HTMLElement) => void
   onVisiblePhotosChange: (photos: Photo[]) => void
@@ -153,7 +151,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const virtualItems = virtualizer.getVirtualItems()
 
   return (
-    <div ref={containerRef} className="mt-12 w-full max-w-full">
+    <div ref={containerRef} className="mt-12 w-full">
       {photos.length === 0 ? (
         <p className="text-subtle px-6 py-16 text-center" role="status">
           No photos available.
@@ -191,3 +189,4 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     </div>
   )
 })
+/* eslint-enable react-hooks/refs */

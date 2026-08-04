@@ -2,14 +2,14 @@ import { useEffect, useEffectEvent } from 'react'
 
 interface UseViewerKeyboardNavigationOptions {
   activeIndex: number
-  enabled?: boolean
+  enabled: boolean
   onClose: () => void
   onGoTo: (index: number) => void
 }
 
 export function useViewerKeyboardNavigation({
   activeIndex,
-  enabled = true,
+  enabled,
   onClose,
   onGoTo,
 }: UseViewerKeyboardNavigationOptions) {

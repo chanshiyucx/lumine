@@ -16,145 +16,8 @@
   --color-iris: light-dark(hsl(268deg 21% 57%), hsl(267deg, 57%, 78%));
 }
 
-@theme inline {
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-:root {
-  @apply scroll-smooth;
-}
-
-html {
-  color-scheme: dark;
-  @apply overscroll-none;
-}
-
-@media (min-width: 48rem) {
-  html {
-    scrollbar-gutter: stable;
-  }
-}
-
-body {
-  @apply bg-base text-text min-h-screen font-sans font-medium tabular-nums antialiased;
-}
-
-@utility button-reset {
-  @apply appearance-none border-0 p-0 font-[inherit] text-inherit;
-}
-
-@utility circle-button {
-  @apply bg-overlay/80 inline-flex size-8 cursor-default items-center justify-center rounded-full backdrop-blur-sm transition-[background-color,opacity] duration-200 ease-out motion-reduce:transition-none;
-
-  @variant hover {
-    @apply bg-overlay/90;
-  }
-
-  @variant focus-visible {
-    @apply outline-iris outline-2 outline-offset-2;
-  }
-
-  @variant disabled {
-    @apply pointer-events-none opacity-30;
-  }
-}
-
-@utility logo-path {
-  stroke-dasharray: var(--path-length);
-  stroke-dashoffset: var(--path-length);
-  stroke: var(--color-subtle);
-  fill: var(--color-subtle);
-  transition:
-    fill 0.3s ease,
-    stroke 0.3s ease;
-  @apply animate-svg-text;
-}
-
-@utility scrollbar-hide {
-  scrollbar-width: none;
-}
-
-.photo-masonry-card {
-  container-type: size;
-}
-
-@container (max-height: 8.75rem) {
-  .photo-masonry-expanded-info {
-    display: none;
-  }
-}
-
-@property --viewer-info-mask-top {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-
-@property --viewer-info-mask-bottom {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 30px;
-}
-
-.viewer-info-scroll-mask {
-  --viewer-info-mask-top: 0px;
-  --viewer-info-mask-bottom: 30px;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent calc(var(--viewer-info-mask-top) - 30px),
-    black var(--viewer-info-mask-top),
-    black calc(100% - var(--viewer-info-mask-bottom)),
-    transparent calc(100% - var(--viewer-info-mask-bottom) + 30px)
-  );
-}
-
-@supports (animation-timeline: scroll(self block)) {
-  .viewer-info-scroll-mask {
-    animation-name: viewer-info-mask-top, viewer-info-mask-bottom;
-    animation-duration: 1s, 1s;
-    animation-timing-function: linear, linear;
-    animation-fill-mode: both, both;
-    animation-timeline: scroll(self block), scroll(self block);
-    animation-range:
-      0 50px,
-      calc(100% - 50px) 100%;
-  }
-}
-
-@supports (animation-timeline: scroll()) and
-  (not (animation-timeline: scroll(self block))) {
-  .viewer-info-scroll-mask {
-    animation-name: viewer-info-mask-top, viewer-info-mask-bottom;
-    animation-duration: 1s, 1s;
-    animation-timing-function: linear, linear;
-    animation-fill-mode: both, both;
-    animation-timeline: scroll(), scroll();
-    animation-range:
-      0 50px,
-      calc(100% - 50px) 100%;
-  }
-}
-
-@keyframes viewer-info-mask-top {
-  to {
-    --viewer-info-mask-top: 30px;
-  }
-}
-
-@keyframes viewer-info-mask-bottom {
-  to {
-    --viewer-info-mask-bottom: 0px;
-  }
-}
-
-@theme inline {
-  --animate-svg-text: svg-text 10s var(--delay, 0s) infinite ease-in-out
-    backwards;
+@theme {
+  --animate-svg-text: svg-text 10s infinite ease-in-out backwards;
   --animate-preview-enter: preview-enter 0.2s ease-out forwards;
 
   @keyframes svg-text {
@@ -192,5 +55,136 @@ body {
       opacity: 1;
       transform: scale(1);
     }
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    @apply overscroll-none scroll-smooth;
+  }
+
+  body {
+    @apply bg-base text-text min-h-screen font-medium tabular-nums antialiased;
+  }
+
+  @media (min-width: 48rem) {
+    html {
+      scrollbar-gutter: stable;
+    }
+  }
+}
+
+@utility circle-button {
+  @apply bg-overlay/80 inline-flex size-8 cursor-default items-center justify-center rounded-full backdrop-blur-sm transition-[background-color,opacity] duration-200 ease-out motion-reduce:transition-none;
+
+  @variant hover {
+    @apply bg-overlay/90;
+  }
+
+  @variant focus-visible {
+    @apply outline-iris outline-2 outline-offset-2;
+  }
+
+  @variant disabled {
+    @apply pointer-events-none opacity-30;
+  }
+}
+
+@utility logo-path {
+  stroke-dasharray: var(--path-length);
+  stroke-dashoffset: var(--path-length);
+  stroke: var(--color-subtle);
+  fill: var(--color-subtle);
+  animation-delay: var(--delay, 0s);
+  transition:
+    fill 0.3s ease,
+    stroke 0.3s ease;
+  @apply animate-svg-text;
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@layer components {
+  .photo-masonry-card {
+    container-type: size;
+  }
+
+  @container (max-height: 8.75rem) {
+    .photo-masonry-expanded-info {
+      display: none;
+    }
+  }
+
+  .viewer-info-scroll-mask {
+    --viewer-info-mask-top: 0px;
+    --viewer-info-mask-bottom: 30px;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent calc(var(--viewer-info-mask-top) - 30px),
+      black var(--viewer-info-mask-top),
+      black calc(100% - var(--viewer-info-mask-bottom)),
+      transparent calc(100% - var(--viewer-info-mask-bottom) + 30px)
+    );
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .viewer-info-scroll-mask {
+      animation-name: viewer-info-mask-top, viewer-info-mask-bottom;
+      animation-duration: 1s, 1s;
+      animation-timing-function: linear, linear;
+      animation-fill-mode: both, both;
+      animation-timeline: scroll(), scroll();
+      animation-range:
+        0 50px,
+        calc(100% - 50px) 100%;
+    }
+  }
+
+  @supports (animation-timeline: scroll(self block)) {
+    .viewer-info-scroll-mask {
+      animation-timeline: scroll(self block), scroll(self block);
+    }
+  }
+}
+
+@property --viewer-info-mask-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --viewer-info-mask-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 30px;
+}
+
+@keyframes viewer-info-mask-top {
+  to {
+    --viewer-info-mask-top: 30px;
+  }
+}
+
+@keyframes viewer-info-mask-bottom {
+  to {
+    --viewer-info-mask-bottom: 0px;
   }
 }

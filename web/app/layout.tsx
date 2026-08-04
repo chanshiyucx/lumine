@@ -1,19 +1,13 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist } from 'next/font/google'
 import 'swiper/css'
 import 'swiper/css/virtual'
 import { siteConfig } from '@/lib/site-config'
-import { cn } from '@/lib/style'
 import '@/styles/globals.css'
 import { Header } from '@/components/header'
 
 const geist = Geist({
   variable: '--font-geist',
-  subsets: ['latin'],
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
   subsets: ['latin'],
 })
 
@@ -41,11 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="en"
-      data-scroll-behavior="smooth"
-      className={cn(geist.variable, geistMono.variable)}
-    >
+    <html lang="en" data-scroll-behavior="smooth" className={geist.variable}>
       <body>
         <Header />
         {children}

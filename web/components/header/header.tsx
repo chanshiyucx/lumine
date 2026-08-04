@@ -5,7 +5,7 @@ import { HeaderNav } from './header-nav'
 
 export function Header() {
   return (
-    <header className="fixed top-0 right-0 left-0 z-100" data-site-header>
+    <header className="fixed inset-x-0 top-0 z-100" data-site-header>
       <LinearBlur
         className="absolute inset-x-0 -z-1 h-15"
         tint="var(--color-base)"

@@ -229,7 +229,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 key={photo.id}
                 type="button"
                 className={cn(
-                  'button-reset transition-filter focus-visible:ring-iris absolute top-0 cursor-pointer overflow-hidden duration-300 ease-out focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none',
+                  'transition-filter focus-visible:ring-iris absolute top-0 cursor-pointer appearance-none overflow-hidden duration-300 ease-out focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none',
                   !isActive && !isHover && 'grayscale',
                 )}
                 style={{
@@ -245,9 +245,8 @@ export const ThumbnailRail = memo(function ThumbnailRail({
               >
                 <ThumbnailImage
                   photo={photo}
-                  loading="lazy"
                   placeholderClassName="object-contain opacity-60"
-                  imageClassName="absolute inset-0 size-full object-contain"
+                  imageClassName="object-contain"
                 />
               </button>
             )

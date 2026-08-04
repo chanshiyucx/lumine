@@ -1,3 +1,4 @@
+import type { ComponentType, SVGProps } from 'react'
 import {
   CarbonIsoOutline,
   FocalLength,
@@ -9,7 +10,7 @@ import { cn } from '@/lib/style'
 
 const CAPTURE_SETTING_ICONS: Record<
   CaptureSetting['key'],
-  React.ComponentType<React.SVGProps<SVGSVGElement>>
+  ComponentType<SVGProps<SVGSVGElement>>
 > = {
   focal: FocalLength,
   aperture: TablerAperture,

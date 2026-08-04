@@ -15,6 +15,7 @@ function getFocusableElements(container: HTMLElement) {
   ).filter(
     (element) =>
       !element.closest('[aria-hidden="true"]') &&
+      !element.closest('[inert]') &&
       element.getClientRects().length > 0,
   )
 }

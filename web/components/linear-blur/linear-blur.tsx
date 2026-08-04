@@ -3,11 +3,13 @@ import { cn } from '@/lib/style'
 
 interface LinearBlurProps extends HTMLAttributes<HTMLDivElement> {
   strength?: number
-  steps?: number
-  falloffPercentage?: number
   tint?: string
   side?: 'left' | 'right' | 'top' | 'bottom'
 }
+
+const BLUR_STEPS = 8
+const FALLOFF_PERCENTAGE = 100
+const MIN_BLUR_RADIUS = 0.5
 
 const oppositeSide = {
   left: 'right',
@@ -16,76 +18,58 @@ const oppositeSide = {
   bottom: 'top',
 }
 
-const transformOriginClass = {
-  left: 'origin-left',
-  right: 'origin-right',
-  top: 'origin-top',
-  bottom: 'origin-bottom',
+const tintOffsetClass = {
+  left: 'top-0 -left-full',
+  right: 'top-0 -right-full',
+  top: '-top-full left-0',
+  bottom: '-bottom-full left-0',
 }
 
 export function LinearBlur({
+  className,
   strength = 64,
-  steps = 8,
-  falloffPercentage = 100,
   tint = 'transparent',
   side = 'top',
   ...props
 }: LinearBlurProps) {
-  const step = falloffPercentage / steps
+  const falloffStep = FALLOFF_PERCENTAGE / BLUR_STEPS
+  const blurGrowthFactor = Math.pow(
+    strength / MIN_BLUR_RADIUS,
+    1 / (BLUR_STEPS - 1),
+  )
+  const solidPercentage = 100 - FALLOFF_PERCENTAGE
 
-  const factor = 0.5
-
-  const base = Math.pow(strength / factor, 1 / (steps - 1))
-
-  const mainPercentage = 100 - falloffPercentage
-
-  const getBackdropFilter = (i: number) =>
-    `blur(${factor * base ** (steps - i - 1)}px)`
+  const getBackdropFilter = (layerIndex: number) =>
+    `blur(${MIN_BLUR_RADIUS * blurGrowthFactor ** (BLUR_STEPS - layerIndex - 1)}px)`
 
   return (
     <div
       {...props}
-      className={cn(
-        props.className,
-        'pointer-events-none',
-        transformOriginClass[side],
-      )}
+      className={cn('relative', className, 'pointer-events-none')}
     >
-      <div className="absolute z-0 size-full">
-        {/* Full blur at 100-falloffPercentage% */}
-        {steps > 1 && (
+      <div className="absolute inset-0 z-0">
+        <div
+          className="absolute inset-0 z-1"
+          style={{
+            mask: `linear-gradient(to ${oppositeSide[side]}, rgba(0, 0, 0, 1) ${solidPercentage}%, rgba(0, 0, 0, 1) ${solidPercentage + falloffStep}%, rgba(0, 0, 0, 0) ${solidPercentage + falloffStep * 2}%)`,
+            backdropFilter: getBackdropFilter(1),
+            WebkitBackdropFilter: getBackdropFilter(1),
+          }}
+        />
+        {Array.from({ length: BLUR_STEPS - 2 }, (_, index) => (
           <div
-            className="absolute inset-0 z-1"
+            key={index}
+            className="absolute inset-0"
             style={{
-              mask: `linear-gradient(to ${oppositeSide[side]}, rgba(0, 0, 0, 1) ${mainPercentage}%, rgba(0, 0, 0, 1) ${mainPercentage + step}%, rgba(0, 0, 0, 0) ${mainPercentage + step * 2}%)`,
-              backdropFilter: getBackdropFilter(1),
-              WebkitBackdropFilter: getBackdropFilter(1),
+              zIndex: index + 2,
+              mask: `linear-gradient(to ${oppositeSide[side]},rgba(0, 0, 0, 0) ${solidPercentage + index * falloffStep}%,rgba(0, 0, 0, 1) ${solidPercentage + (index + 1) * falloffStep}%,rgba(0, 0, 0, 1) ${solidPercentage + (index + 2) * falloffStep}%,rgba(0, 0, 0, 0) ${solidPercentage + (index + 3) * falloffStep}%)`,
+              backdropFilter: getBackdropFilter(index + 2),
+              WebkitBackdropFilter: getBackdropFilter(index + 2),
             }}
           />
-        )}
-        {steps > 2 &&
-          Array.from({ length: steps - 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute inset-0"
-              style={{
-                zIndex: i + 2,
-                mask: `linear-gradient(to ${oppositeSide[side]},rgba(0, 0, 0, 0) ${mainPercentage + i * step}%,rgba(0, 0, 0, 1) ${mainPercentage + (i + 1) * step}%,rgba(0, 0, 0, 1) ${mainPercentage + (i + 2) * step}%,rgba(0, 0, 0, 0) ${mainPercentage + (i + 3) * step}%)`,
-                backdropFilter: getBackdropFilter(i + 2),
-                WebkitBackdropFilter: getBackdropFilter(i + 2),
-              }}
-            />
-          ))}
+        ))}
         <div
-          className={`absolute size-full ${
-            side === 'top'
-              ? '-top-full left-0'
-              : side === 'bottom'
-                ? '-bottom-full left-0'
-                : side === 'left'
-                  ? 'top-0 -left-full'
-                  : 'top-0 -right-full'
-          }`}
+          className={cn('absolute size-full', tintOffsetClass[side])}
           style={{ boxShadow: `0 0 60px ${tint}, 0 0 100px ${tint}` }}
         />
       </div>

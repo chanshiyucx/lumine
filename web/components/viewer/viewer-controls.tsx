@@ -88,20 +88,19 @@ export function ViewerToolbar({
 
 interface ViewerNavigationProps {
   activeIndex: number
+  isVisible: boolean
   onSelect: (index: number) => void
   phase: ViewerPhase
   photoCount: number
-  visibility: 'hidden' | 'visible'
 }
 
 export function ViewerNavigation({
   activeIndex,
+  isVisible,
   onSelect,
   phase,
   photoCount,
-  visibility,
 }: ViewerNavigationProps) {
-  const isVisible = visibility === 'visible'
   const isInteractive = phase === 'open'
   const canGoPrevious = activeIndex > 0
   const canGoNext = activeIndex < photoCount - 1

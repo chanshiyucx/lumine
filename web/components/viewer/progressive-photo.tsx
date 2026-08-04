@@ -1,5 +1,11 @@
 import Image from 'next/image'
-import { startTransition, useEffect, useRef, useState } from 'react'
+import {
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
@@ -22,7 +28,7 @@ const SCALE_INDICATOR_DURATION = 1000
 interface HighResolutionPhotoProps {
   photo: Photo
   src: string
-  loadingIndicatorRef: React.RefObject<LoadingIndicatorHandle | null>
+  loadingIndicatorRef: RefObject<LoadingIndicatorHandle | null>
   onError: (error: Error) => void
   onZoomChange: (scale: number) => void
   onZoomStateChange?: (isZoomed: boolean) => void

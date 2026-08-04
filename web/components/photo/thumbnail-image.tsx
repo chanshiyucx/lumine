@@ -6,14 +6,13 @@ import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
 
 interface ThumbnailImagePhoto {
-  title: string
   thumbHash: string
   thumbnail: Pick<PhotoAsset, 'height' | 'url' | 'width'>
 }
 
 interface ThumbnailImageProps {
   photo: ThumbnailImagePhoto
-  decorative?: boolean
+  alt?: string
   imageClassName?: string
   loading?: 'eager' | 'lazy'
   placeholderClassName?: string
@@ -21,7 +20,7 @@ interface ThumbnailImageProps {
 
 export function ThumbnailImage({
   photo,
-  decorative = false,
+  alt = '',
   imageClassName,
   loading = 'lazy',
   placeholderClassName,
@@ -37,7 +36,7 @@ export function ThumbnailImage({
       <ThumbHashImage
         thumbHash={photo.thumbHash}
         className={cn(
-          'absolute inset-0 h-full w-full object-cover',
+          'absolute inset-0 size-full object-cover',
           placeholderClassName,
         )}
       />
@@ -45,12 +44,11 @@ export function ThumbnailImage({
         key={photo.thumbnail.url}
         ref={handleImageRef}
         src={photo.thumbnail.url}
-        alt={decorative ? '' : photo.title}
-        aria-hidden={decorative || undefined}
+        alt={alt}
         width={photo.thumbnail.width}
         height={photo.thumbnail.height}
         className={cn(
-          'absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-200 ease-out data-loaded:opacity-100 motion-reduce:transition-none',
+          'absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-200 ease-out data-loaded:opacity-100 motion-reduce:transition-none',
           imageClassName,
         )}
         decoding="async"

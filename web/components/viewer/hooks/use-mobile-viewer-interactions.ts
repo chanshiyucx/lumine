@@ -48,7 +48,6 @@ export function useMobileViewerInteractions({
   const dismissY = useMotionValue(0)
   const inspectorProgress = useMotionValue(0)
   const closingRef = useRef(false)
-  const gestureActiveRef = useRef(false)
   const animationsRef = useRef<ReturnType<typeof animate>[]>([])
   const metrics = getMobileGestureMetrics(viewport.height)
 
@@ -84,15 +83,6 @@ export function useMobileViewerInteractions({
     settle(dismissY, 0)
   }
 
-  const reset = () => {
-    stopAnimations()
-    closingRef.current = false
-    gestureActiveRef.current = false
-    dismissX.set(0)
-    dismissY.set(0)
-    inspectorProgress.set(infoOpen ? 1 : 0)
-  }
-
   useEffect(() => {
     const handleResize = () => setViewport(getViewport())
     window.addEventListener('resize', handleResize)
@@ -104,7 +94,6 @@ export function useMobileViewerInteractions({
       animationsRef.current.forEach((animation) => animation.stop())
       animationsRef.current = []
       closingRef.current = false
-      gestureActiveRef.current = false
       dismissX.set(0)
       dismissY.set(0)
       inspectorProgress.set(infoOpen ? 1 : 0)
@@ -181,7 +170,6 @@ export function useMobileViewerInteractions({
       }
 
       if (first) {
-        gestureActiveRef.current = true
         const target = event.target
         if (
           target instanceof Element &&
@@ -194,9 +182,6 @@ export function useMobileViewerInteractions({
       }
 
       if (gesture.ignore || (axis && axis !== 'y')) {
-        if (last) {
-          gestureActiveRef.current = false
-        }
         return gesture
       }
 
@@ -239,8 +224,6 @@ export function useMobileViewerInteractions({
       }
 
       if (last) {
-        gestureActiveRef.current = false
-
         if (
           gesture.startedWithInspectorOpen ||
           inspectorProgress.get() > 0.02
@@ -331,7 +314,6 @@ export function useMobileViewerInteractions({
     infoPanelY,
     inspectorProgress,
     railOpacity,
-    reset,
     settleInspector,
     viewerBorderRadius,
     viewerRotate,

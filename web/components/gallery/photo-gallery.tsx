@@ -2,7 +2,7 @@
 
 import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { publishGalleryHeaderDetail } from '@/components/header/lib/gallery-header-events'
+import { publishGalleryHeaderDetail } from '@/components/header/lib/gallery-header-store'
 import { useViewerController, Viewer } from '@/components/viewer'
 import type { Photo } from '@/lib/photo'
 import {
@@ -14,7 +14,7 @@ import { PhotoMasonry } from './photo-masonry'
 interface PhotoGalleryProps {
   photos: Photo[]
   initialPhotoSlug?: string
-  fixedHeaderDetail?: GalleryHeaderState
+  fixedHeaderLocation?: string
 }
 
 const HEADER_SCROLL_THRESHOLD = 500
@@ -22,19 +22,28 @@ const HEADER_SCROLL_THRESHOLD = 500
 export function PhotoGallery({
   photos,
   initialPhotoSlug,
-  fixedHeaderDetail,
+  fixedHeaderLocation,
 }: PhotoGalleryProps) {
   const viewer = useViewerController({
     photos,
     initialPhotoSlug,
   })
   const isViewerMounted = viewer.state.activeIndex !== null
+  const hasFixedHeader = fixedHeaderLocation !== undefined
   const [showHeaderDetail, setShowHeaderDetail] = useState(false)
   const [headerState, setHeaderState] = useState<GalleryHeaderState>({})
-  const displayedHeaderState = fixedHeaderDetail ?? headerState
+  const fixedHeaderState = hasFixedHeader
+    ? getGalleryHeaderState(photos)
+    : undefined
+  const displayedDate = hasFixedHeader
+    ? fixedHeaderState?.date
+    : headerState.date
+  const displayedLocation = hasFixedHeader
+    ? fixedHeaderLocation
+    : headerState.location
 
   useEffect(() => {
-    if (fixedHeaderDetail) {
+    if (hasFixedHeader) {
       return
     }
 
@@ -56,7 +65,7 @@ export function PhotoGallery({
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [fixedHeaderDetail])
+  }, [hasFixedHeader])
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>('[data-site-header]')
@@ -73,21 +82,20 @@ export function PhotoGallery({
 
   useEffect(() => {
     publishGalleryHeaderDetail({
-      ...displayedHeaderState,
-      showDateRange:
-        !!displayedHeaderState.dateRange &&
-        (fixedHeaderDetail !== undefined || showHeaderDetail),
+      date: displayedDate,
+      location: displayedLocation,
+      showDate: !!displayedDate && (hasFixedHeader || showHeaderDetail),
     })
-  }, [displayedHeaderState, fixedHeaderDetail, showHeaderDetail])
+  }, [displayedDate, displayedLocation, hasFixedHeader, showHeaderDetail])
 
   useEffect(() => {
     return () => {
-      publishGalleryHeaderDetail({ showDateRange: false })
+      publishGalleryHeaderDetail({ showDate: false })
     }
   }, [])
 
   const handleVisiblePhotosChange = (visiblePhotos: Photo[]) => {
-    if (fixedHeaderDetail) {
+    if (hasFixedHeader) {
       return
     }
 
@@ -95,7 +103,7 @@ export function PhotoGallery({
 
     setHeaderState((currentState) => {
       if (
-        currentState.dateRange === nextHeaderState.dateRange &&
+        currentState.date === nextHeaderState.date &&
         currentState.location === nextHeaderState.location
       ) {
         return currentState

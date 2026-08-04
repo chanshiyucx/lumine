@@ -1,14 +1,12 @@
-export interface GalleryHeaderDetail {
-  dateRange?: string
+interface GalleryHeaderDetail {
+  date?: string
   location?: string
-  showDateRange: boolean
+  showDate: boolean
 }
 
-const defaultGalleryHeaderDetail: GalleryHeaderDetail = {
-  showDateRange: false,
+let currentGalleryHeaderDetail: GalleryHeaderDetail = {
+  showDate: false,
 }
-
-let currentGalleryHeaderDetail = defaultGalleryHeaderDetail
 const galleryHeaderDetailListeners = new Set<() => void>()
 
 export function getGalleryHeaderDetail() {

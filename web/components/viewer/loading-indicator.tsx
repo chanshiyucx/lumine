@@ -4,10 +4,10 @@ import { formatLoadingBytes } from './lib/loading-indicator'
 
 interface ViewerLoadingState {
   isVisible: boolean
-  loadingProgress?: number
-  loadedBytes?: number
-  totalBytes?: number
-  isError?: boolean
+  loadingProgress: number
+  loadedBytes: number
+  totalBytes: number
+  isError: boolean
   errorMessage?: string
 }
 
@@ -53,8 +53,7 @@ export const LoadingIndicator = forwardRef<LoadingIndicatorHandle>(
       [],
     )
 
-    const loadedBytes = loadingState.loadedBytes ?? 0
-    const totalBytes = loadingState.totalBytes ?? 0
+    const { loadedBytes, totalBytes } = loadingState
     const bytesLabel =
       totalBytes <= 0
         ? loadedBytes > 0
@@ -78,7 +77,7 @@ export const LoadingIndicator = forwardRef<LoadingIndicatorHandle>(
           {loadingState.isError ? (
             <p>{loadingState.errorMessage ?? 'Failed to load image'}</p>
           ) : (
-            <p>Loading {Math.round(loadingState.loadingProgress ?? 0)}%</p>
+            <p>Loading {Math.round(loadingState.loadingProgress)}%</p>
           )}
           {!loadingState.isError && bytesLabel && <p>{bytesLabel}</p>}
         </div>

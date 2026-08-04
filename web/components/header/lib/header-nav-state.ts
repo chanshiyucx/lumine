@@ -3,5 +3,5 @@ export function isHeaderNavItemActive(pathname: string, href: string) {
 
   return href === '/'
     ? normalizedPathname === '/' || normalizedPathname.startsWith('/photos/')
-    : normalizedPathname.startsWith(href)
+    : normalizedPathname === href || normalizedPathname.startsWith(`${href}/`)
 }
