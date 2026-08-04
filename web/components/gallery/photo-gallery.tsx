@@ -2,7 +2,7 @@
 
 import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
-import { publishGalleryHeaderDetail } from '@/components/header/gallery-header-events'
+import { publishGalleryHeaderDetail } from '@/components/header/lib/gallery-header-events'
 import { useViewerController, Viewer } from '@/components/viewer'
 import type { Photo } from '@/lib/photo'
 import {
@@ -86,24 +86,27 @@ export function PhotoGallery({
     }
   }, [])
 
-  const handleVisiblePhotosChange = useCallback((visiblePhotos: Photo[]) => {
-    if (fixedHeaderDetail) {
-      return
-    }
-
-    const nextHeaderState = getGalleryHeaderState(visiblePhotos)
-
-    setHeaderState((currentState) => {
-      if (
-        currentState.dateRange === nextHeaderState.dateRange &&
-        currentState.location === nextHeaderState.location
-      ) {
-        return currentState
+  const handleVisiblePhotosChange = useCallback(
+    (visiblePhotos: Photo[]) => {
+      if (fixedHeaderDetail) {
+        return
       }
 
-      return nextHeaderState
-    })
-  }, [fixedHeaderDetail])
+      const nextHeaderState = getGalleryHeaderState(visiblePhotos)
+
+      setHeaderState((currentState) => {
+        if (
+          currentState.dateRange === nextHeaderState.dateRange &&
+          currentState.location === nextHeaderState.location
+        ) {
+          return currentState
+        }
+
+        return nextHeaderState
+      })
+    },
+    [fixedHeaderDetail],
+  )
 
   return (
     <LazyMotion features={domAnimation} strict>

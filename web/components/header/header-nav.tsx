@@ -4,6 +4,7 @@ import { LayoutGrid, LibraryBig } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/style'
+import { isHeaderNavItemActive } from './lib/header-nav-state'
 
 const navItems = [
   {
@@ -24,10 +25,7 @@ export function HeaderNav() {
   return (
     <nav aria-label="Primary" className="flex items-center gap-1">
       {navItems.map((item) => {
-        const isActive =
-          item.href === '/'
-            ? pathname === '/' || pathname.startsWith('/photos/')
-            : pathname.startsWith(item.href)
+        const isActive = isHeaderNavItemActive(pathname, item.href)
         const Icon = item.icon
 
         return (

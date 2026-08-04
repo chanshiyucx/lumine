@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react'
 import {
   getGalleryHeaderDetail,
   subscribeGalleryHeaderDetail,
-} from './gallery-header-events'
+} from './lib/gallery-header-events'
 
 export function HeaderCenter() {
   const detail = useSyncExternalStore(
