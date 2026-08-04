@@ -1,7 +1,6 @@
 'use client'
 
-/* eslint-disable @next/next/no-img-element */
-import { useCallback } from 'react'
+import Image from 'next/image'
 import { ThumbHashImage } from '@/components/thumbhash'
 import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
@@ -27,11 +26,11 @@ export function ThumbnailImage({
   loading = 'lazy',
   placeholderClassName,
 }: ThumbnailImageProps) {
-  const handleImageRef = useCallback((image: HTMLImageElement | null) => {
+  const handleImageRef = (image: HTMLImageElement | null) => {
     if (image?.complete && image.naturalWidth > 0) {
       image.dataset.loaded = 'true'
     }
-  }, [])
+  }
 
   return (
     <>
@@ -42,7 +41,7 @@ export function ThumbnailImage({
           placeholderClassName,
         )}
       />
-      <img
+      <Image
         key={photo.thumbnail.url}
         ref={handleImageRef}
         src={photo.thumbnail.url}
@@ -56,6 +55,7 @@ export function ThumbnailImage({
         )}
         decoding="async"
         loading={loading}
+        unoptimized
         onLoad={(event) => {
           event.currentTarget.dataset.loaded = 'true'
         }}

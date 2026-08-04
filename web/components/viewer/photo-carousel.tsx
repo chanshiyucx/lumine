@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Swiper as SwiperInstance } from 'swiper'
 import { A11y, Virtual } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -54,25 +54,19 @@ export function PhotoCarousel({
     }
   }, [allowTouchMove])
 
-  const handleZoomStateChange = useCallback(
-    (isZoomed: boolean) => {
-      setZoomState((current) => {
-        if (
-          current.photoId === activePhotoId &&
-          current.isZoomed === isZoomed
-        ) {
-          return current
-        }
+  const handleZoomStateChange = (isZoomed: boolean) => {
+    setZoomState((current) => {
+      if (current.photoId === activePhotoId && current.isZoomed === isZoomed) {
+        return current
+      }
 
-        return {
-          photoId: activePhotoId,
-          isZoomed,
-        }
-      })
-      onZoomStateChange(isZoomed)
-    },
-    [activePhotoId, onZoomStateChange],
-  )
+      return {
+        photoId: activePhotoId,
+        isZoomed,
+      }
+    })
+    onZoomStateChange(isZoomed)
+  }
 
   return (
     <Swiper

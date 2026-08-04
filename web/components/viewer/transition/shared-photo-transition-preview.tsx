@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 import { m, useIsPresent, useReducedMotion } from 'motion/react'
+import Image from 'next/image'
 import {
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type RefObject,
@@ -163,10 +162,9 @@ export function SharedPhotoTransitionPreview({
     return () => window.clearTimeout(timer)
   }, [frames, onEntryHandoff, operationId, phase, reduceMotion])
 
-  const transform = useMemo(
-    () => (frames ? getFrameTransform(frames.source, frames.target) : null),
-    [frames],
-  )
+  const transform = frames
+    ? getFrameTransform(frames.source, frames.target)
+    : null
 
   if (!frames || !transform) {
     return null
@@ -209,7 +207,6 @@ export function SharedPhotoTransitionPreview({
         top: frames.target.top,
         transformOrigin: '0 0',
         width: frames.target.width,
-        willChange: 'transform',
       }}
       initial={
         reduceMotion
@@ -257,12 +254,15 @@ export function SharedPhotoTransitionPreview({
         }
       }}
     >
-      <img
+      <Image
         src={photo.thumbnail.url}
         alt=""
         aria-hidden
+        width={photo.thumbnail.width}
+        height={photo.thumbnail.height}
         className="size-full object-cover"
         draggable={false}
+        unoptimized
       />
     </m.div>
   )

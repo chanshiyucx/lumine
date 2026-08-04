@@ -191,4 +191,3 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     </div>
   )
 })
-/* eslint-enable react-hooks/refs */

@@ -1,33 +1,21 @@
 'use client'
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  PanelRightClose,
-  PanelRightOpen,
-  X,
-} from 'lucide-react'
 import { m } from 'motion/react'
-import { useCallback, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
-import { cn } from '@/lib/style'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 import {
   useMobileViewerInteractions,
   type MobileDismissSnapshot,
 } from './hooks/use-mobile-viewer-interactions'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
+import { resolveSharedPhotoTransition } from './lib/shared-photo-transition'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 import type { ViewerState } from './lib/viewer-state'
 import { PhotoCarousel } from './photo-carousel'
-import { ThumbnailRail } from './thumbnail-rail'
-import {
-  resolveSharedPhotoTransition,
-  SharedPhotoTransition,
-} from './transition/shared-photo-transition'
+import { SharedPhotoTransition } from './transition/shared-photo-transition'
 import {
   fitMediaFrame,
   projectViewerFrame,
@@ -40,10 +28,12 @@ import {
   type ViewerRevealStage,
 } from './transition/viewer-reveal-state'
 import { ViewerBackdrop } from './viewer-backdrop'
+import {
+  ViewerNavigation,
+  ViewerThumbnailRail,
+  ViewerToolbar,
+} from './viewer-controls'
 import { ViewerInfoPanel } from './viewer-info-panel'
-
-const NAVIGATION_BUTTON_CLASS =
-  'circle-button pointer-events-auto absolute top-1/2 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 lg:inline-flex'
 
 interface ViewerProps {
   photos: Photo[]
@@ -95,59 +85,47 @@ export function Viewer({
   const backdropEntryKey =
     state.phase === 'entering' ? state.operationId : revealState.operationId
   const sharedTransition = resolveSharedPhotoTransition(state)
-  const canGoPrevious = activeIndex > 0
-  const canGoNext = activeIndex < photos.length - 1
-  const advanceReveal = useCallback(
-    (operationId: number, stage: ViewerRevealStage) => {
-      setRevealState((current) =>
-        advanceViewerRevealState(current, operationId, stage),
+  const advanceReveal = (operationId: number, stage: ViewerRevealStage) => {
+    setRevealState((current) =>
+      advanceViewerRevealState(current, operationId, stage),
+    )
+  }
+  const revealSurfaces = (operationId: number) =>
+    advanceReveal(operationId, 'surfaces')
+  const revealControls = (operationId: number) =>
+    advanceReveal(operationId, 'controls')
+
+  const handleMobileDismiss = (snapshot: MobileDismissSnapshot) => {
+    const stage = mediaStageRef.current
+    if (stage) {
+      const fittedFrame = fitMediaFrame(
+        {
+          height: currentPhoto.original.height,
+          width: currentPhoto.original.width,
+        },
+        {
+          height: stage.offsetHeight,
+          left: stage.offsetLeft,
+          top: stage.offsetTop,
+          width: stage.offsetWidth,
+        },
       )
-    },
-    [],
-  )
-  const revealSurfaces = useCallback(
-    (operationId: number) => advanceReveal(operationId, 'surfaces'),
-    [advanceReveal],
-  )
-  const revealControls = useCallback(
-    (operationId: number) => advanceReveal(operationId, 'controls'),
-    [advanceReveal],
-  )
-
-  const handleMobileDismiss = useCallback(
-    (snapshot: MobileDismissSnapshot) => {
-      const stage = mediaStageRef.current
-      if (stage) {
-        const fittedFrame = fitMediaFrame(
+      setDragExitFrame(
+        projectViewerFrame(
+          fittedFrame,
           {
-            height: currentPhoto.original.height,
-            width: currentPhoto.original.width,
+            height: window.innerHeight,
+            left: 0,
+            top: 0,
+            width: window.innerWidth,
           },
-          {
-            height: stage.offsetHeight,
-            left: stage.offsetLeft,
-            top: stage.offsetTop,
-            width: stage.offsetWidth,
-          },
-        )
-        setDragExitFrame(
-          projectViewerFrame(
-            fittedFrame,
-            {
-              height: window.innerHeight,
-              left: 0,
-              top: 0,
-              width: window.innerWidth,
-            },
-            snapshot,
-          ),
-        )
-      }
+          snapshot,
+        ),
+      )
+    }
 
-      onClose()
-    },
-    [currentPhoto.original.height, currentPhoto.original.width, onClose],
-  )
+    onClose()
+  }
 
   const mobile = useMobileViewerInteractions({
     enabled: isMobile && state.phase !== 'entering',
@@ -156,23 +134,20 @@ export function Viewer({
   })
   const isInfoPanelOpen = isMobile ? mobile.infoOpen : isDesktopInfoPanelOpen
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setDragExitFrame(null)
     onClose()
-  }, [onClose])
+  }
 
   useDialogFocus(dialogRef, closeButtonRef, getRestoreFocusElement)
 
-  const goToPhoto = useCallback(
-    (index: number) => {
-      if (!isInteractionEnabled || index < 0 || index >= photos.length) {
-        return
-      }
+  const goToPhoto = (index: number) => {
+    if (!isInteractionEnabled || index < 0 || index >= photos.length) {
+      return
+    }
 
-      onActiveIndexChange(index)
-    },
-    [isInteractionEnabled, onActiveIndexChange, photos.length],
-  )
+    onActiveIndexChange(index)
+  }
 
   useViewerKeyboardNavigation({
     activeIndex,
@@ -287,60 +262,16 @@ export function Viewer({
                   touchAction: isMobile ? 'pan-x' : undefined,
                 }}
               >
-                <m.div
-                  className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] right-[calc(env(safe-area-inset-right)+0.5rem)] z-50 flex gap-2"
-                  data-viewer-chrome="toolbar"
-                  initial={
-                    state.phase === 'entering' ? { opacity: 0, y: -6 } : false
-                  }
-                  animate={{
-                    opacity: isViewerControlsVisible ? 1 : 0,
-                    y: isViewerControlsVisible ? 0 : -6,
-                  }}
-                  transition={
-                    isViewerControlsVisible
-                      ? VIEWER_MOTION.chrome.toolbar.enter
-                      : VIEWER_MOTION.chrome.toolbar.exit
-                  }
-                  style={{
-                    pointerEvents: isViewerControlsVisible ? 'auto' : 'none',
-                  }}
-                >
-                  <m.div
-                    className="flex gap-2"
-                    style={{ opacity: isMobile ? mobile.chromeOpacity : 1 }}
-                  >
-                    <button
-                      ref={infoButtonRef}
-                      type="button"
-                      className="circle-button"
-                      onClick={toggleInfoPanel}
-                      aria-expanded={isInfoPanelOpen}
-                      aria-label={
-                        isInfoPanelOpen
-                          ? 'Collapse information panel'
-                          : 'Expand information panel'
-                      }
-                    >
-                      <Info className="size-4 lg:hidden" />
-                      {isInfoPanelOpen ? (
-                        <PanelRightClose className="hidden size-4 lg:block" />
-                      ) : (
-                        <PanelRightOpen className="hidden size-4 lg:block" />
-                      )}
-                    </button>
-
-                    <button
-                      ref={closeButtonRef}
-                      type="button"
-                      className="circle-button"
-                      onClick={handleClose}
-                      aria-label="Close preview"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </m.div>
-                </m.div>
+                <ViewerToolbar
+                  chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
+                  closeButtonRef={closeButtonRef}
+                  infoButtonRef={infoButtonRef}
+                  isInfoPanelOpen={isInfoPanelOpen}
+                  isVisible={isViewerControlsVisible}
+                  onClose={handleClose}
+                  onToggleInfoPanel={toggleInfoPanel}
+                  phase={state.phase}
+                />
 
                 <div
                   className="absolute inset-0"
@@ -357,72 +288,24 @@ export function Viewer({
                   />
                 </div>
 
-                <m.div
-                  data-viewer-chrome="navigation"
-                  className="pointer-events-none absolute inset-0 z-50"
-                  initial={state.phase === 'entering' ? { opacity: 0 } : false}
-                  animate={{ opacity: isViewerControlsVisible ? 1 : 0 }}
-                  transition={
-                    isViewerControlsVisible
-                      ? VIEWER_MOTION.chrome.toolbar.enter
-                      : VIEWER_MOTION.chrome.toolbar.exit
-                  }
-                >
-                  {canGoPrevious && (
-                    <button
-                      type="button"
-                      disabled={!isInteractionEnabled}
-                      className={cn(NAVIGATION_BUTTON_CLASS, 'left-4')}
-                      onClick={() => goToPhoto(activeIndex - 1)}
-                      aria-label="Previous photo"
-                    >
-                      <ChevronLeft className="size-5" />
-                    </button>
-                  )}
-
-                  {canGoNext && (
-                    <button
-                      type="button"
-                      disabled={!isInteractionEnabled}
-                      className={cn(NAVIGATION_BUTTON_CLASS, 'right-4')}
-                      onClick={() => goToPhoto(activeIndex + 1)}
-                      aria-label="Next photo"
-                    >
-                      <ChevronRight className="size-5" />
-                    </button>
-                  )}
-                </m.div>
+                <ViewerNavigation
+                  activeIndex={activeIndex}
+                  onSelect={goToPhoto}
+                  phase={state.phase}
+                  photoCount={photos.length}
+                  visibility={isViewerControlsVisible ? 'visible' : 'hidden'}
+                />
               </section>
 
-              <m.div
-                data-viewer-chrome="thumbnail-rail"
-                initial={
-                  state.phase === 'entering' ? { opacity: 0, y: 24 } : false
-                }
-                animate={{
-                  opacity: isViewerSurfaceVisible ? 1 : 0,
-                  y: isViewerSurfaceVisible ? 0 : 24,
-                }}
-                transition={
-                  isViewerSurfaceVisible
-                    ? VIEWER_MOTION.chrome.rail.enter
-                    : VIEWER_MOTION.chrome.rail.exit
-                }
-                style={{
-                  pointerEvents:
-                    isViewerSurfaceVisible && isInteractionEnabled
-                      ? 'auto'
-                      : 'none',
-                }}
-              >
-                <m.div style={{ opacity: isMobile ? mobile.railOpacity : 1 }}>
-                  <ThumbnailRail
-                    photos={photos}
-                    activeIndex={activeIndex}
-                    onSelect={goToPhoto}
-                  />
-                </m.div>
-              </m.div>
+              <ViewerThumbnailRail
+                activeIndex={activeIndex}
+                isInteractive={isInteractionEnabled}
+                isVisible={isViewerSurfaceVisible}
+                onSelect={goToPhoto}
+                opacity={isMobile ? mobile.railOpacity : 1}
+                phase={state.phase}
+                photos={photos}
+              />
             </m.div>
 
             <ViewerInfoPanel

@@ -1,6 +1,6 @@
 import { useDrag } from '@use-gesture/react'
 import { animate, useMotionValue, useTransform } from 'motion/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   clamp,
   getDismissPresentation,
@@ -50,67 +50,48 @@ export function useMobileViewerInteractions({
   const closingRef = useRef(false)
   const gestureActiveRef = useRef(false)
   const animationsRef = useRef<ReturnType<typeof animate>[]>([])
-  const metrics = useMemo(
-    () => getMobileGestureMetrics(viewport.height),
-    [viewport.height],
-  )
+  const metrics = getMobileGestureMetrics(viewport.height)
 
-  const stopAnimations = useCallback(() => {
+  const stopAnimations = () => {
     animationsRef.current.forEach((animation) => animation.stop())
     animationsRef.current = []
-  }, [])
+  }
 
-  const registerAnimation = useCallback(
-    (animation: ReturnType<typeof animate>) => {
-      animationsRef.current.push(animation)
-      return animation
-    },
-    [],
-  )
+  const registerAnimation = (animation: ReturnType<typeof animate>) => {
+    animationsRef.current.push(animation)
+    return animation
+  }
 
-  const settle = useCallback(
-    (value: typeof dismissX, target: number, velocity = 0) => {
-      return registerAnimation(
-        animate(value, target, {
-          ...VIEWER_MOTION.settle,
-          velocity,
-        }),
-      )
-    },
-    [registerAnimation],
-  )
+  const settle = (value: typeof dismissX, target: number, velocity = 0) => {
+    return registerAnimation(
+      animate(value, target, {
+        ...VIEWER_MOTION.settle,
+        velocity,
+      }),
+    )
+  }
 
-  const settleInspector = useCallback(
-    (open: boolean, velocity = 0) => {
-      stopAnimations()
-      setInfoOpen(open)
-      registerAnimation(
-        animate(inspectorProgress, open ? 1 : 0, {
-          ...VIEWER_MOTION.inspector[open ? 'open' : 'close'],
-          velocity: getInspectorSettleVelocity(open, velocity),
-        }),
-      )
-      settle(dismissX, 0)
-      settle(dismissY, 0)
-    },
-    [
-      dismissX,
-      dismissY,
-      inspectorProgress,
-      registerAnimation,
-      settle,
-      stopAnimations,
-    ],
-  )
+  const settleInspector = (open: boolean, velocity = 0) => {
+    stopAnimations()
+    setInfoOpen(open)
+    registerAnimation(
+      animate(inspectorProgress, open ? 1 : 0, {
+        ...VIEWER_MOTION.inspector[open ? 'open' : 'close'],
+        velocity: getInspectorSettleVelocity(open, velocity),
+      }),
+    )
+    settle(dismissX, 0)
+    settle(dismissY, 0)
+  }
 
-  const reset = useCallback(() => {
+  const reset = () => {
     stopAnimations()
     closingRef.current = false
     gestureActiveRef.current = false
     dismissX.set(0)
     dismissY.set(0)
     inspectorProgress.set(infoOpen ? 1 : 0)
-  }, [dismissX, dismissY, infoOpen, inspectorProgress, stopAnimations])
+  }
 
   useEffect(() => {
     const handleResize = () => setViewport(getViewport())
@@ -120,68 +101,62 @@ export function useMobileViewerInteractions({
 
   useEffect(() => {
     if (!enabled) {
-      reset()
+      animationsRef.current.forEach((animation) => animation.stop())
+      animationsRef.current = []
+      closingRef.current = false
+      gestureActiveRef.current = false
+      dismissX.set(0)
+      dismissY.set(0)
+      inspectorProgress.set(infoOpen ? 1 : 0)
     }
-  }, [enabled, reset])
+  }, [dismissX, dismissY, enabled, infoOpen, inspectorProgress])
 
-  const dismissWithThrow = useCallback(
-    (velocityX: number, velocityY: number) => {
-      closingRef.current = true
-      stopAnimations()
-      const currentX = dismissX.get()
-      const currentY = dismissY.get()
-      const targetX = clamp(
-        currentX + velocityX * viewport.width * 0.1,
-        -viewport.width * 0.22,
-        viewport.width * 0.22,
-      )
-      const targetY = clamp(
-        currentY + viewport.height * (0.08 + velocityY * 0.04),
-        currentY + 40,
-        viewport.height * 0.42,
-      )
+  const dismissWithThrow = (velocityX: number, velocityY: number) => {
+    closingRef.current = true
+    stopAnimations()
+    const currentX = dismissX.get()
+    const currentY = dismissY.get()
+    const targetX = clamp(
+      currentX + velocityX * viewport.width * 0.1,
+      -viewport.width * 0.22,
+      viewport.width * 0.22,
+    )
+    const targetY = clamp(
+      currentY + viewport.height * (0.08 + velocityY * 0.04),
+      currentY + 40,
+      viewport.height * 0.42,
+    )
 
-      registerAnimation(
-        animate(dismissX, targetX, {
-          type: 'spring',
-          duration: 0.18,
-          bounce: 0.08,
-        }),
-      )
-      registerAnimation(
-        animate(dismissY, targetY, {
-          type: 'spring',
-          duration: 0.18,
-          bounce: 0.04,
-          onComplete: () => {
-            const presentation = getDismissPresentation(
-              targetX,
-              targetY,
-              metrics.dismissTravel,
-              viewport.width,
-            )
-            onDismiss({
-              borderRadius: presentation.borderRadius,
-              rotate: presentation.rotate,
-              scale: presentation.scale,
-              translateX: targetX,
-              translateY: targetY,
-            })
-          },
-        }),
-      )
-    },
-    [
-      dismissX,
-      dismissY,
-      metrics.dismissTravel,
-      onDismiss,
-      registerAnimation,
-      stopAnimations,
-      viewport.height,
-      viewport.width,
-    ],
-  )
+    registerAnimation(
+      animate(dismissX, targetX, {
+        type: 'spring',
+        duration: 0.18,
+        bounce: 0.08,
+      }),
+    )
+    registerAnimation(
+      animate(dismissY, targetY, {
+        type: 'spring',
+        duration: 0.18,
+        bounce: 0.04,
+        onComplete: () => {
+          const presentation = getDismissPresentation(
+            targetX,
+            targetY,
+            metrics.dismissTravel,
+            viewport.width,
+          )
+          onDismiss({
+            borderRadius: presentation.borderRadius,
+            rotate: presentation.rotate,
+            scale: presentation.scale,
+            translateX: targetX,
+            translateY: targetY,
+          })
+        },
+      }),
+    )
+  }
 
   const bindStage = useDrag(
     ({

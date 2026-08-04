@@ -1,12 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
-import {
-  memo,
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import Image from 'next/image'
+import { startTransition, useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
@@ -69,7 +62,7 @@ function HighResolutionPhoto({
   )
 }
 
-export const ProgressivePhoto = memo(function ProgressivePhoto({
+export function ProgressivePhoto({
   photo,
   isActive,
   loadDelayMs = 0,
@@ -92,23 +85,20 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
   const resourceKey = `${photo.id}:${state.blobSrc ?? ''}`
   const hasRenderFailed = failedResourceKey === resourceKey
 
-  const handleImageError = useCallback(
-    (error: Error) => {
-      console.error('Failed to render image:', error)
-      setFailedResourceKey(resourceKey)
+  const handleImageError = (error: Error) => {
+    console.error('Failed to render image:', error)
+    setFailedResourceKey(resourceKey)
 
-      if (isActive) {
-        loadingIndicatorRef.current?.updateLoadingState({
-          isVisible: true,
-          isError: true,
-          errorMessage: 'Failed to render image',
-        })
-      }
-    },
-    [isActive, resourceKey],
-  )
+    if (isActive) {
+      loadingIndicatorRef.current?.updateLoadingState({
+        isVisible: true,
+        isError: true,
+        errorMessage: 'Failed to render image',
+      })
+    }
+  }
 
-  const handleZoomChange = useCallback((scale: number) => {
+  const handleZoomChange = (scale: number) => {
     startTransition(() => {
       setCurrentScale(scale)
       setShowScaleIndicator(true)
@@ -122,7 +112,7 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
       setShowScaleIndicator(false)
       scaleIndicatorTimeoutRef.current = null
     }, SCALE_INDICATOR_DURATION)
-  }, [])
+  }
 
   useEffect(
     () => () => {
@@ -135,12 +125,15 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
 
   return (
     <div className="relative size-full overflow-hidden">
-      <img
+      <Image
         src={photo.thumbnail.url}
         alt=""
         aria-hidden
+        width={photo.thumbnail.width}
+        height={photo.thumbnail.height}
         className="absolute inset-0 size-full object-contain"
         loading="eager"
+        unoptimized
       />
 
       {state.blobSrc &&
@@ -171,4 +164,4 @@ export const ProgressivePhoto = memo(function ProgressivePhoto({
       </div>
     </div>
   )
-})
+}

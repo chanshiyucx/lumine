@@ -24,9 +24,8 @@ interface MasonryPosition {
 
 export function getMasonryLayout(containerWidth: number): MasonryLayout {
   const columnCount =
-    COLUMN_COUNT_BREAKPOINTS.find(
-      ({ minWidth }) => containerWidth >= minWidth,
-    )?.columnCount ?? 1
+    COLUMN_COUNT_BREAKPOINTS.find(({ minWidth }) => containerWidth >= minWidth)
+      ?.columnCount ?? 1
 
   return {
     columnCount,
@@ -40,12 +39,15 @@ export function getVisibleMasonryIndexes(
   viewportStart: number,
   viewportEnd: number,
 ): number[] {
-  return positions
-    .filter(
-      (position) =>
-        position.end > viewportStart && position.start < viewportEnd,
-    )
-    .map((position) => position.index)
+  const indexes: number[] = []
+
+  for (const position of positions) {
+    if (position.end > viewportStart && position.start < viewportEnd) {
+      indexes.push(position.index)
+    }
+  }
+
+  return indexes
 }
 
 export function getPhotoMasonryHeight(

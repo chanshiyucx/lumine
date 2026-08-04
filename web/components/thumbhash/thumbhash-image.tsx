@@ -1,18 +1,28 @@
 'use client'
 
-/* eslint-disable @next/next/no-img-element */
-import { useMemo, type ComponentProps } from 'react'
+import Image, { type ImageProps } from 'next/image'
 import { getThumbHashAsset } from '@/lib/thumbhash'
 
 interface ThumbHashImageProps extends Omit<
-  ComponentProps<'img'>,
-  'alt' | 'src'
+  ImageProps,
+  'alt' | 'fill' | 'height' | 'src' | 'width'
 > {
   thumbHash: string
 }
 
 export function ThumbHashImage({ thumbHash, ...props }: ThumbHashImageProps) {
-  const src = useMemo(() => getThumbHashAsset(thumbHash).dataUrl, [thumbHash])
+  const src = getThumbHashAsset(thumbHash).dataUrl
 
-  return <img {...props} src={src} alt="" aria-hidden decoding="async" />
+  return (
+    <Image
+      {...props}
+      src={src}
+      alt=""
+      aria-hidden
+      decoding="async"
+      fill
+      sizes="100vw"
+      unoptimized
+    />
+  )
 }

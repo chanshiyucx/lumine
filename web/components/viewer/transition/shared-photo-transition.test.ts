@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { resolveSharedPhotoTransition } from '../lib/shared-photo-transition'
 import {
   createClosedViewerState,
   createDirectViewerState,
   reduceViewerState,
 } from '../lib/viewer-state'
-import { resolveSharedPhotoTransition } from './shared-photo-transition'
 
 const triggerElement = {} as HTMLElement
 

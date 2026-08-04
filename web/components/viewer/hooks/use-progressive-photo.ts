@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Photo } from '@/lib/photo'
 import {
   getCachedPhotoUrl,
@@ -95,6 +95,12 @@ async function readResponseAsBlob(
   })
 }
 
+function assertSuccessfulResponse(response: Response) {
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`)
+  }
+}
+
 export function useProgressivePhoto(
   photo: Photo,
   {
@@ -112,31 +118,31 @@ export function useProgressivePhoto(
 
     return createCachedState(cachedPhotoUrl)
   })
-
-  useEffect(() => {
-    if (!isActive && state.error) {
-      setState(createInitialState())
-    }
-  }, [isActive, state.error])
-
-  useEffect(() => {
-    if (!isActive || state.error) {
-      return
-    }
-
-    if (state.blobSrc) {
-      const cachedPhotoUrl = getCachedPhotoUrl(photo.original.url)
-      if (cachedPhotoUrl !== state.blobSrc) {
-        setState(createInitialState())
+  const shouldRetryOnActivationRef = useRef(false)
+  const cachedPhotoUrl = peekCachedPhotoUrl(photo.original.url)
+  const currentState: ProgressiveState = cachedPhotoUrl
+    ? createCachedState(cachedPhotoUrl)
+    : {
+        blobSrc: null,
+        error: state.error,
       }
+
+  useEffect(() => {
+    if (!isActive) {
+      shouldRetryOnActivationRef.current = true
       return
     }
 
-    const cachedPhotoUrl = getCachedPhotoUrl(photo.original.url)
     if (cachedPhotoUrl) {
-      setState(createCachedState(cachedPhotoUrl))
+      getCachedPhotoUrl(photo.original.url)
       return
     }
+
+    if (state.error && !shouldRetryOnActivationRef.current) {
+      return
+    }
+
+    shouldRetryOnActivationRef.current = false
 
     const controller = new AbortController()
     let loadTimer: number | null = null
@@ -155,10 +161,7 @@ export function useProgressivePhoto(
         const response = await fetch(photo.original.url, {
           signal: controller.signal,
         })
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.status}`)
-        }
+        assertSuccessfulResponse(response)
 
         const blob = await readResponseAsBlob(
           response,
@@ -223,9 +226,9 @@ export function useProgressivePhoto(
     photo.original.bytes,
     photo.original.mime,
     photo.original.url,
-    state.blobSrc,
+    cachedPhotoUrl,
     state.error,
   ])
 
-  return state
+  return currentState
 }

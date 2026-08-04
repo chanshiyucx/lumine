@@ -3,15 +3,9 @@
 import { AnimatePresence } from 'motion/react'
 import type { RefObject } from 'react'
 import type { Photo } from '@/lib/photo'
-import type { ViewerState } from '../lib/viewer-state'
+import type { ActiveSharedPhotoTransition } from '../lib/shared-photo-transition'
 import { SharedPhotoTransitionPreview } from './shared-photo-transition-preview'
 import type { ProjectedViewerFrame } from './viewer-frame'
-
-export interface ActiveSharedPhotoTransition {
-  operationId: number
-  phase: Extract<ViewerState['phase'], 'entering' | 'exiting'>
-  sourceElement: HTMLElement
-}
 
 interface SharedPhotoTransitionProps {
   activeTransition: ActiveSharedPhotoTransition | null
@@ -22,24 +16,6 @@ interface SharedPhotoTransitionProps {
   onExitComplete: (operationId: number) => void
   onPresenceExitComplete: (operationId: number) => void
   photo: Photo
-}
-
-export function resolveSharedPhotoTransition(
-  state: ViewerState,
-): ActiveSharedPhotoTransition | null {
-  const isSharedEntry =
-    state.phase === 'entering' && state.entryMode === 'shared'
-  const isSharedExit = state.phase === 'exiting' && state.exitMode === 'shared'
-
-  if ((!isSharedEntry && !isSharedExit) || state.triggerElement === null) {
-    return null
-  }
-
-  return {
-    operationId: state.operationId,
-    phase: isSharedEntry ? 'entering' : 'exiting',
-    sourceElement: state.triggerElement,
-  }
 }
 
 export function SharedPhotoTransition({

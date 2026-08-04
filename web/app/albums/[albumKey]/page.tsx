@@ -17,8 +17,10 @@ export default async function AlbumPage({
 }: {
   params: Promise<{ albumKey: string }>
 }) {
-  const { albumKey } = await params
-  const photoCollection = await getPhotoCollection()
+  const [{ albumKey }, photoCollection] = await Promise.all([
+    params,
+    getPhotoCollection(),
+  ])
   const album = getAlbumByKey(
     photoCollection.photos,
     normalizeAlbumKey(albumKey),

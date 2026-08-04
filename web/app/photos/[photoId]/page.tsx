@@ -19,8 +19,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: PhotoPageProps): Promise<Metadata> {
-  const { photoId } = await params
-  const photoCollection = await getPhotoCollection()
+  const [{ photoId }, photoCollection] = await Promise.all([
+    params,
+    getPhotoCollection(),
+  ])
   const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
 
   if (!photo) {
@@ -48,8 +50,10 @@ export async function generateMetadata({
 }
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
-  const { photoId } = await params
-  const photoCollection = await getPhotoCollection()
+  const [{ photoId }, photoCollection] = await Promise.all([
+    params,
+    getPhotoCollection(),
+  ])
   const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
 
   if (!photo) {

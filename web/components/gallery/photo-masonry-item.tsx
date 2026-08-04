@@ -58,7 +58,7 @@ export function PhotoMasonryItem({
             <span>{formatBytes(photo.original.bytes)}</span>
           </div>
           <div className="photo-masonry-expanded-info">
-            <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md duration-300 group-hover:opacity-100">
+            <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
               {albumChip}
             </span>
           </div>
