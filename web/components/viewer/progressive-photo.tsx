@@ -1,18 +1,9 @@
 import Image from 'next/image'
-import {
-  startTransition,
-  useEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from 'react'
+import { startTransition, useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
-import {
-  LoadingIndicator,
-  type LoadingIndicatorHandle,
-} from './loading-indicator'
+import { LoadingIndicator } from './loading-indicator'
 import { ZoomableImage } from './zoomable-image'
 
 interface ProgressivePhotoProps {
@@ -26,24 +17,24 @@ interface ProgressivePhotoProps {
 const SCALE_INDICATOR_DURATION = 1000
 
 interface HighResolutionPhotoProps {
+  isVisible: boolean
   photo: Photo
   src: string
-  loadingIndicatorRef: RefObject<LoadingIndicatorHandle | null>
   onError: (error: Error) => void
+  onLoad: () => void
   onZoomChange: (scale: number) => void
   onZoomStateChange?: (isZoomed: boolean) => void
 }
 
 function HighResolutionPhoto({
+  isVisible,
   photo,
   src,
-  loadingIndicatorRef,
   onError,
+  onLoad,
   onZoomChange,
   onZoomStateChange,
 }: HighResolutionPhotoProps) {
-  const [isVisible, setIsVisible] = useState(false)
-
   return (
     <div
       className={cn(
@@ -56,10 +47,7 @@ function HighResolutionPhoto({
         alt={photo.title}
         width={photo.original.width}
         height={photo.original.height}
-        onLoad={() => {
-          loadingIndicatorRef.current?.resetLoadingState()
-          setIsVisible(true)
-        }}
+        onLoad={onLoad}
         onZoomChange={onZoomChange}
         onZoomStateChange={onZoomStateChange}
         onError={onError}
@@ -75,34 +63,17 @@ export function ProgressivePhoto({
   onZoomStateChange,
   shouldMountInteractiveImage = true,
 }: ProgressivePhotoProps) {
-  const [failedResourceKey, setFailedResourceKey] = useState<string | null>(
-    null,
-  )
   const [currentScale, setCurrentScale] = useState(1)
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
   const scaleIndicatorTimeoutRef = useRef<number | null>(null)
-  const loadingIndicatorRef = useRef<LoadingIndicatorHandle | null>(null)
-  const state = useProgressivePhoto(photo, {
+  const { markDecoded, markRenderFailed, state } = useProgressivePhoto(photo, {
     isActive,
     loadDelayMs,
-    loadingIndicatorRef,
   })
-
-  const resourceKey = `${photo.id}:${state.blobSrc ?? ''}`
-  const hasRenderFailed = failedResourceKey === resourceKey
-
-  const handleImageError = (error: Error) => {
-    console.error('Failed to render image:', error)
-    setFailedResourceKey(resourceKey)
-
-    if (isActive) {
-      loadingIndicatorRef.current?.updateLoadingState({
-        isVisible: true,
-        isError: true,
-        errorMessage: 'Failed to render image',
-      })
-    }
-  }
+  const hasHighResolutionPhoto =
+    state.status === 'cached' ||
+    state.status === 'decoding' ||
+    state.status === 'ready'
 
   const handleZoomChange = (scale: number) => {
     startTransition(() => {
@@ -142,23 +113,20 @@ export function ProgressivePhoto({
         unoptimized
       />
 
-      {state.blobSrc &&
-        isActive &&
-        shouldMountInteractiveImage &&
-        !state.error &&
-        !hasRenderFailed && (
-          <HighResolutionPhoto
-            key={resourceKey}
-            photo={photo}
-            src={state.blobSrc}
-            loadingIndicatorRef={loadingIndicatorRef}
-            onError={handleImageError}
-            onZoomChange={handleZoomChange}
-            onZoomStateChange={onZoomStateChange}
-          />
-        )}
+      {hasHighResolutionPhoto && isActive && shouldMountInteractiveImage && (
+        <HighResolutionPhoto
+          key={`${photo.id}:${state.src}`}
+          isVisible={state.status === 'ready'}
+          photo={photo}
+          src={state.src}
+          onError={markRenderFailed}
+          onLoad={markDecoded}
+          onZoomChange={handleZoomChange}
+          onZoomStateChange={onZoomStateChange}
+        />
+      )}
 
-      <LoadingIndicator ref={loadingIndicatorRef} />
+      <LoadingIndicator state={state} />
 
       <div
         className={cn(

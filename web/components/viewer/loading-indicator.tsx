@@ -1,87 +1,51 @@
 import { AlertCircle, LoaderCircle } from 'lucide-react'
-import { forwardRef, useImperativeHandle, useState } from 'react'
 import { formatLoadingBytes } from './lib/loading-indicator'
+import type { PhotoResourceState } from './lib/photo-resource-store'
 
-interface ViewerLoadingState {
-  isVisible: boolean
-  loadingProgress: number
-  loadedBytes: number
-  totalBytes: number
-  isError: boolean
-  errorMessage?: string
+interface LoadingIndicatorProps {
+  state: PhotoResourceState
 }
 
-export interface LoadingIndicatorHandle {
-  updateLoadingState: (state: Partial<ViewerLoadingState>) => void
-  resetLoadingState: () => void
+function getBytesLabel(loadedBytes: number, totalBytes: number) {
+  if (totalBytes <= 0) {
+    return loadedBytes > 0 ? formatLoadingBytes(loadedBytes) : ''
+  }
+
+  return `${formatLoadingBytes(loadedBytes)} / ${formatLoadingBytes(totalBytes)}`
 }
 
-const initialLoadingState: ViewerLoadingState = {
-  isVisible: false,
-  loadingProgress: 0,
-  loadedBytes: 0,
-  totalBytes: 0,
-  isError: false,
-  errorMessage: undefined,
-}
+export function LoadingIndicator({ state }: LoadingIndicatorProps) {
+  if (
+    state.status === 'cached' ||
+    state.status === 'idle' ||
+    state.status === 'ready'
+  ) {
+    return null
+  }
 
-export const LoadingIndicator = forwardRef<LoadingIndicatorHandle>(
-  function LoadingIndicator(_, ref) {
-    const [loadingState, setLoadingState] =
-      useState<ViewerLoadingState>(initialLoadingState)
+  const isError = state.status === 'error'
+  const bytesLabel = isError
+    ? null
+    : getBytesLabel(state.loadedBytes, state.totalBytes)
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        updateLoadingState: (partialState: Partial<ViewerLoadingState>) => {
-          setLoadingState((current) => {
-            if (partialState.isVisible === false) {
-              return initialLoadingState
-            }
+  return (
+    <div className="bg-overlay/80 pointer-events-none absolute right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
+      {isError ? (
+        <AlertCircle className="size-4" />
+      ) : (
+        <LoaderCircle className="size-4 animate-spin" />
+      )}
 
-            return {
-              ...current,
-              ...partialState,
-              isVisible: partialState.isVisible ?? true,
-            }
-          })
-        },
-        resetLoadingState: () => {
-          setLoadingState(initialLoadingState)
-        },
-      }),
-      [],
-    )
-
-    const { loadedBytes, totalBytes } = loadingState
-    const bytesLabel =
-      totalBytes <= 0
-        ? loadedBytes > 0
-          ? formatLoadingBytes(loadedBytes)
-          : ''
-        : `${formatLoadingBytes(loadedBytes)} / ${formatLoadingBytes(totalBytes)}`
-
-    if (!loadingState.isVisible) {
-      return null
-    }
-
-    return (
-      <div className="bg-overlay/80 pointer-events-none absolute right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
-        {loadingState.isError ? (
-          <AlertCircle className="size-4" />
+      <div className="w-28 text-xs tabular-nums">
+        {isError ? (
+          <p>{state.message}</p>
         ) : (
-          <LoaderCircle className="size-4 animate-spin" />
+          <>
+            <p>Loading {Math.round(state.progress)}%</p>
+            {bytesLabel && <p>{bytesLabel}</p>}
+          </>
         )}
-
-        <div className="w-28 text-xs tabular-nums">
-          {loadingState.isError ? (
-            <p>{loadingState.errorMessage ?? 'Failed to load image'}</p>
-          ) : (
-            <p>Loading {Math.round(loadingState.loadingProgress)}%</p>
-          )}
-          {!loadingState.isError && bytesLabel && <p>{bytesLabel}</p>}
-        </div>
       </div>
-    )
-  },
-)
+    </div>
+  )
+}
