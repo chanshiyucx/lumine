@@ -65,17 +65,11 @@
 @layer base {
   html {
     color-scheme: dark;
-    @apply overscroll-none scroll-smooth;
+    @apply h-full overflow-hidden;
   }
 
   body {
-    @apply bg-base text-text min-h-screen font-medium tabular-nums antialiased;
-  }
-
-  @media (min-width: 48rem) {
-    html {
-      scrollbar-gutter: stable;
-    }
+    @apply bg-base text-text h-full overflow-x-hidden overflow-y-auto font-medium tabular-nums antialiased lg:overflow-hidden;
   }
 }
 

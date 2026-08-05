@@ -5,6 +5,7 @@ import 'swiper/css/virtual'
 import { siteConfig } from '@/lib/site-config'
 import '@/styles/globals.css'
 import { Header } from '@/components/header'
+import { PageScrollArea } from '@/components/scroll-area'
 
 const geist = Geist({
   variable: '--font-geist',
@@ -35,10 +36,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={geist.variable}>
+    <html lang="en" className={geist.variable}>
       <body>
         <Header />
-        {children}
+        <PageScrollArea>{children}</PageScrollArea>
       </body>
     </html>
   )

@@ -3,6 +3,7 @@
 import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { publishGalleryHeaderDetail } from '@/components/header/lib/gallery-header-store'
+import { useScrollElement } from '@/components/scroll-area'
 import { useViewerController, Viewer } from '@/components/viewer'
 import type { Photo } from '@/lib/photo'
 import {
@@ -24,6 +25,7 @@ export function PhotoGallery({
   initialPhotoSlug,
   fixedHeaderLocation,
 }: PhotoGalleryProps) {
+  const scrollElement = useScrollElement()
   const viewer = useViewerController({
     photos,
     initialPhotoSlug,
@@ -43,12 +45,13 @@ export function PhotoGallery({
     : headerState.location
 
   useEffect(() => {
-    if (hasFixedHeader) {
+    if (hasFixedHeader || !scrollElement) {
       return
     }
 
     const handleScroll = () => {
-      const nextShowHeaderDetail = window.scrollY > HEADER_SCROLL_THRESHOLD
+      const nextShowHeaderDetail =
+        scrollElement.scrollTop > HEADER_SCROLL_THRESHOLD
 
       setShowHeaderDetail((currentShowHeaderDetail) => {
         if (currentShowHeaderDetail === nextShowHeaderDetail) {
@@ -60,12 +63,12 @@ export function PhotoGallery({
     }
 
     handleScroll()
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
+      scrollElement.removeEventListener('scroll', handleScroll)
     }
-  }, [hasFixedHeader])
+  }, [hasFixedHeader, scrollElement])
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>('[data-site-header]')

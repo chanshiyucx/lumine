@@ -1,6 +1,7 @@
 import { m, type MotionStyle } from 'motion/react'
 import type { ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/photo'
+import { ScrollArea } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
 import { getCaptureSettings } from '@/lib/photo/metadata'
 import { cn } from '@/lib/style'
@@ -164,9 +165,14 @@ export function ViewerInfoPanel({
                 />
               </button>
             </div>
-            <div className="viewer-info-scroll-mask min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <ScrollArea
+              ariaLabel="Photo information"
+              className="min-h-0 flex-1"
+              scrollbarClassName="my-2"
+              viewportClassName="viewer-info-scroll-mask overscroll-contain"
+            >
               <ViewerInfoPanelContent photo={photo} />
-            </div>
+            </ScrollArea>
           </div>
         </m.div>
       </m.div>

@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import { ThumbHashImage } from '@/components/thumbhash'
 import type { PhotoAsset } from '@/lib/photo'
@@ -25,12 +23,6 @@ export function ThumbnailImage({
   loading = 'lazy',
   placeholderClassName,
 }: ThumbnailImageProps) {
-  const handleImageRef = (image: HTMLImageElement | null) => {
-    if (image?.complete && image.naturalWidth > 0) {
-      image.dataset.loaded = 'true'
-    }
-  }
-
   return (
     <>
       <ThumbHashImage
@@ -41,22 +33,17 @@ export function ThumbnailImage({
         )}
       />
       <Image
-        key={photo.thumbnail.url}
-        ref={handleImageRef}
         src={photo.thumbnail.url}
         alt={alt}
         width={photo.thumbnail.width}
         height={photo.thumbnail.height}
         className={cn(
-          'absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-200 ease-out data-loaded:opacity-100 motion-reduce:transition-none',
+          'absolute inset-0 size-full object-cover',
           imageClassName,
         )}
         decoding="async"
         loading={loading}
         unoptimized
-        onLoad={(event) => {
-          event.currentTarget.dataset.loaded = 'true'
-        }}
       />
     </>
   )
