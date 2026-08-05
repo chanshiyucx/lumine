@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutGrid, LibraryBig } from 'lucide-react'
+import { LayoutGrid, LibraryBig, Map as MapIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/style'
@@ -16,6 +16,11 @@ const navItems = [
     href: '/albums',
     label: 'Albums',
     icon: LibraryBig,
+  },
+  {
+    href: '/map',
+    label: 'Map',
+    icon: MapIcon,
   },
 ]
 

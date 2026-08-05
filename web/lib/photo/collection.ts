@@ -2,8 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
-import { PHOTO_MANIFEST_URL_ENV } from '../env'
-import { siteConfig } from '../site-config'
+import { getMediaUrl, MEDIA_PATHS } from '../media-url'
 import { decodePathSegment } from '../url-segments'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
@@ -70,21 +69,8 @@ const manifestSchema = z.strictObject({
   photos: z.array(photoManifestSchema),
 })
 
-function getManifestUrl() {
-  const manifestUrl = process.env[PHOTO_MANIFEST_URL_ENV]
-  const parsedManifestUrl = z.url().safeParse(manifestUrl)
-
-  if (!parsedManifestUrl.success) {
-    throw new Error(
-      `Missing or invalid ${PHOTO_MANIFEST_URL_ENV}. Set it to the remote manifest.json URL.`,
-    )
-  }
-
-  return parsedManifestUrl.data
-}
-
 function resolveAssetUrl(pathname: string) {
-  return new URL(pathname, siteConfig.mediaOrigin).toString()
+  return getMediaUrl(pathname)
 }
 
 function parseAlbumPath(originalPath: string | undefined) {
@@ -131,7 +117,7 @@ function getFileNameFromAssetPath(pathname: string) {
 }
 
 async function fetchManifestJson() {
-  const manifestUrl = getManifestUrl()
+  const manifestUrl = getMediaUrl(MEDIA_PATHS.photoManifest)
   const response = await fetch(manifestUrl, {
     next: { revalidate: PHOTO_MANIFEST_REVALIDATE_SECONDS },
   })
