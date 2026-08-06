@@ -85,7 +85,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
   const [bounds, setBounds] = useState<MapBounds>(WORLD_BOUNDS)
   const [zoom, setZoom] = useState(1)
   const [loaded, setLoaded] = useState(false)
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const clusterIndex = useMemo(() => makeClusterIndex(items), [items])
   const clusters = useMemo(
     () => clusterIndex.getClusters(bounds, Math.floor(zoom)),
@@ -108,10 +107,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
     requestAnimationFrame(syncMapState)
   }, [items, syncMapState])
 
-  const handleSelect = useCallback((item: AlbumMapItem) => {
-    setSelectedKey((current) => (current === item.key ? null : item.key))
-  }, [])
-
   return (
     <main className="album-map bg-base relative h-svh overflow-hidden">
       <Map
@@ -122,7 +117,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
         mapStyle={MAP_STYLE_URL}
         projection={{ type: 'mercator' }}
         attributionControl={false}
-        onClick={() => setSelectedKey(null)}
         onLoad={handleLoad}
         onMove={syncMapState}
         onMoveEnd={syncMapState}
@@ -147,7 +141,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
                 count={pointCount}
                 items={clusterItems}
                 onExpand={() => {
-                  setSelectedKey(null)
                   mapRef.current?.easeTo({
                     center: [longitude, latitude],
                     zoom: Math.min(
@@ -163,14 +156,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
 
           const item = feature.properties.item
 
-          return (
-            <AlbumMarker
-              key={item.key}
-              item={item}
-              selected={item.key === selectedKey}
-              onSelect={handleSelect}
-            />
-          )
+          return <AlbumMarker key={item.key} item={item} />
         })}
       </Map>
 

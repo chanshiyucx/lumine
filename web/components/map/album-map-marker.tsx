@@ -2,31 +2,28 @@
 
 import * as HoverCard from '@radix-ui/react-hover-card'
 import { MapPinned } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
 import type { AlbumMapItem } from '@/lib/map/album-map-data'
-import { cn } from '@/lib/style'
 import { AlbumMapCoverImage } from './album-map-cover'
 import { AlbumPreviewCard } from './album-preview-card'
 import { ClusterPreviewCard } from './cluster-preview-card'
 
-interface InteractiveMarkerProps {
+interface MapMarkerProps {
   longitude: number
   latitude: number
   label: string
-  pressed?: boolean
-  onActivate: () => void
+  onActivate?: () => void
   children: ReactNode
 }
 
-function InteractiveMarker({
+function MapMarker({
   longitude,
   latitude,
   label,
-  pressed,
   onActivate,
   children,
-}: InteractiveMarkerProps) {
+}: MapMarkerProps) {
   const markerRef = useRef<MarkerInstance>(null)
 
   useEffect(() => {
@@ -35,13 +32,14 @@ function InteractiveMarker({
 
     element.setAttribute('aria-label', label)
     element.setAttribute('title', label)
-    element.setAttribute('tabindex', '0')
-
-    if (pressed === undefined) {
-      element.removeAttribute('aria-pressed')
-    } else {
-      element.setAttribute('aria-pressed', String(pressed))
+    if (!onActivate) {
+      element.setAttribute('role', 'img')
+      element.removeAttribute('tabindex')
+      return
     }
+
+    element.setAttribute('role', 'button')
+    element.setAttribute('tabindex', '0')
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Enter' && event.key !== ' ') return
@@ -51,8 +49,11 @@ function InteractiveMarker({
     }
 
     element.addEventListener('keydown', handleKeyDown)
-    return () => element.removeEventListener('keydown', handleKeyDown)
-  }, [label, pressed])
+    return () => {
+      element.removeEventListener('keydown', handleKeyDown)
+      element.removeAttribute('tabindex')
+    }
+  }, [label, onActivate])
 
   return (
     <Marker
@@ -60,61 +61,36 @@ function InteractiveMarker({
       longitude={longitude}
       latitude={latitude}
       anchor="center"
-      onClick={(event) => {
-        event.originalEvent.stopPropagation()
-        onActivate()
-      }}
+      onClick={
+        onActivate
+          ? (event) => {
+              event.originalEvent.stopPropagation()
+              onActivate()
+            }
+          : undefined
+      }
     >
       {children}
     </Marker>
   )
 }
 
-export function AlbumMarker({
-  item,
-  selected,
-  onSelect,
-}: {
-  item: AlbumMapItem
-  selected: boolean
-  onSelect: (item: AlbumMapItem) => void
-}) {
+export function AlbumMarker({ item }: { item: AlbumMapItem }) {
   const cover = item.covers[0]
-  const [hoverOpen, setHoverOpen] = useState(false)
 
   return (
-    <InteractiveMarker
+    <MapMarker
       longitude={item.location.lng}
       latitude={item.location.lat}
-      label={`Show ${item.label} album`}
-      pressed={selected}
-      onActivate={() => onSelect(item)}
+      label={`${item.label} album location`}
     >
-      <HoverCard.Root
-        open={selected || hoverOpen}
-        openDelay={350}
-        closeDelay={120}
-        onOpenChange={(open) => {
-          if (!selected) setHoverOpen(open)
-        }}
-      >
+      <HoverCard.Root openDelay={350} closeDelay={120}>
         <HoverCard.Trigger asChild>
           <span
             className="group relative block size-11 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white"
             aria-hidden
           >
-            <span
-              className={cn(
-                'bg-iris/25 absolute -inset-1.5 rounded-full transition-[opacity,transform] duration-300',
-                selected ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
-              )}
-            />
-            <span
-              className={cn(
-                'border-text/30 bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-transform duration-200 group-hover:scale-110',
-                selected && 'border-iris scale-110',
-              )}
-            >
+            <span className="border-text/30 bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-transform duration-200 group-hover:scale-110">
               {cover ? (
                 <AlbumMapCoverImage cover={cover} alt="" />
               ) : (
@@ -134,16 +110,12 @@ export function AlbumMarker({
             className="z-50 w-80 outline-none"
             onPointerDown={(event) => event.stopPropagation()}
           >
-            <AlbumPreviewCard
-              item={item}
-              selected={selected}
-              onClose={() => onSelect(item)}
-            />
+            <AlbumPreviewCard item={item} />
             <HoverCard.Arrow className="fill-base/95" width={14} height={7} />
           </HoverCard.Content>
         </HoverCard.Portal>
       </HoverCard.Root>
-    </InteractiveMarker>
+    </MapMarker>
   )
 }
 
@@ -164,7 +136,7 @@ export function ClusterMarker({
   const representativeCover = items[0]?.covers[0]
 
   return (
-    <InteractiveMarker
+    <MapMarker
       longitude={longitude}
       latitude={latitude}
       label={`Zoom into ${count} albums`}
@@ -207,6 +179,6 @@ export function ClusterMarker({
           </HoverCard.Content>
         </HoverCard.Portal>
       </HoverCard.Root>
-    </InteractiveMarker>
+    </MapMarker>
   )
 }

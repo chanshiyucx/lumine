@@ -1,17 +1,9 @@
-import { ArrowUpRight, X } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import type { AlbumMapItem } from '@/lib/map/album-map-data'
 import { AlbumCoverLink } from './album-cover-link'
 
-export function AlbumPreviewCard({
-  item,
-  selected,
-  onClose,
-}: {
-  item: AlbumMapItem
-  selected: boolean
-  onClose: () => void
-}) {
+export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
   const photoCountLabel = `${item.photoCount} ${item.photoCount === 1 ? 'photo' : 'photos'}`
   const detailLabel = [item.dateLabel, photoCountLabel]
     .filter(Boolean)
@@ -19,20 +11,9 @@ export function AlbumPreviewCard({
 
   return (
     <section
-      className="album-map-preview-card border-text/15 bg-base/95 relative overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-[120px]"
+      className="album-map-preview-card border-text/15 bg-base/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-[120px]"
       aria-label={`${item.label} album preview`}
     >
-      {selected && (
-        <button
-          type="button"
-          className="circle-button absolute top-3 right-3 z-10 cursor-pointer"
-          aria-label="Close album preview"
-          onClick={onClose}
-        >
-          <X className="size-4" />
-        </button>
-      )}
-
       <div className="grid h-32 grid-cols-[3fr_2fr] grid-rows-2 gap-px bg-black/20">
         {item.covers.slice(0, 3).map((cover, index) => (
           <AlbumCoverLink
