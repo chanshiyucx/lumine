@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/maplibre'
 import Supercluster from 'supercluster'
 import type { AlbumMapItem } from '@/lib/map/album-map-data'
+import { getInitialFocusItems } from '@/lib/map/initial-map-focus'
 import { AlbumMarker, ClusterMarker } from './album-map-marker'
 import { MapControls } from './map-controls'
 
@@ -102,7 +103,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
     const map = mapRef.current
     if (!map) return
 
-    fitMapToItems(map, items, false)
+    fitMapToItems(map, getInitialFocusItems(items), false)
     setLoaded(true)
     requestAnimationFrame(syncMapState)
   }, [items, syncMapState])

@@ -120,7 +120,7 @@ export function AlbumMarker({
               ) : (
                 <MapPinned className="text-subtle absolute inset-0 m-auto size-4" />
               )}
-              <span className="absolute inset-0 bg-linear-to-br from-white/15 to-black/15" />
+              <span className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/15 to-black/15" />
             </span>
           </span>
         </HoverCard.Trigger>
@@ -185,8 +185,8 @@ export function ClusterMarker({
                   loading="eager"
                 />
               )}
-              <span className="from-base/25 to-iris/65 absolute inset-0 bg-linear-to-br" />
-              <span className="text-text absolute inset-0 grid place-items-center text-sm font-bold drop-shadow-lg">
+              <span className="from-base/25 to-iris/65 pointer-events-none absolute inset-0 bg-linear-to-br" />
+              <span className="text-text pointer-events-none absolute inset-0 grid place-items-center text-sm font-bold drop-shadow-lg">
                 {count}
               </span>
             </span>

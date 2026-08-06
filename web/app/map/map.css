@@ -3,7 +3,12 @@
 }
 
 .album-map .maplibregl-marker {
+  cursor: pointer;
   will-change: transform;
+}
+
+.album-map .maplibregl-marker * {
+  cursor: inherit;
 }
 
 .album-map-preview-card {

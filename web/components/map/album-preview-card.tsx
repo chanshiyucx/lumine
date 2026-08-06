@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, Images, X } from 'lucide-react'
+import { ArrowUpRight, X } from 'lucide-react'
 import Link from 'next/link'
 import type { AlbumMapItem } from '@/lib/map/album-map-data'
 import { AlbumCoverLink } from './album-cover-link'
@@ -13,6 +13,9 @@ export function AlbumPreviewCard({
   onClose: () => void
 }) {
   const photoCountLabel = `${item.photoCount} ${item.photoCount === 1 ? 'photo' : 'photos'}`
+  const detailLabel = [item.dateLabel, photoCountLabel]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <section
@@ -42,30 +45,21 @@ export function AlbumPreviewCard({
         ))}
       </div>
 
-      <div className="space-y-3 p-4">
+      <div className="flex items-center justify-between gap-3 p-4">
         <Link
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="group/link hover:text-iris flex items-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="group/link hover:text-iris flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           aria-label={`Open ${item.label} album in a new tab`}
         >
-          <h2 className="text-text flex-1 truncate text-sm font-semibold">
+          <h2 className="text-text truncate text-sm font-semibold">
             {item.label}
           </h2>
-          <ArrowUpRight className="text-subtle size-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+          <ArrowUpRight className="text-subtle size-4 shrink-0 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
         </Link>
 
-        <div className="text-subtle flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-1.5">
-            <CalendarDays className="size-3.5" />
-            <span>{item.dateLabel}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Images className="size-3.5" />
-            <span>{photoCountLabel}</span>
-          </div>
-        </div>
+        <p className="text-subtle shrink-0 text-xs">{detailLabel}</p>
       </div>
     </section>
   )

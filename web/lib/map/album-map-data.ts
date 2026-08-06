@@ -2,8 +2,10 @@ import { cache } from 'react'
 import { z } from 'zod'
 import { getAlbumPath, type Album } from '../albums'
 import { getMediaUrl, MEDIA_PATHS } from '../media-url'
+import { getPhotoPath } from '../photo'
 
 export interface AlbumMapCover {
+  href: string
   thumbHash: string
   url: string
   width: number
@@ -48,6 +50,7 @@ function getDateLabel(album: Album) {
 
 function getCovers(album: Album): AlbumMapCover[] {
   return album.photos.slice(0, MAX_COVERS).map((photo) => ({
+    href: getPhotoPath(photo.slug),
     thumbHash: photo.thumbHash,
     url: photo.thumbnail.url,
     width: photo.thumbnail.width,

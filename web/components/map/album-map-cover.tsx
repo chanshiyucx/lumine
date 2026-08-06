@@ -22,7 +22,8 @@ export function AlbumMapCoverImage({
       }}
       alt={alt}
       loading={loading}
-      imageClassName="transition-transform duration-300 group-hover:scale-105"
+      imageClassName="pointer-events-none select-none transition-transform duration-300 group-hover:scale-105"
+      placeholderClassName="pointer-events-none select-none"
     />
   )
 }
