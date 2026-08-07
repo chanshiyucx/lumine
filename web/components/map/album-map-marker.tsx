@@ -3,6 +3,7 @@
 import { MapPinned } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
+import { cn } from '@/lib/style'
 import { AlbumMapCoverImage } from './album-map-cover'
 import { AlbumPreviewCard } from './album-preview-card'
 import { ClusterPreviewCard } from './cluster-preview-card'
@@ -32,7 +33,6 @@ function MapMarker({
     if (!element) return
 
     element.setAttribute('aria-label', label)
-    element.setAttribute('title', label)
     if (!isInteractive) {
       element.setAttribute('role', 'img')
       element.removeAttribute('tabindex')
@@ -80,10 +80,14 @@ export function AlbumMarker({
   item,
   canHover,
   onPreview,
+  pinned,
+  onPinnedChange,
 }: {
   item: AlbumMapItem
   canHover: boolean
   onPreview: () => void
+  pinned: boolean
+  onPinnedChange: (pinned: boolean) => void
 }) {
   const cover = item.covers[0]
   const trigger = (
@@ -94,7 +98,12 @@ export function AlbumMarker({
         if (canHover && event.pointerType !== 'mouse') onPreview()
       }}
     >
-      <span className="border-text/30 bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-transform duration-200 group-hover:scale-110">
+      <span
+        className={cn(
+          'bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-[transform,border-color,box-shadow] duration-200 group-hover:scale-110 group-data-[state=open]:scale-110',
+          pinned ? 'border-iris/80 ring-iris/25 ring-2' : 'border-text/30',
+        )}
+      >
         {cover ? (
           <AlbumMapCoverImage cover={cover} alt="" />
         ) : (
@@ -113,7 +122,13 @@ export function AlbumMarker({
       onActivate={canHover ? undefined : onPreview}
     >
       {canHover ? (
-        <MapHoverPreview trigger={trigger} openDelay={350} closeDelay={120}>
+        <MapHoverPreview
+          trigger={trigger}
+          openDelay={350}
+          closeDelay={120}
+          pinned={pinned}
+          onPinnedChange={onPinnedChange}
+        >
           <AlbumPreviewCard item={item} />
         </MapHoverPreview>
       ) : (

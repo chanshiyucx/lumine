@@ -96,6 +96,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
   const [bounds, setBounds] = useState<MapBounds>(WORLD_BOUNDS)
   const [zoom, setZoom] = useState(1)
   const [loaded, setLoaded] = useState(false)
+  const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
   const [mobilePreview, setMobilePreview] = useState<MobileMapPreview | null>(
     null,
   )
@@ -158,6 +159,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
         projection={{ type: 'mercator' }}
         attributionControl={false}
         onClick={() => {
+          setPinnedAlbumKey(null)
           if (mobilePreview) closeMobilePreview()
         }}
         onLoad={handleLoad}
@@ -185,6 +187,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
                 items={clusterItems}
                 canHover={canHover}
                 onExpand={() => {
+                  setPinnedAlbumKey(null)
                   const map = mapRef.current
                   if (!map) return
 
@@ -227,6 +230,10 @@ export function AlbumMap({ items }: AlbumMapProps) {
               key={item.key}
               item={item}
               canHover={canHover}
+              pinned={pinnedAlbumKey === item.key}
+              onPinnedChange={(pinned) => {
+                setPinnedAlbumKey(pinned ? item.key : null)
+              }}
               onPreview={() =>
                 openMobilePreview({ type: 'album', item }, [
                   item.location.lng,
@@ -244,6 +251,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
         onReset={() => {
           const map = mapRef.current
           if (map) {
+            setPinnedAlbumKey(null)
             setMobilePreview(null)
             map.setPadding(EMPTY_PADDING)
             fitMapToItems(map, items, true)
