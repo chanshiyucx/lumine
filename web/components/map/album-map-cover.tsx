@@ -1,5 +1,5 @@
 import { ThumbnailImage } from '@/components/photo'
-import type { AlbumMapCover } from '@/lib/map/album-map-data'
+import type { AlbumMapCover } from './lib/album-map-data'
 
 export function AlbumMapCoverImage({
   cover,

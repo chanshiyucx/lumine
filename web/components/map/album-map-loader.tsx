@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { AlbumMapItem } from '@/lib/map/album-map-data'
+import type { AlbumMapItem } from './lib/album-map-data'
 
 const AlbumMap = dynamic(
   () => import('./album-map').then((module) => module.AlbumMap),

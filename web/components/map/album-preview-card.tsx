@@ -1,19 +1,27 @@
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
-import type { AlbumMapItem } from '@/lib/map/album-map-data'
 import { AlbumCoverLink } from './album-cover-link'
+import type { AlbumMapItem } from './lib/album-map-data'
 
 export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
+  return (
+    <section
+      className="album-map-preview-card border-text/15 bg-base/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-[120px]"
+      aria-label={`${item.label} album preview`}
+    >
+      <AlbumPreviewContent item={item} />
+    </section>
+  )
+}
+
+export function AlbumPreviewContent({ item }: { item: AlbumMapItem }) {
   const photoCountLabel = `${item.photoCount} ${item.photoCount === 1 ? 'photo' : 'photos'}`
   const detailLabel = [item.dateLabel, photoCountLabel]
     .filter(Boolean)
     .join(' · ')
 
   return (
-    <section
-      className="album-map-preview-card border-text/15 bg-base/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-[120px]"
-      aria-label={`${item.label} album preview`}
-    >
+    <>
       <div className="grid h-32 grid-cols-[3fr_2fr] grid-rows-2 gap-px bg-black/20">
         {item.covers.slice(0, 3).map((cover, index) => (
           <AlbumCoverLink
@@ -42,6 +50,6 @@ export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
 
         <p className="text-subtle shrink-0 text-xs">{detailLabel}</p>
       </div>
-    </section>
+    </>
   )
 }

@@ -1,8 +1,8 @@
 import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
-import type { AlbumMapCover, AlbumMapItem } from '@/lib/map/album-map-data'
 import { cn } from '@/lib/style'
 import { AlbumMapCoverImage } from './album-map-cover'
+import type { AlbumMapCover, AlbumMapItem } from './lib/album-map-data'
 
 export function AlbumCoverLink({
   item,

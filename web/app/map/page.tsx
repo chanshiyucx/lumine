@@ -1,6 +1,6 @@
 import { AlbumMapLoader } from '@/components/map'
+import { getAlbumMapItems } from '@/components/map/lib/album-map-data'
 import { getAlbums } from '@/lib/albums'
-import { getAlbumMapItems } from '@/lib/map/album-map-data'
 import { getPhotoCollection } from '@/lib/photo/collection'
 
 export default async function MapPage() {

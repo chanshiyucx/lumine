@@ -1,8 +1,9 @@
+import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { getAlbumPath, type Album } from '../albums'
-import { getMediaUrl, MEDIA_PATHS } from '../media-url'
-import { getPhotoPath } from '../photo'
+import { getAlbumPath, type Album } from '@/lib/albums'
+import { getMediaUrl, MEDIA_PATHS } from '@/lib/media-url'
+import { getPhotoPath } from '@/lib/photo'
 
 export interface AlbumMapCover {
   href: string
