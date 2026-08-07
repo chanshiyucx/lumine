@@ -68,7 +68,6 @@ export function Viewer({
   )
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const mediaStageRef = useRef<HTMLElement | null>(null)
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const infoButtonRef = useRef<HTMLButtonElement | null>(null)
   const activeIndex = state.activeIndex ?? 0
   const currentPhoto = photos[activeIndex]
@@ -139,7 +138,7 @@ export function Viewer({
     onClose()
   }
 
-  useDialogFocus(dialogRef, closeButtonRef, getRestoreFocusElement)
+  useDialogFocus(dialogRef, getRestoreFocusElement)
 
   const goToPhoto = (index: number) => {
     if (!isInteractionEnabled || index < 0 || index >= photos.length) {
@@ -263,7 +262,6 @@ export function Viewer({
             >
               <ViewerToolbar
                 chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
-                closeButtonRef={closeButtonRef}
                 infoButtonRef={infoButtonRef}
                 isInfoPanelOpen={isInfoPanelOpen}
                 isVisible={isViewerControlsVisible}

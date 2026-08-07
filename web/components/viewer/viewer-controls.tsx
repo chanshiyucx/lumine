@@ -19,7 +19,6 @@ const NAVIGATION_BUTTON_CLASS =
 
 interface ViewerToolbarProps {
   chromeOpacity: number | MotionValue<number>
-  closeButtonRef: RefObject<HTMLButtonElement | null>
   infoButtonRef: RefObject<HTMLButtonElement | null>
   isInfoPanelOpen: boolean
   isVisible: boolean
@@ -30,7 +29,6 @@ interface ViewerToolbarProps {
 
 export function ViewerToolbar({
   chromeOpacity,
-  closeButtonRef,
   infoButtonRef,
   isInfoPanelOpen,
   isVisible,
@@ -73,7 +71,6 @@ export function ViewerToolbar({
         </button>
 
         <button
-          ref={closeButtonRef}
           type="button"
           className="circle-button"
           onClick={onClose}

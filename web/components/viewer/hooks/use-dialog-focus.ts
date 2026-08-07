@@ -22,7 +22,6 @@ function getFocusableElements(container: HTMLElement) {
 
 export function useDialogFocus(
   dialogRef: RefObject<HTMLElement | null>,
-  initialFocusRef: RefObject<HTMLElement | null>,
   getRestoreFocusElement?: () => HTMLElement | null,
 ) {
   useEffect(() => {
@@ -31,7 +30,7 @@ export function useDialogFocus(
         ? document.activeElement
         : null
     const frame = window.requestAnimationFrame(() => {
-      initialFocusRef.current?.focus({ preventScroll: true })
+      dialogRef.current?.focus({ preventScroll: true })
     })
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -86,5 +85,5 @@ export function useDialogFocus(
         restoreTarget?.focus({ preventScroll: true })
       })
     }
-  }, [dialogRef, getRestoreFocusElement, initialFocusRef])
+  }, [dialogRef, getRestoreFocusElement])
 }
