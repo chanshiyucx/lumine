@@ -14,16 +14,13 @@ import {
   type MapBounds,
 } from './lib/map-config'
 import { shouldPreviewClusterOnTouch } from './lib/map-preview-interaction'
-import {
-  expandMapBounds,
-  getMapMarkerImageLoading,
-} from './lib/map-viewport'
+import { expandMapBounds, getMapMarkerImageLoading } from './lib/map-viewport'
 import { MapControls } from './map-controls'
+import { MapErrorState, MapLoadingState } from './map-loading-state'
 import {
   MobileMapPreviewSheet,
   type MobileMapPreview,
 } from './mobile-map-preview-sheet'
-import { MapErrorState, MapLoadingState } from './map-loading-state'
 
 const MAP_STYLE_URL =
   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
@@ -358,15 +355,12 @@ export function AlbumMap({ items }: AlbumMapProps) {
       )}
 
       {!loaded && loadFailed && (
-        <MapErrorState
-          className="absolute inset-0 z-30"
-          onRetry={retryMap}
-        />
+        <MapErrorState className="absolute inset-0 z-30" onRetry={retryMap} />
       )}
 
       {loaded && items.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-          <p className="border-text/15 bg-base/95 text-subtle rounded-full border px-4 py-2 text-sm shadow-xl">
+          <p className="border-overlay bg-surface/95 text-subtle rounded-full border px-4 py-2 text-sm shadow-xl">
             No mapped albums yet
           </p>
         </div>

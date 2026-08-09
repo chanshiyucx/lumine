@@ -33,7 +33,7 @@ export function MapControls({
   return (
     <div
       className={cn(
-        'absolute bottom-6 left-3 z-10 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-black/55 shadow-xl backdrop-blur-xl transition-[opacity,transform] duration-150 sm:left-5',
+        'border-overlay bg-surface/85 absolute bottom-6 left-3 z-10 flex flex-col overflow-hidden rounded-xl border shadow-xl backdrop-blur-xl transition-[opacity,transform] duration-150 sm:left-5',
         hidden && 'pointer-events-none translate-y-2 opacity-0',
       )}
     >
@@ -42,8 +42,8 @@ export function MapControls({
           key={label}
           type="button"
           className={cn(
-            'text-text grid size-10 cursor-pointer place-items-center transition-colors hover:bg-white/10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-white',
-            index > 0 && 'border-t border-white/10',
+            'hover:bg-overlay focus-visible:outline-iris grid size-10 cursor-pointer place-items-center transition-colors focus-visible:z-10 focus-visible:outline-2',
+            index > 0 && 'border-overlay border-t',
           )}
           aria-label={label}
           onClick={action}

@@ -27,13 +27,13 @@ export function MapErrorState({
       role="alert"
     >
       <div className="max-w-xs px-6 text-center">
-        <p className="text-text font-semibold">Map unavailable</p>
+        <p className="font-semibold">Map unavailable</p>
         <p className="text-subtle mt-1 text-sm">
           The map couldn’t load. Check your connection and try again.
         </p>
         <button
           type="button"
-          className="border-text/20 bg-overlay hover:bg-text/15 focus-visible:outline-iris mt-4 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="border-overlay bg-surface hover:bg-overlay focus-visible:outline-iris mt-4 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           onClick={onRetry}
         >
           Try again

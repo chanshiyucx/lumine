@@ -132,7 +132,7 @@ export function MobileMapPreviewSheet({
         ref={sheetRef}
         aria-label={label}
         data-mobile-map-preview={preview.type}
-        className="mobile-map-preview-sheet border-text/15 bg-base/98 max-h-[min(70svh,34rem)] w-full overflow-hidden rounded-t-3xl border border-b-0 shadow-2xl"
+        className="mobile-map-preview-sheet border-overlay bg-surface/98 max-h-[min(70svh,34rem)] w-full overflow-hidden rounded-t-3xl border border-b-0 shadow-2xl"
       >
         <div
           className="flex h-7 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
@@ -142,14 +142,17 @@ export function MobileMapPreviewSheet({
           onPointerUp={finishDrag}
           onPointerCancel={cancelDrag}
         >
-          <span className="bg-text/25 h-1 w-10 rounded-full" />
+          <span className="bg-muted/60 h-1 w-10 rounded-full" />
         </div>
 
         <div className="mobile-map-preview-content overflow-y-auto overscroll-contain">
           {preview.type === 'album' ? (
             <AlbumPreviewContent item={preview.item} />
           ) : (
-            <ClusterPreviewContent count={preview.count} items={preview.items} />
+            <ClusterPreviewContent
+              count={preview.count}
+              items={preview.items}
+            />
           )}
         </div>
       </section>

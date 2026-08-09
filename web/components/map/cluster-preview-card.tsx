@@ -10,7 +10,7 @@ export function ClusterPreviewCard({
 }) {
   return (
     <section
-      className="border-text/15 bg-base/95 rounded-2xl border shadow-2xl backdrop-blur-2xl"
+      className="border-overlay bg-surface/95 rounded-2xl border shadow-2xl backdrop-blur-2xl"
       aria-label={`${count} albums in this area`}
     >
       <ClusterPreviewContent count={count} items={items} />
@@ -30,7 +30,7 @@ export function ClusterPreviewContent({
 
   return (
     <div className="space-y-3 p-4">
-      <h2 className="text-text text-sm font-semibold">{count} albums</h2>
+      <h2 className="text-sm font-semibold">{count} albums</h2>
 
       <div className="grid grid-cols-3 gap-2">
         {visibleItems.map((item) => {
@@ -49,7 +49,7 @@ export function ClusterPreviewContent({
         })}
 
         {remainingCount > 0 && (
-          <div className="bg-overlay text-text grid aspect-square place-items-center rounded-lg">
+          <div className="bg-overlay grid aspect-square place-items-center rounded-lg">
             <div className="text-center">
               <p className="text-lg font-semibold">+{remainingCount}</p>
               <p className="text-subtle text-[10px]">more</p>

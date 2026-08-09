@@ -6,7 +6,7 @@ import type { AlbumMapItem } from './lib/album-map-data'
 export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
   return (
     <section
-      className="border-text/15 bg-base/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
+      className="border-overlay bg-surface/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
       aria-label={`${item.label} album preview`}
     >
       <AlbumPreviewContent item={item} />
@@ -22,7 +22,7 @@ export function AlbumPreviewContent({ item }: { item: AlbumMapItem }) {
 
   return (
     <>
-      <div className="grid h-32 grid-cols-[3fr_2fr] grid-rows-2 gap-px bg-black/20">
+      <div className="bg-overlay grid h-32 grid-cols-[3fr_2fr] grid-rows-2 gap-px">
         {item.covers.slice(0, 3).map((cover, index) => (
           <AlbumCoverLink
             key={`${cover.url}-${index}`}
@@ -39,12 +39,10 @@ export function AlbumPreviewContent({ item }: { item: AlbumMapItem }) {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="group/link hover:text-iris flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="group/link hover:text-iris focus-visible:outline-iris flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           aria-label={`Open ${item.label} album in a new tab`}
         >
-          <h2 className="text-text truncate text-sm font-semibold">
-            {item.label}
-          </h2>
+          <h2 className="truncate text-sm font-semibold">{item.label}</h2>
           <ArrowUpRight className="text-subtle size-4 shrink-0 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
         </Link>
 

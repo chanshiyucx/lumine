@@ -94,7 +94,7 @@ export function AlbumMarker({
   const cover = item.covers[0]
   const trigger = (
     <span
-      className="group relative block size-11 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white"
+      className="group focus-visible:outline-iris relative block size-11 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3"
       aria-hidden
       onPointerUp={(event) => {
         if (canHover && event.pointerType !== 'mouse') onPreview()
@@ -103,7 +103,7 @@ export function AlbumMarker({
       <span
         className={cn(
           'bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-[scale,border-color,box-shadow] duration-200 ease-out group-hover:scale-[1.08] group-data-[state=open]:scale-[1.08]',
-          pinned ? 'border-iris/80 ring-iris/25 ring-2' : 'border-text/30',
+          pinned ? 'border-iris/80 ring-iris/25 ring-2' : 'border-subtle/50',
         )}
       >
         {cover ? (
@@ -111,7 +111,7 @@ export function AlbumMarker({
         ) : (
           <MapPinned className="text-subtle absolute inset-0 m-auto size-4" />
         )}
-        <span className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/15 to-black/15" />
+        <span className="from-text/15 to-base/25 pointer-events-none absolute inset-0 bg-linear-to-br" />
       </span>
     </span>
   )
@@ -161,12 +161,12 @@ export function ClusterMarker({
   const representativeCover = items[0]?.covers[0]
   const trigger = (
     <span
-      className="group relative block cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white"
+      className="group focus-visible:outline-iris relative block cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3"
       style={{ width: size, height: size }}
       aria-hidden
     >
       <span className="bg-iris/20 absolute -inset-1.5 rounded-full" />
-      <span className="border-text/25 bg-overlay relative block size-full overflow-hidden rounded-full border-2 shadow-2xl transition-transform duration-200 ease-out group-hover:scale-105">
+      <span className="border-subtle/50 bg-overlay relative block size-full overflow-hidden rounded-full border-2 shadow-2xl transition-transform duration-200 ease-out group-hover:scale-105">
         {representativeCover && (
           <AlbumMapCoverImage
             cover={representativeCover}
@@ -174,7 +174,7 @@ export function ClusterMarker({
           />
         )}
         <span className="from-base/25 to-iris/65 pointer-events-none absolute inset-0 bg-linear-to-br" />
-        <span className="text-text pointer-events-none absolute inset-0 grid place-items-center text-sm font-bold drop-shadow-lg">
+        <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-bold drop-shadow-lg">
           {count}
         </span>
       </span>

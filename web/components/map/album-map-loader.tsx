@@ -9,8 +9,8 @@ const AlbumMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <main className="bg-base h-svh">
-        <MapLoadingState className="h-full w-full" />
+      <main className="h-svh">
+        <MapLoadingState className="h-full" />
       </main>
     ),
   },
