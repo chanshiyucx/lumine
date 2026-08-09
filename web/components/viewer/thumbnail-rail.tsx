@@ -243,11 +243,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 aria-label={`Open ${photo.title}`}
                 aria-current={isActive}
               >
-                <ThumbnailImage
-                  photo={photo}
-                  placeholderClassName="object-contain opacity-60"
-                  imageClassName="object-contain"
-                />
+                <ThumbnailImage photo={photo} fit="contain" />
               </button>
             )
           })}

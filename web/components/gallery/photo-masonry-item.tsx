@@ -36,11 +36,7 @@ export function PhotoMasonryItem({
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
     >
-      <ThumbnailImage
-        photo={photo}
-        loading={imageLoading}
-        imageClassName="origin-center transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-      />
+      <ThumbnailImage photo={photo} loading={imageLoading} scaleOnHover />
 
       <div className="pointer-events-none">
         <div className="from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none" />
