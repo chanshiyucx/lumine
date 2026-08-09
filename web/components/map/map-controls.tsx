@@ -1,21 +1,33 @@
-import { Maximize2, Minus, Plus } from 'lucide-react'
+import { Maximize2, Minimize2, Minus, Plus } from 'lucide-react'
 import { cn } from '@/lib/style'
 
 export function MapControls({
   hidden = false,
   onZoomIn,
   onZoomOut,
-  onReset,
+  onToggleExtent,
+  showingAll,
 }: {
   hidden?: boolean
   onZoomIn: () => void
   onZoomOut: () => void
-  onReset: () => void
+  onToggleExtent: () => void
+  showingAll: boolean
 }) {
   const controls = [
     { label: 'Zoom in', icon: Plus, action: onZoomIn },
     { label: 'Zoom out', icon: Minus, action: onZoomOut },
-    { label: 'Show all places', icon: Maximize2, action: onReset },
+    showingAll
+      ? {
+          label: 'Return to default view',
+          icon: Minimize2,
+          action: onToggleExtent,
+        }
+      : {
+          label: 'Show all places',
+          icon: Maximize2,
+          action: onToggleExtent,
+        },
   ]
 
   return (
@@ -34,7 +46,6 @@ export function MapControls({
             index > 0 && 'border-t border-white/10',
           )}
           aria-label={label}
-          title={label}
           onClick={action}
         >
           <Icon className="size-4" />

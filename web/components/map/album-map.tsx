@@ -114,6 +114,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
   const [loaded, setLoaded] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
+  const [showingAll, setShowingAll] = useState(false)
   const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
   const [mobilePreview, setMobilePreview] = useState<MobileMapPreview | null>(
     null,
@@ -122,6 +123,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
     [longitude: number, latitude: number] | null
   >(null)
   const [mobilePreviewHeight, setMobilePreviewHeight] = useState(0)
+  const initialFocusItems = useMemo(() => getInitialFocusItems(items), [items])
   const clusterIndex = useMemo(() => makeClusterIndex(items), [items])
   const clusters = useMemo(
     () => clusterIndex.getClusters(viewport.clusterBounds, viewport.zoom),
@@ -154,13 +156,14 @@ export function AlbumMap({ items }: AlbumMapProps) {
     const map = mapRef.current
     if (!map) return
 
-    fitMapToItems(map, getInitialFocusItems(items), false)
+    fitMapToItems(map, initialFocusItems, false)
     requestAnimationFrame(() => {
       syncMapState()
       setLoaded(true)
       setLoadFailed(false)
+      setShowingAll(false)
     })
-  }, [items, syncMapState])
+  }, [initialFocusItems, syncMapState])
 
   const retryMap = useCallback(() => {
     setLoaded(false)
@@ -319,9 +322,10 @@ export function AlbumMap({ items }: AlbumMapProps) {
 
       <MapControls
         hidden={mobilePreview !== null || items.length === 0}
+        showingAll={showingAll}
         onZoomIn={() => mapRef.current?.zoomIn({ duration: 250 })}
         onZoomOut={() => mapRef.current?.zoomOut({ duration: 250 })}
-        onReset={() => {
+        onToggleExtent={() => {
           const map = mapRef.current
           if (map) {
             setPinnedAlbumKey(null)
@@ -329,7 +333,14 @@ export function AlbumMap({ items }: AlbumMapProps) {
             setMobilePreviewCenter(null)
             setMobilePreviewHeight(0)
             map.setPadding(EMPTY_PADDING)
+            if (showingAll) {
+              fitMapToItems(map, initialFocusItems, true)
+              setShowingAll(false)
+              return
+            }
+
             fitMapToItems(map, items, true)
+            setShowingAll(initialFocusItems.length < items.length)
           }
         }}
       />

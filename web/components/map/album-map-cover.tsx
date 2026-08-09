@@ -28,7 +28,7 @@ export function AlbumMapCoverImage({
       imageClassName={cn(
         'pointer-events-none select-none',
         scaleOnHover &&
-          'transition-transform duration-300 ease-out group-hover:scale-[1.04]',
+          'transition-transform duration-300 ease-out group-hover:scale-105',
       )}
       placeholderClassName="pointer-events-none select-none"
     />
