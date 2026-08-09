@@ -10,12 +10,14 @@ import { getAvailableCaptureSettings } from '@/lib/photo/metadata'
 interface PhotoMasonryItemProps {
   photo: Photo
   index: number
+  imageLoading: 'eager' | 'lazy'
   onOpen: (index: number, triggerElement: HTMLElement) => void
 }
 
 export function PhotoMasonryItem({
   photo,
   index,
+  imageLoading,
   onOpen,
 }: PhotoMasonryItemProps) {
   const mimeLabel = formatMimeLabel(photo)
@@ -36,6 +38,7 @@ export function PhotoMasonryItem({
     >
       <ThumbnailImage
         photo={photo}
+        loading={imageLoading}
         imageClassName="origin-center transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
       />
 

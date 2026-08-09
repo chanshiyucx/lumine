@@ -3,6 +3,7 @@ import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useScrollElement } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
 import {
+  getMasonryImageLoading,
   getMasonryLayout,
   getPhotoMasonryHeight,
   getVisibleMasonryIndexes,
@@ -162,6 +163,9 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const sizeContainerRef = virtualizer.containerRef
   const measureItem = virtualizer.measureElement
   const virtualItems = virtualizer.getVirtualItems()
+  const scrollOffset = virtualizer.scrollOffset ?? scrollElement?.scrollTop ?? 0
+  const viewportStart = scrollOffset + HEADER_HEIGHT
+  const viewportEnd = scrollOffset + (scrollElement?.clientHeight ?? 0)
 
   return (
     <div ref={containerRef} className="mt-12 w-full">
@@ -192,6 +196,11 @@ export const PhotoMasonry = memo(function PhotoMasonry({
                 <PhotoMasonryItem
                   photo={photo}
                   index={virtualItem.index}
+                  imageLoading={getMasonryImageLoading(
+                    virtualItem,
+                    viewportStart,
+                    viewportEnd,
+                  )}
                   onOpen={onPhotoOpen}
                 />
               </li>
