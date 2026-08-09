@@ -30,7 +30,7 @@ export function HeaderCenter() {
         {detail.date}
       </span>
       {detail.location && (
-        <span className="text-subtle text-[10px] lg:text-xs">
+        <span className="text-text text-[10px] lg:text-xs">
           {detail.location}
         </span>
       )}
