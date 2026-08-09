@@ -39,14 +39,17 @@ const albumMapSchema = z.object({
 })
 
 const ALBUM_MAP_REVALIDATE_SECONDS = 30
-const MAX_COVERS = 4
+const MAX_COVERS = 3
+const ALBUM_DATE_PATTERN = /^(\d{4})(\d{2})(\d{2})(?:-|$)/
 
 function normalizeAlbumKey(key: string) {
   return key.normalize('NFC')
 }
 
 function getDateLabel(album: Album) {
-  return album.label.split(' · ')[1] ?? ''
+  const match = ALBUM_DATE_PATTERN.exec(album.key)
+
+  return match ? `${match[1]}.${match[2]}.${match[3]}` : ''
 }
 
 function getCovers(album: Album): AlbumMapCover[] {

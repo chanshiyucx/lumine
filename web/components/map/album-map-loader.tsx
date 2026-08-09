@@ -19,7 +19,7 @@ function MapLoadingState() {
   return (
     <main className="bg-base flex h-svh items-center justify-center">
       <div className="text-center">
-        <div className="bg-overlay mx-auto mb-4 size-10 animate-pulse rounded-full" />
+        <div className="bg-overlay mx-auto mb-4 size-10 animate-pulse rounded-full motion-reduce:animate-none" />
         <p className="text-subtle text-sm">Preparing the map…</p>
       </div>
     </main>

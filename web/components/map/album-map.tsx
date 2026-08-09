@@ -1,12 +1,18 @@
 'use client'
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/maplibre'
 import Supercluster from 'supercluster'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { AlbumMarker, ClusterMarker } from './album-map-marker'
 import type { AlbumMapItem } from './lib/album-map-data'
 import { getInitialFocusItems } from './lib/initial-map-focus'
+import {
+  CLUSTER_RADIUS,
+  MAX_CLUSTER_ZOOM,
+  WORLD_BOUNDS,
+  type MapBounds,
+} from './lib/map-config'
 import { shouldPreviewClusterOnTouch } from './lib/map-preview-interaction'
 import { MapControls } from './map-controls'
 import {
@@ -16,15 +22,11 @@ import {
 
 const MAP_STYLE_URL =
   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-const WORLD_BOUNDS: MapBounds = [-180, -85, 180, 85]
-const CLUSTER_RADIUS = 72
-const MAX_CLUSTER_ZOOM = 15
 const CAN_HOVER_QUERY =
   '(min-width: 768px) and (hover: hover) and (pointer: fine)'
 const MOBILE_PREVIEW_BOTTOM_PADDING = 260
+const MAP_LOAD_TIMEOUT_MS = 15_000
 const EMPTY_PADDING = { top: 0, right: 0, bottom: 0, left: 0 }
-
-type MapBounds = [west: number, south: number, east: number, north: number]
 
 interface AlbumPointProperties {
   item: AlbumMapItem
@@ -96,6 +98,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
   const [bounds, setBounds] = useState<MapBounds>(WORLD_BOUNDS)
   const [zoom, setZoom] = useState(1)
   const [loaded, setLoaded] = useState(false)
+  const [loadTimedOut, setLoadTimedOut] = useState(false)
   const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
   const [mobilePreview, setMobilePreview] = useState<MobileMapPreview | null>(
     null,
@@ -105,6 +108,17 @@ export function AlbumMap({ items }: AlbumMapProps) {
     () => clusterIndex.getClusters(bounds, Math.floor(zoom)),
     [bounds, clusterIndex, zoom],
   )
+
+  useEffect(() => {
+    if (loaded) return
+
+    const timeoutId = window.setTimeout(() => {
+      setLoadTimedOut(true)
+    }, MAP_LOAD_TIMEOUT_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loaded])
+
   const syncMapState = useCallback(() => {
     const map = mapRef.current
     if (!map) return
@@ -119,6 +133,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
 
     fitMapToItems(map, getInitialFocusItems(items), false)
     setLoaded(true)
+    setLoadTimedOut(false)
     requestAnimationFrame(syncMapState)
   }, [items, syncMapState])
 
@@ -267,11 +282,27 @@ export function AlbumMap({ items }: AlbumMapProps) {
       )}
 
       {!loaded && (
-        <div className="bg-base absolute inset-0 z-30 grid place-items-center transition-opacity">
-          <div className="text-center">
-            <div className="bg-overlay mx-auto mb-4 size-10 animate-pulse rounded-full" />
-            <p className="text-subtle text-sm">Loading places…</p>
-          </div>
+        <div className="bg-base absolute inset-0 z-30 grid place-items-center">
+          {loadTimedOut ? (
+            <div className="max-w-xs px-6 text-center" role="alert">
+              <p className="text-text font-semibold">Map unavailable</p>
+              <p className="text-subtle mt-1 text-sm">
+                The map is taking longer than expected to load.
+              </p>
+              <button
+                type="button"
+                className="border-text/20 bg-overlay hover:bg-text/15 focus-visible:outline-iris mt-4 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                onClick={() => window.location.reload()}
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <div className="text-center" role="status">
+              <div className="bg-overlay mx-auto mb-4 size-10 animate-pulse rounded-full motion-reduce:animate-none" />
+              <p className="text-subtle text-sm">Loading places…</p>
+            </div>
+          )}
         </div>
       )}
     </main>

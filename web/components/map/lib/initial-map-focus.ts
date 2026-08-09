@@ -1,8 +1,7 @@
 import Supercluster from 'supercluster'
+import { CLUSTER_RADIUS, WORLD_BOUNDS } from './map-config'
 
-const WORLD_BOUNDS: [number, number, number, number] = [-180, -85, 180, 85]
 const ANALYSIS_ZOOM = 1
-const CLUSTER_RADIUS = 72
 const MIN_DOMINANT_ALBUMS = 3
 const MIN_DOMINANT_SHARE = 0.6
 

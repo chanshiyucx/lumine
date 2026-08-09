@@ -161,7 +161,7 @@ export function ClusterMarker({
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <span className="bg-iris/25 absolute -inset-1.5 animate-pulse rounded-full" />
+      <span className="bg-iris/25 absolute -inset-1.5 animate-pulse rounded-full motion-reduce:animate-none" />
       <span className="border-text/25 bg-overlay relative block size-full overflow-hidden rounded-full border-2 shadow-2xl transition-transform duration-200 group-hover:scale-105">
         {representativeCover && (
           <AlbumMapCoverImage cover={representativeCover} loading="eager" />
