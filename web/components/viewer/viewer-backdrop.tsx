@@ -25,10 +25,7 @@ export function ViewerBackdrop({ photo }: ViewerBackdropProps) {
           exit={{ opacity: 0 }}
           transition={transition}
         >
-          <ThumbHashImage
-            thumbHash={photo.thumbHash}
-            className="block size-full scale-110"
-          />
+          <ThumbHashImage thumbHash={photo.thumbHash} className="scale-110" />
         </m.div>
       </AnimatePresence>
     </div>

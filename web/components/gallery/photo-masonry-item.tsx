@@ -41,7 +41,7 @@ export function PhotoMasonryItem({
       <div className="pointer-events-none">
         <div className="from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none" />
         <div className="absolute inset-x-0 bottom-0 max-h-full overflow-hidden p-2">
-          <h3 className="truncate font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+          <h3 className="truncate opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
             {photo.title}
           </h3>
           <div className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">

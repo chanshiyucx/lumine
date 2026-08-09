@@ -65,7 +65,7 @@ export function ThumbnailImage({
     >
       <ThumbHashImage
         thumbHash={photo.thumbHash}
-        className={cn('absolute inset-0 size-full', objectFitClassName)}
+        className={objectFitClassName}
       />
       {loadImage ? (
         <Image

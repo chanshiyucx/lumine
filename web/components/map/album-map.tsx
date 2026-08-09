@@ -206,7 +206,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
   )
 
   return (
-    <main className="album-map bg-base relative h-svh overflow-hidden">
+    <main className="album-map relative h-svh overflow-hidden">
       <Map
         key={mapInstanceKey}
         ref={mapRef}

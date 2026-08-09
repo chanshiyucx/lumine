@@ -130,7 +130,7 @@ export function ProgressivePhoto({
 
       <div
         className={cn(
-          'pointer-events-none absolute bottom-4 left-4 z-20 translate-y-2 rounded bg-black/50 px-3 py-1 text-lg text-white opacity-0 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none',
+          'bg-base/70 text-text pointer-events-none absolute bottom-4 left-4 z-20 translate-y-2 rounded px-3 py-1 text-lg opacity-0 backdrop-blur-sm transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none',
           showScaleIndicator && 'translate-y-0 opacity-100',
         )}
       >

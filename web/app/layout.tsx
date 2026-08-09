@@ -13,10 +13,7 @@ const geist = Geist({
 })
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#232136' },
-    { media: '(prefers-color-scheme: light)', color: '#faf4ed' },
-  ],
+  themeColor: '#232136',
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,

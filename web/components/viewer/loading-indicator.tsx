@@ -36,7 +36,7 @@ export function LoadingIndicator({ state }: LoadingIndicatorProps) {
         <LoaderCircle className="size-4 animate-spin" />
       )}
 
-      <div className="w-28 text-xs tabular-nums">
+      <div className="w-28 text-xs">
         {isError ? (
           <p>{state.message}</p>
         ) : (

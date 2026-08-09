@@ -200,7 +200,7 @@ export function SharedPhotoTransitionPreview({
   return (
     <m.div
       data-viewer-transition={phase}
-      className="pointer-events-none fixed z-40 overflow-hidden bg-black"
+      className="bg-base pointer-events-none fixed z-40 overflow-hidden"
       style={{
         height: frames.target.height,
         left: frames.target.left,

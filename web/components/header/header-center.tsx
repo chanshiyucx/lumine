@@ -26,11 +26,11 @@ export function HeaderCenter() {
           : 'pointer-events-none translate-y-5 opacity-0 blur-sm',
       )}
     >
-      <span className="text-xs font-semibold text-white lg:text-sm">
+      <span className="text-text text-xs font-semibold lg:text-sm">
         {detail.date}
       </span>
       {detail.location && (
-        <span className="text-[10px] text-white/60 lg:text-xs">
+        <span className="text-subtle text-[10px] lg:text-xs">
           {detail.location}
         </span>
       )}
