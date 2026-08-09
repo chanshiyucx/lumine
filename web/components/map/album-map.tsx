@@ -14,17 +14,22 @@ import {
   type MapBounds,
 } from './lib/map-config'
 import { shouldPreviewClusterOnTouch } from './lib/map-preview-interaction'
+import {
+  expandMapBounds,
+  getMapMarkerImageLoading,
+} from './lib/map-viewport'
 import { MapControls } from './map-controls'
 import {
   MobileMapPreviewSheet,
   type MobileMapPreview,
 } from './mobile-map-preview-sheet'
+import { MapErrorState, MapLoadingState } from './map-loading-state'
 
 const MAP_STYLE_URL =
   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 const CAN_HOVER_QUERY =
   '(min-width: 768px) and (hover: hover) and (pointer: fine)'
-const MOBILE_PREVIEW_BOTTOM_PADDING = 260
+const MOBILE_PREVIEW_MAP_GAP = 16
 const MAP_LOAD_TIMEOUT_MS = 15_000
 const EMPTY_PADDING = { top: 0, right: 0, bottom: 0, left: 0 }
 
@@ -34,6 +39,12 @@ interface AlbumPointProperties {
 
 interface AlbumMapProps {
   items: AlbumMapItem[]
+}
+
+interface MapViewportState {
+  bounds: MapBounds
+  clusterBounds: MapBounds
+  zoom: number
 }
 
 function makeClusterIndex(items: AlbumMapItem[]) {
@@ -95,36 +106,48 @@ function fitMapToItems(map: MapRef, items: AlbumMapItem[], animated: boolean) {
 export function AlbumMap({ items }: AlbumMapProps) {
   const mapRef = useRef<MapRef>(null)
   const canHover = useMediaQuery(CAN_HOVER_QUERY)
-  const [bounds, setBounds] = useState<MapBounds>(WORLD_BOUNDS)
-  const [zoom, setZoom] = useState(1)
+  const [viewport, setViewport] = useState<MapViewportState>({
+    bounds: WORLD_BOUNDS,
+    clusterBounds: WORLD_BOUNDS,
+    zoom: 1,
+  })
   const [loaded, setLoaded] = useState(false)
-  const [loadTimedOut, setLoadTimedOut] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [mapInstanceKey, setMapInstanceKey] = useState(0)
   const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
   const [mobilePreview, setMobilePreview] = useState<MobileMapPreview | null>(
     null,
   )
+  const [mobilePreviewCenter, setMobilePreviewCenter] = useState<
+    [longitude: number, latitude: number] | null
+  >(null)
+  const [mobilePreviewHeight, setMobilePreviewHeight] = useState(0)
   const clusterIndex = useMemo(() => makeClusterIndex(items), [items])
   const clusters = useMemo(
-    () => clusterIndex.getClusters(bounds, Math.floor(zoom)),
-    [bounds, clusterIndex, zoom],
+    () => clusterIndex.getClusters(viewport.clusterBounds, viewport.zoom),
+    [clusterIndex, viewport.clusterBounds, viewport.zoom],
   )
 
   useEffect(() => {
-    if (loaded) return
+    if (loaded || loadFailed || items.length === 0) return
 
     const timeoutId = window.setTimeout(() => {
-      setLoadTimedOut(true)
+      setLoadFailed(true)
     }, MAP_LOAD_TIMEOUT_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [loaded])
+  }, [items.length, loadFailed, loaded, mapInstanceKey])
 
   const syncMapState = useCallback(() => {
     const map = mapRef.current
     if (!map) return
 
-    setBounds(getMapBounds(map))
-    setZoom(map.getZoom())
+    const bounds = getMapBounds(map)
+    setViewport({
+      bounds,
+      clusterBounds: expandMapBounds(bounds),
+      zoom: Math.floor(map.getZoom()),
+    })
   }, [])
 
   const handleLoad = useCallback(() => {
@@ -132,33 +155,52 @@ export function AlbumMap({ items }: AlbumMapProps) {
     if (!map) return
 
     fitMapToItems(map, getInitialFocusItems(items), false)
-    setLoaded(true)
-    setLoadTimedOut(false)
-    requestAnimationFrame(syncMapState)
+    requestAnimationFrame(() => {
+      syncMapState()
+      setLoaded(true)
+      setLoadFailed(false)
+    })
   }, [items, syncMapState])
+
+  const retryMap = useCallback(() => {
+    setLoaded(false)
+    setLoadFailed(false)
+    setMapInstanceKey((currentKey) => currentKey + 1)
+  }, [])
 
   const closeMobilePreview = useCallback(() => {
     setMobilePreview(null)
+    setMobilePreviewCenter(null)
+    setMobilePreviewHeight(0)
     mapRef.current?.easeTo({
       padding: EMPTY_PADDING,
       duration: 220,
     })
   }, [])
 
+  useEffect(() => {
+    if (!mobilePreview || !mobilePreviewCenter || mobilePreviewHeight <= 0) {
+      return
+    }
+
+    mapRef.current?.easeTo({
+      center: mobilePreviewCenter,
+      padding: {
+        ...EMPTY_PADDING,
+        bottom: mobilePreviewHeight + MOBILE_PREVIEW_MAP_GAP,
+      },
+      duration: 320,
+    })
+  }, [mobilePreview, mobilePreviewCenter, mobilePreviewHeight])
+
   const openMobilePreview = useCallback(
     (
       preview: MobileMapPreview,
       center: [longitude: number, latitude: number],
     ) => {
+      setMobilePreviewHeight(0)
+      setMobilePreviewCenter(center)
       setMobilePreview(preview)
-      mapRef.current?.easeTo({
-        center,
-        padding: {
-          ...EMPTY_PADDING,
-          bottom: MOBILE_PREVIEW_BOTTOM_PADDING,
-        },
-        duration: 320,
-      })
     },
     [],
   )
@@ -166,6 +208,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
   return (
     <main className="album-map bg-base relative h-svh overflow-hidden">
       <Map
+        key={mapInstanceKey}
         ref={mapRef}
         initialViewState={{ longitude: 20, latitude: 42, zoom: 1 }}
         minZoom={1}
@@ -178,7 +221,9 @@ export function AlbumMap({ items }: AlbumMapProps) {
           if (mobilePreview) closeMobilePreview()
         }}
         onLoad={handleLoad}
-        onMove={syncMapState}
+        onError={() => {
+          if (!loaded) setLoadFailed(true)
+        }}
         onMoveEnd={syncMapState}
       >
         {clusters.map((feature) => {
@@ -201,6 +246,11 @@ export function AlbumMap({ items }: AlbumMapProps) {
                 count={pointCount}
                 items={clusterItems}
                 canHover={canHover}
+                imageLoading={getMapMarkerImageLoading(
+                  longitude,
+                  latitude,
+                  viewport.bounds,
+                )}
                 onExpand={() => {
                   setPinnedAlbumKey(null)
                   const map = mapRef.current
@@ -227,6 +277,8 @@ export function AlbumMap({ items }: AlbumMapProps) {
                   }
 
                   setMobilePreview(null)
+                  setMobilePreviewCenter(null)
+                  setMobilePreviewHeight(0)
                   map.easeTo({
                     center: [longitude, latitude],
                     zoom: Math.min(expansionZoom, 16),
@@ -245,6 +297,11 @@ export function AlbumMap({ items }: AlbumMapProps) {
               key={item.key}
               item={item}
               canHover={canHover}
+              imageLoading={getMapMarkerImageLoading(
+                longitude,
+                latitude,
+                viewport.bounds,
+              )}
               pinned={pinnedAlbumKey === item.key}
               onPinnedChange={(pinned) => {
                 setPinnedAlbumKey(pinned ? item.key : null)
@@ -261,6 +318,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
       </Map>
 
       <MapControls
+        hidden={mobilePreview !== null || items.length === 0}
         onZoomIn={() => mapRef.current?.zoomIn({ duration: 250 })}
         onZoomOut={() => mapRef.current?.zoomOut({ duration: 250 })}
         onReset={() => {
@@ -268,6 +326,8 @@ export function AlbumMap({ items }: AlbumMapProps) {
           if (map) {
             setPinnedAlbumKey(null)
             setMobilePreview(null)
+            setMobilePreviewCenter(null)
+            setMobilePreviewHeight(0)
             map.setPadding(EMPTY_PADDING)
             fitMapToItems(map, items, true)
           }
@@ -278,31 +338,26 @@ export function AlbumMap({ items }: AlbumMapProps) {
         <MobileMapPreviewSheet
           preview={mobilePreview}
           onDismiss={closeMobilePreview}
+          onHeightChange={setMobilePreviewHeight}
         />
       )}
 
-      {!loaded && (
-        <div className="bg-base absolute inset-0 z-30 grid place-items-center">
-          {loadTimedOut ? (
-            <div className="max-w-xs px-6 text-center" role="alert">
-              <p className="text-text font-semibold">Map unavailable</p>
-              <p className="text-subtle mt-1 text-sm">
-                The map is taking longer than expected to load.
-              </p>
-              <button
-                type="button"
-                className="border-text/20 bg-overlay hover:bg-text/15 focus-visible:outline-iris mt-4 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-                onClick={() => window.location.reload()}
-              >
-                Try again
-              </button>
-            </div>
-          ) : (
-            <div className="text-center" role="status">
-              <div className="bg-overlay mx-auto mb-4 size-10 animate-pulse rounded-full motion-reduce:animate-none" />
-              <p className="text-subtle text-sm">Loading places…</p>
-            </div>
-          )}
+      {!loaded && !loadFailed && (
+        <MapLoadingState className="absolute inset-0 z-30" />
+      )}
+
+      {!loaded && loadFailed && (
+        <MapErrorState
+          className="absolute inset-0 z-30"
+          onRetry={retryMap}
+        />
+      )}
+
+      {loaded && items.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+          <p className="border-text/15 bg-base/95 text-subtle rounded-full border px-4 py-2 text-sm shadow-xl">
+            No mapped albums yet
+          </p>
         </div>
       )}
     </main>

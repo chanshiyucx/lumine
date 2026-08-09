@@ -79,12 +79,14 @@ function MapMarker({
 export function AlbumMarker({
   item,
   canHover,
+  imageLoading,
   onPreview,
   pinned,
   onPinnedChange,
 }: {
   item: AlbumMapItem
   canHover: boolean
+  imageLoading: 'eager' | 'lazy'
   onPreview: () => void
   pinned: boolean
   onPinnedChange: (pinned: boolean) => void
@@ -100,12 +102,12 @@ export function AlbumMarker({
     >
       <span
         className={cn(
-          'bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-[transform,border-color,box-shadow] duration-200 group-hover:scale-110 group-data-[state=open]:scale-110',
+          'bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-[scale,border-color,box-shadow] duration-200 ease-out group-hover:scale-[1.08] group-data-[state=open]:scale-[1.08]',
           pinned ? 'border-iris/80 ring-iris/25 ring-2' : 'border-text/30',
         )}
       >
         {cover ? (
-          <AlbumMapCoverImage cover={cover} alt="" />
+          <AlbumMapCoverImage cover={cover} alt="" loading={imageLoading} />
         ) : (
           <MapPinned className="text-subtle absolute inset-0 m-auto size-4" />
         )}
@@ -144,6 +146,7 @@ export function ClusterMarker({
   count,
   items,
   canHover,
+  imageLoading,
   onExpand,
 }: {
   longitude: number
@@ -151,6 +154,7 @@ export function ClusterMarker({
   count: number
   items: AlbumMapItem[]
   canHover: boolean
+  imageLoading: 'eager' | 'lazy'
   onExpand: () => void
 }) {
   const size = Math.min(66, Math.max(50, 42 + Math.log2(count) * 7))
@@ -161,10 +165,13 @@ export function ClusterMarker({
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <span className="bg-iris/25 absolute -inset-1.5 animate-pulse rounded-full motion-reduce:animate-none" />
-      <span className="border-text/25 bg-overlay relative block size-full overflow-hidden rounded-full border-2 shadow-2xl transition-transform duration-200 group-hover:scale-105">
+      <span className="bg-iris/20 absolute -inset-1.5 rounded-full" />
+      <span className="border-text/25 bg-overlay relative block size-full overflow-hidden rounded-full border-2 shadow-2xl transition-transform duration-200 ease-out group-hover:scale-105">
         {representativeCover && (
-          <AlbumMapCoverImage cover={representativeCover} loading="eager" />
+          <AlbumMapCoverImage
+            cover={representativeCover}
+            loading={imageLoading}
+          />
         )}
         <span className="from-base/25 to-iris/65 pointer-events-none absolute inset-0 bg-linear-to-br" />
         <span className="text-text pointer-events-none absolute inset-0 grid place-items-center text-sm font-bold drop-shadow-lg">

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
-import { cn } from '@/lib/style'
+import { animate, m, useMotionValue } from 'motion/react'
+import { useEffect, useRef, type PointerEvent } from 'react'
 import { AlbumPreviewContent } from './album-preview-card'
 import { ClusterPreviewContent } from './cluster-preview-card'
 import type { AlbumMapItem } from './lib/album-map-data'
@@ -20,13 +20,30 @@ interface DragSession {
 export function MobileMapPreviewSheet({
   preview,
   onDismiss,
+  onHeightChange,
 }: {
   preview: MobileMapPreview
   onDismiss: () => void
+  onHeightChange: (height: number) => void
 }) {
+  const sheetRef = useRef<HTMLElement>(null)
   const dragSessionRef = useRef<DragSession | null>(null)
-  const [dragOffset, setDragOffset] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
+  const dragY = useMotionValue(0)
+  const animationRef = useRef<ReturnType<typeof animate> | null>(null)
+
+  const stopAnimation = () => {
+    animationRef.current?.stop()
+    animationRef.current = null
+  }
+
+  const settleDrag = () => {
+    stopAnimation()
+    animationRef.current = animate(dragY, 0, {
+      type: 'spring',
+      stiffness: 480,
+      damping: 38,
+    })
+  }
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -39,26 +56,41 @@ export function MobileMapPreviewSheet({
     }
   }, [onDismiss])
 
+  useEffect(() => {
+    const sheet = sheetRef.current
+    if (!sheet) return
+
+    const reportHeight = () => onHeightChange(sheet.offsetHeight)
+    const resizeObserver = new ResizeObserver(reportHeight)
+
+    reportHeight()
+    resizeObserver.observe(sheet)
+
+    return () => resizeObserver.disconnect()
+  }, [onHeightChange])
+
+  useEffect(() => () => stopAnimation(), [])
+
   const label =
     preview.type === 'album'
       ? `${preview.item.label} album preview`
       : `${preview.count} albums in this area`
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    stopAnimation()
     dragSessionRef.current = {
       pointerId: event.pointerId,
       startTime: performance.now(),
       startY: event.clientY,
     }
     event.currentTarget.setPointerCapture(event.pointerId)
-    setIsDragging(true)
   }
 
   const updateDrag = (event: PointerEvent<HTMLDivElement>) => {
     const session = dragSessionRef.current
     if (!session || event.pointerId !== session.pointerId) return
 
-    setDragOffset(Math.max(0, event.clientY - session.startY))
+    dragY.set(Math.max(0, event.clientY - session.startY))
   }
 
   const finishDrag = (event: PointerEvent<HTMLDivElement>) => {
@@ -69,53 +101,58 @@ export function MobileMapPreviewSheet({
     const elapsed = Math.max(performance.now() - session.startTime, 1)
 
     dragSessionRef.current = null
-    setIsDragging(false)
     if (shouldDismissMobilePreview({ distance, elapsedMs: elapsed })) {
-      onDismiss()
+      stopAnimation()
+      animationRef.current = animate(
+        dragY,
+        Math.max(sheetRef.current?.offsetHeight ?? 0, distance + 80),
+        {
+          duration: 0.18,
+          ease: [0.4, 0, 1, 1],
+          onComplete: onDismiss,
+        },
+      )
       return
     }
 
-    setDragOffset(0)
+    settleDrag()
   }
 
   const cancelDrag = () => {
     dragSessionRef.current = null
-    setIsDragging(false)
-    setDragOffset(0)
+    settleDrag()
   }
 
   return (
-    <section
-      aria-label={label}
-      data-mobile-map-preview={preview.type}
-      className={cn(
-        'mobile-map-preview-sheet border-text/15 bg-base/97 fixed right-2 bottom-0 left-2 z-50 mx-auto max-h-[min(70svh,34rem)] max-w-lg overflow-hidden rounded-t-3xl border border-b-0 shadow-2xl backdrop-blur-[120px]',
-        !isDragging && 'transition-transform duration-200 ease-out',
-      )}
-      style={
-        dragOffset > 0
-          ? { transform: `translate3d(0, ${dragOffset}px, 0)` }
-          : undefined
-      }
+    <m.div
+      className="fixed right-2 bottom-0 left-2 z-50 mx-auto max-w-lg"
+      style={{ y: dragY }}
     >
-      <div
-        className="flex h-7 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
-        aria-hidden
-        onPointerDown={startDrag}
-        onPointerMove={updateDrag}
-        onPointerUp={finishDrag}
-        onPointerCancel={cancelDrag}
+      <section
+        ref={sheetRef}
+        aria-label={label}
+        data-mobile-map-preview={preview.type}
+        className="mobile-map-preview-sheet border-text/15 bg-base/98 max-h-[min(70svh,34rem)] w-full overflow-hidden rounded-t-3xl border border-b-0 shadow-2xl"
       >
-        <span className="bg-text/25 h-1 w-10 rounded-full" />
-      </div>
+        <div
+          className="flex h-7 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+          aria-hidden
+          onPointerDown={startDrag}
+          onPointerMove={updateDrag}
+          onPointerUp={finishDrag}
+          onPointerCancel={cancelDrag}
+        >
+          <span className="bg-text/25 h-1 w-10 rounded-full" />
+        </div>
 
-      <div className="mobile-map-preview-content overflow-y-auto overscroll-contain">
-        {preview.type === 'album' ? (
-          <AlbumPreviewContent item={preview.item} />
-        ) : (
-          <ClusterPreviewContent count={preview.count} items={preview.items} />
-        )}
-      </div>
-    </section>
+        <div className="mobile-map-preview-content overflow-y-auto overscroll-contain">
+          {preview.type === 'album' ? (
+            <AlbumPreviewContent item={preview.item} />
+          ) : (
+            <ClusterPreviewContent count={preview.count} items={preview.items} />
+          )}
+        </div>
+      </section>
+    </m.div>
   )
 }

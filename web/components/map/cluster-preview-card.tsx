@@ -10,7 +10,7 @@ export function ClusterPreviewCard({
 }) {
   return (
     <section
-      className="border-text/15 bg-base/95 rounded-2xl border shadow-2xl backdrop-blur-[120px]"
+      className="border-text/15 bg-base/95 rounded-2xl border shadow-2xl backdrop-blur-2xl"
       aria-label={`${count} albums in this area`}
     >
       <ClusterPreviewContent count={count} items={items} />

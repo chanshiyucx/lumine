@@ -6,7 +6,7 @@ import type { AlbumMapItem } from './lib/album-map-data'
 export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
   return (
     <section
-      className="border-text/15 bg-base/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-[120px]"
+      className="border-text/15 bg-base/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
       aria-label={`${item.label} album preview`}
     >
       <AlbumPreviewContent item={item} />

@@ -1,14 +1,17 @@
 import { ThumbnailImage } from '@/components/photo'
+import { cn } from '@/lib/style'
 import type { AlbumMapCover } from './lib/album-map-data'
 
 export function AlbumMapCoverImage({
   cover,
   alt = '',
   loading = 'lazy',
+  scaleOnHover = false,
 }: {
   cover: AlbumMapCover
   alt?: string
   loading?: 'eager' | 'lazy'
+  scaleOnHover?: boolean
 }) {
   return (
     <ThumbnailImage
@@ -22,7 +25,11 @@ export function AlbumMapCoverImage({
       }}
       alt={alt}
       loading={loading}
-      imageClassName="pointer-events-none select-none transition-transform duration-300 group-hover:scale-105"
+      imageClassName={cn(
+        'pointer-events-none select-none',
+        scaleOnHover &&
+          'transition-transform duration-300 ease-out group-hover:scale-[1.04]',
+      )}
       placeholderClassName="pointer-events-none select-none"
     />
   )

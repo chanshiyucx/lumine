@@ -1,9 +1,10 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { getAlbumPath, type Album } from '@/lib/albums'
+import { getAlbumPath, getAlbums, type Album } from '@/lib/albums'
 import { getMediaUrl, MEDIA_PATHS } from '@/lib/media-url'
 import { getPhotoPath } from '@/lib/photo'
+import { getPhotoCollection } from '@/lib/photo/collection'
 
 export interface AlbumMapCover {
   href: string
@@ -85,10 +86,12 @@ const fetchAlbumMapData = cache(async () => {
   return albumMapSchema.parse(mapJson)
 })
 
-export async function getAlbumMapItems(
-  albums: Album[],
-): Promise<AlbumMapItem[]> {
-  const albumMapData = await fetchAlbumMapData()
+export async function getAlbumMapItems(): Promise<AlbumMapItem[]> {
+  const [photoCollection, albumMapData] = await Promise.all([
+    getPhotoCollection(),
+    fetchAlbumMapData(),
+  ])
+  const albums = getAlbums(photoCollection.photos)
   const locations = new Map(
     Object.entries(albumMapData.locations).map(([key, location]) => [
       normalizeAlbumKey(key),

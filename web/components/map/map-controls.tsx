@@ -1,11 +1,13 @@
-import { Compass, Minus, Plus } from 'lucide-react'
+import { Maximize2, Minus, Plus } from 'lucide-react'
 import { cn } from '@/lib/style'
 
 export function MapControls({
+  hidden = false,
   onZoomIn,
   onZoomOut,
   onReset,
 }: {
+  hidden?: boolean
   onZoomIn: () => void
   onZoomOut: () => void
   onReset: () => void
@@ -13,11 +15,16 @@ export function MapControls({
   const controls = [
     { label: 'Zoom in', icon: Plus, action: onZoomIn },
     { label: 'Zoom out', icon: Minus, action: onZoomOut },
-    { label: 'Show all places', icon: Compass, action: onReset },
+    { label: 'Show all places', icon: Maximize2, action: onReset },
   ]
 
   return (
-    <div className="absolute bottom-6 left-3 z-10 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-black/55 shadow-xl backdrop-blur-xl sm:left-5">
+    <div
+      className={cn(
+        'absolute bottom-6 left-3 z-10 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-black/55 shadow-xl backdrop-blur-xl transition-[opacity,transform] duration-150 sm:left-5',
+        hidden && 'pointer-events-none translate-y-2 opacity-0',
+      )}
+    >
       {controls.map(({ label, icon: Icon, action }, index) => (
         <button
           key={label}
