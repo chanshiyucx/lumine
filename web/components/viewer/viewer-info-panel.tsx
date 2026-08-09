@@ -138,13 +138,14 @@ export function ViewerInfoPanel({
       >
         <m.div
           className={cn(
-            'border-overlay bg-surface/70 relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:w-80 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
+            'relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:w-80 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
             !isMobileMotionControlled &&
               (isOpen
                 ? 'translate-y-0 opacity-100'
                 : 'translate-y-full opacity-0 lg:translate-y-0'),
           )}
           style={{
+            backgroundColor: 'rgb(40 40 40 / 0.56)',
             opacity: 1,
             y: 0,
             ...mobileStyle,
