@@ -1,5 +1,3 @@
-'use client'
-
 import Image, { type ImageProps } from 'next/image'
 import { getThumbHashAsset } from '@/lib/thumbhash'
 
