@@ -1,7 +1,8 @@
-export function isHeaderNavItemActive(pathname: string, href: string) {
-  const normalizedPathname = pathname || '/'
-
+export function isHeaderNavItemActive(
+  segment: string | null,
+  href: string,
+) {
   return href === '/'
-    ? normalizedPathname === '/' || normalizedPathname.startsWith('/photos/')
-    : normalizedPathname === href || normalizedPathname.startsWith(`${href}/`)
+    ? segment === null || segment === 'photos'
+    : segment === href.slice(1)
 }

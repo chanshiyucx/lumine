@@ -69,7 +69,7 @@
   }
 
   body {
-    @apply bg-base text-text h-full overflow-x-hidden overflow-y-auto font-medium tabular-nums antialiased lg:overflow-hidden;
+    @apply bg-base text-text h-full overflow-x-hidden overflow-y-auto font-medium tabular-nums antialiased;
   }
 }
 

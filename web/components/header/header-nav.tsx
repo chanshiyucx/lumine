@@ -2,7 +2,7 @@
 
 import { LayoutGrid, LibraryBig, Map as MapIcon } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useSelectedLayoutSegment } from 'next/navigation'
 import { cn } from '@/lib/style'
 import { isHeaderNavItemActive } from './lib/header-nav-state'
 
@@ -25,12 +25,12 @@ const navItems = [
 ]
 
 export function HeaderNav() {
-  const pathname = usePathname()
+  const segment = useSelectedLayoutSegment()
 
   return (
     <nav aria-label="Primary" className="flex items-center gap-1">
       {navItems.map((item) => {
-        const isActive = isHeaderNavItemActive(pathname, item.href)
+        const isActive = isHeaderNavItemActive(segment, item.href)
         const Icon = item.icon
 
         return (

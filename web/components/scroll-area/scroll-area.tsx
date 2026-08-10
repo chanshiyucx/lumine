@@ -2,10 +2,11 @@
 
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area'
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { useMobile } from '@/hooks/use-mobile'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { cn } from '@/lib/style'
 
 const ScrollElementContext = createContext<HTMLElement | null>(null)
+const NATIVE_PAGE_SCROLL_QUERY = '(hover: none) and (pointer: coarse)'
 
 interface ScrollAreaProps {
   ariaLabel?: string
@@ -83,9 +84,9 @@ export function ScrollArea(props: ScrollAreaProps) {
 export function PageScrollArea({
   children,
 }: Pick<ScrollAreaProps, 'children'>) {
-  const isMobile = useMobile()
+  const isNativePageScroll = useMediaQuery(NATIVE_PAGE_SCROLL_QUERY)
 
-  if (isMobile) {
+  if (isNativePageScroll) {
     return (
       <ScrollElementContext.Provider value={document.body}>
         {children}

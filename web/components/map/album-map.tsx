@@ -24,7 +24,7 @@ import {
 
 const MAP_STYLE_URL =
   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-const CAN_HOVER_QUERY =
+const MAP_HOVER_PREVIEW_QUERY =
   '(min-width: 768px) and (hover: hover) and (pointer: fine)'
 const MOBILE_PREVIEW_MAP_GAP = 16
 const MAP_LOAD_TIMEOUT_MS = 15_000
@@ -102,7 +102,7 @@ function fitMapToItems(map: MapRef, items: AlbumMapItem[], animated: boolean) {
 
 export function AlbumMap({ items }: AlbumMapProps) {
   const mapRef = useRef<MapRef>(null)
-  const canHover = useMediaQuery(CAN_HOVER_QUERY)
+  const canHover = useMediaQuery(MAP_HOVER_PREVIEW_QUERY)
   const [viewport, setViewport] = useState<MapViewportState>({
     bounds: WORLD_BOUNDS,
     clusterBounds: WORLD_BOUNDS,
