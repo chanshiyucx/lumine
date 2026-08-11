@@ -43,16 +43,7 @@ export function PhotoGallery({
     }
 
     const handleScroll = () => {
-      const nextShowHeaderDetail =
-        scrollElement.scrollTop > HEADER_SCROLL_THRESHOLD
-
-      setShowHeaderDetail((currentShowHeaderDetail) => {
-        if (currentShowHeaderDetail === nextShowHeaderDetail) {
-          return currentShowHeaderDetail
-        }
-
-        return nextShowHeaderDetail
-      })
+      setShowHeaderDetail(scrollElement.scrollTop > HEADER_SCROLL_THRESHOLD)
     }
 
     handleScroll()
@@ -90,12 +81,8 @@ export function PhotoGallery({
     }
   }, [])
 
-  const handleVisiblePhotosChange = (visiblePhotos: Photo[]) => {
-    if (hasFixedHeader) {
-      return
-    }
-
-    const nextHeaderState = getGalleryHeaderState(visiblePhotos)
+  const handleVisiblePhotoChange = (visiblePhoto: Photo | undefined) => {
+    const nextHeaderState = getGalleryHeaderState(visiblePhoto)
 
     setHeaderState((currentState) => {
       if (
@@ -113,7 +100,7 @@ export function PhotoGallery({
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
         <div
-          className="flow-root"
+          className="pt-12"
           data-gallery-root
           inert={isViewerMounted}
           tabIndex={-1}
@@ -121,7 +108,9 @@ export function PhotoGallery({
           <PhotoMasonry
             photos={photos}
             onPhotoOpen={viewer.open}
-            onVisiblePhotosChange={handleVisiblePhotosChange}
+            onVisiblePhotoChange={
+              hasFixedHeader ? undefined : handleVisiblePhotoChange
+            }
           />
         </div>
 

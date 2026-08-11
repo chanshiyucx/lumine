@@ -24,12 +24,20 @@ interface MasonryPosition {
 
 type MasonryImagePosition = Pick<MasonryPosition, 'start' | 'end'>
 
+function isMasonryPositionVisible(
+  position: MasonryImagePosition,
+  viewportStart: number,
+  viewportEnd: number,
+) {
+  return position.end > viewportStart && position.start < viewportEnd
+}
+
 export function getMasonryImageLoading(
   position: MasonryImagePosition,
   viewportStart: number,
   viewportEnd: number,
 ): 'eager' | 'lazy' {
-  return position.end > viewportStart && position.start < viewportEnd
+  return isMasonryPositionVisible(position, viewportStart, viewportEnd)
     ? 'eager'
     : 'lazy'
 }
@@ -46,22 +54,16 @@ export function getMasonryLayout(containerWidth: number): MasonryLayout {
   }
 }
 
-export function getVisibleMasonryIndexes(
+export function getFirstVisibleMasonryIndex(
   positions: readonly MasonryPosition[],
   viewportStart: number,
   viewportEnd: number,
-): number[] {
-  const indexes: number[] = []
-
+): number | undefined {
   for (const position of positions) {
-    if (
-      getMasonryImageLoading(position, viewportStart, viewportEnd) === 'eager'
-    ) {
-      indexes.push(position.index)
+    if (isMasonryPositionVisible(position, viewportStart, viewportEnd)) {
+      return position.index
     }
   }
-
-  return indexes
 }
 
 export function getPhotoMasonryHeight(

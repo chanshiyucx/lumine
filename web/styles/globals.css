@@ -121,6 +121,10 @@
     container-type: size;
   }
 
+  .photo-masonry-expanded-info {
+    display: block;
+  }
+
   @container (max-height: 8.75rem) {
     .photo-masonry-expanded-info {
       display: none;

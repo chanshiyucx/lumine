@@ -3,10 +3,10 @@ import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useScrollElement } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
 import {
+  getFirstVisibleMasonryIndex,
   getMasonryImageLoading,
   getMasonryLayout,
   getPhotoMasonryHeight,
-  getVisibleMasonryIndexes,
   MASONRY_GAP,
   type MasonryLayout,
 } from './lib/masonry-layout'
@@ -22,14 +22,7 @@ interface MeasuredMasonryLayout extends MasonryLayout {
 interface PhotoMasonryProps {
   photos: Photo[]
   onPhotoOpen: (index: number, triggerElement: HTMLElement) => void
-  onVisiblePhotosChange: (photos: Photo[]) => void
-}
-
-function arePhotoIdsEqual(left: string[], right: string[]) {
-  return (
-    left.length === right.length &&
-    left.every((id, index) => id === right[index])
-  )
+  onVisiblePhotoChange?: (photo: Photo | undefined) => void
 }
 
 function getScrollMargin(container: HTMLElement, scrollElement: HTMLElement) {
@@ -82,29 +75,29 @@ function useMasonryLayout(scrollElement: HTMLElement | null) {
   return { containerRef, layout }
 }
 
-function getVisiblePhotos(
+function getFirstVisiblePhoto(
   photos: Photo[],
   virtualizer: Virtualizer<HTMLElement, HTMLLIElement>,
   scrollElement: HTMLElement,
 ) {
   const scrollOffset = virtualizer.scrollOffset ?? scrollElement.scrollTop
-  const indexes = getVisibleMasonryIndexes(
+  const index = getFirstVisibleMasonryIndex(
     virtualizer.getVirtualItems(),
     scrollOffset + HEADER_HEIGHT,
     scrollOffset + scrollElement.clientHeight,
   )
 
-  return indexes.map((index) => photos[index])
+  return index === undefined ? undefined : photos[index]
 }
 
 export const PhotoMasonry = memo(function PhotoMasonry({
   photos,
   onPhotoOpen,
-  onVisiblePhotosChange,
+  onVisiblePhotoChange,
 }: PhotoMasonryProps) {
   const scrollElement = useScrollElement()
   const { containerRef, layout } = useMasonryLayout(scrollElement)
-  const lastVisiblePhotoIdsRef = useRef<string[] | null>(null)
+  const lastVisiblePhotoRef = useRef<Photo | undefined>(undefined)
   const isLayoutReady = scrollElement !== null && layout !== null
   const columnCount = layout?.columnCount ?? 1
   const columnWidth = layout?.columnWidth ?? 1
@@ -116,25 +109,23 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const getItemKey = useCallback((index: number) => photos[index].id, [photos])
   const handleVirtualizerChange = useCallback(
     (virtualizer: Virtualizer<HTMLElement, HTMLLIElement>) => {
-      if (!scrollElement) {
+      if (!scrollElement || !onVisiblePhotoChange) {
         return
       }
 
-      const visiblePhotos = getVisiblePhotos(photos, virtualizer, scrollElement)
-      const visiblePhotoIds = visiblePhotos.map((photo) => photo.id)
-      const previousVisiblePhotoIds = lastVisiblePhotoIdsRef.current
-
-      if (
-        previousVisiblePhotoIds &&
-        arePhotoIdsEqual(previousVisiblePhotoIds, visiblePhotoIds)
-      ) {
+      const visiblePhoto = getFirstVisiblePhoto(
+        photos,
+        virtualizer,
+        scrollElement,
+      )
+      if (lastVisiblePhotoRef.current === visiblePhoto) {
         return
       }
 
-      lastVisiblePhotoIdsRef.current = visiblePhotoIds
-      onVisiblePhotosChange(visiblePhotos)
+      lastVisiblePhotoRef.current = visiblePhoto
+      onVisiblePhotoChange(visiblePhoto)
     },
-    [onVisiblePhotosChange, photos, scrollElement],
+    [onVisiblePhotoChange, photos, scrollElement],
   )
 
   // TanStack Virtual owns its imperative state and cannot be memoized safely.
@@ -149,7 +140,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     estimateSize,
     getScrollElement: () => scrollElement,
     getItemKey,
-    onChange: handleVirtualizerChange,
+    onChange: onVisiblePhotoChange ? handleVirtualizerChange : undefined,
     directDomUpdates: true,
     useFlushSync: false,
   })
@@ -168,17 +159,13 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const viewportEnd = scrollOffset + (scrollElement?.clientHeight ?? 0)
 
   return (
-    <div ref={containerRef} className="mt-12 w-full">
+    <div ref={containerRef}>
       {photos.length === 0 ? (
         <p className="text-subtle px-6 py-16 text-center" role="status">
           No photos available.
         </p>
       ) : (
-        <ul
-          ref={sizeContainerRef}
-          className="relative m-0 list-none p-0"
-          aria-label="Photos"
-        >
+        <ul ref={sizeContainerRef} className="relative" aria-label="Photos">
           {virtualItems.map((virtualItem) => {
             const photo = photos[virtualItem.index]
 

@@ -8,15 +8,14 @@ export interface GalleryHeaderState {
 }
 
 export function getGalleryHeaderState(
-  photos: readonly Pick<Photo, 'albumKey' | 'takenAt'>[],
+  photo: Pick<Photo, 'albumKey' | 'takenAt'> | undefined,
 ): GalleryHeaderState {
-  const coverPhoto = photos[0]
-  if (!coverPhoto) {
+  if (!photo) {
     return {}
   }
 
-  const date = formatReadableDate(coverPhoto.takenAt)
-  const location = getAlbumDescriptor(coverPhoto.albumKey).title
+  const date = formatReadableDate(photo.takenAt)
+  const location = getAlbumDescriptor(photo.albumKey).title
 
   return { date, location }
 }

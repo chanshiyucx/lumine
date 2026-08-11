@@ -35,13 +35,13 @@ export function PhotoMasonryItem({
     >
       <ThumbnailImage photo={photo} loading={imageLoading} scaleOnHover />
 
-      <div className="pointer-events-none">
-        <div className="from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none" />
-        <div className="absolute inset-x-0 bottom-0 max-h-full overflow-hidden p-2">
-          <h3 className="truncate opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+      <span className="pointer-events-none">
+        <span className="from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none" />
+        <span className="absolute inset-x-0 bottom-0 max-h-full overflow-hidden p-2">
+          <span className="block truncate opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
             {photo.title}
-          </h3>
-          <div className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+          </span>
+          <span className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
             <span>{mimeLabel}</span>
             <span>•</span>
             <span>
@@ -49,25 +49,25 @@ export function PhotoMasonryItem({
             </span>
             <span>•</span>
             <span>{formatBytes(photo.original.bytes)}</span>
-          </div>
-          <div className="photo-masonry-expanded-info">
+          </span>
+          <span className="photo-masonry-expanded-info">
             <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
               {albumTitle}
             </span>
-          </div>
-          {captureSettings.length > 0 && (
-            <div className="photo-masonry-expanded-info grid grid-cols-2 gap-2 text-xs">
-              {captureSettings.map((setting) => (
-                <CaptureSettingChip
-                  key={setting.key}
-                  setting={setting}
-                  className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+            {captureSettings.length > 0 && (
+              <span className="grid grid-cols-2 gap-2 text-xs">
+                {captureSettings.map((setting) => (
+                  <CaptureSettingChip
+                    key={setting.key}
+                    setting={setting}
+                    className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
+                  />
+                ))}
+              </span>
+            )}
+          </span>
+        </span>
+      </span>
     </button>
   )
 }

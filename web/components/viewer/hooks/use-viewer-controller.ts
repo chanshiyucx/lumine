@@ -233,9 +233,10 @@ export function useViewerController({
       }
 
       const photo = photos[index]
-      const triggerElement = photo
-        ? resolveViewerTrigger(photo.id, current.triggerElement)
-        : null
+      const triggerElement = resolveViewerTrigger(
+        photo.id,
+        current.triggerElement,
+      )
       restoreFocusElementRef.current = triggerElement
       applyAction({
         type: 'open',

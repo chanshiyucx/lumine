@@ -30,7 +30,7 @@ export function CaptureSettingChip({
   const Icon = CAPTURE_SETTING_ICONS[setting.key]
 
   return (
-    <div
+    <span
       className={cn(
         'bg-text/10 flex items-center gap-1.5 rounded-md px-2 py-1',
         className,
@@ -38,6 +38,6 @@ export function CaptureSettingChip({
     >
       <Icon />
       <span>{setting.value}</span>
-    </div>
+    </span>
   )
 }
