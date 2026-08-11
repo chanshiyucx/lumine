@@ -122,58 +122,45 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     }
   }, [activeIndex, photos.length, reduceMotion, virtualizer])
 
-  const updateHoverPreview = useCallback(
-    (index: number, button: HTMLButtonElement) => {
-      if (
-        isMobile ||
-        !window.matchMedia('(hover: hover) and (pointer: fine)').matches
-      ) {
-        return
-      }
+  const updateHoverPreview = (index: number, button: HTMLButtonElement) => {
+    if (
+      isMobile ||
+      !window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    ) {
+      return
+    }
 
-      const railShell = railShellRef.current
-      const photo = photos[index]
+    const railShell = railShellRef.current
+    const photo = photos[index]
 
-      if (!railShell || !photo) {
-        return
-      }
+    if (!railShell || !photo) {
+      return
+    }
 
-      const shellRect = railShell.getBoundingClientRect()
-      const buttonRect = button.getBoundingClientRect()
-      const previewSize = getHoverPreviewSize(
-        photo.aspectRatio,
-        shellRect.width,
-      )
-      const rawLeft =
-        buttonRect.left -
-        shellRect.left +
-        buttonRect.width / 2 -
-        previewSize.width / 2
-      const maxLeft = Math.max(
-        HOVER_PREVIEW_PADDING,
-        shellRect.width - previewSize.width - HOVER_PREVIEW_PADDING,
-      )
+    const shellRect = railShell.getBoundingClientRect()
+    const buttonRect = button.getBoundingClientRect()
+    const previewSize = getHoverPreviewSize(photo.aspectRatio, shellRect.width)
+    const rawLeft =
+      buttonRect.left -
+      shellRect.left +
+      buttonRect.width / 2 -
+      previewSize.width / 2
+    const maxLeft = Math.max(
+      HOVER_PREVIEW_PADDING,
+      shellRect.width - previewSize.width - HOVER_PREVIEW_PADDING,
+    )
 
-      setHoverPreview({
-        index,
-        left: clamp(rawLeft, HOVER_PREVIEW_PADDING, maxLeft),
-        width: previewSize.width,
-        height: previewSize.height,
-      })
-    },
-    [isMobile, photos],
-  )
+    setHoverPreview({
+      index,
+      left: clamp(rawLeft, HOVER_PREVIEW_PADDING, maxLeft),
+      width: previewSize.width,
+      height: previewSize.height,
+    })
+  }
 
-  const handleThumbnailEnter = useCallback(
-    (index: number, event: React.MouseEvent<HTMLButtonElement>) => {
-      updateHoverPreview(index, event.currentTarget)
-    },
-    [updateHoverPreview],
-  )
-
-  const handleThumbnailLeave = useCallback(() => {
+  const clearHoverPreview = () => {
     setHoverPreview(null)
-  }, [])
+  }
 
   useEffect(() => {
     if (isMobile && hoverPreview) {
@@ -207,7 +194,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
         ref={railViewportRef}
         className="scrollbar-hide h-full overflow-x-auto overflow-y-hidden"
         aria-label="Preview thumbnails"
-        onScroll={handleThumbnailLeave}
+        onScroll={clearHoverPreview}
       >
         <div
           className="relative"
@@ -238,8 +225,10 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                   transform: `translateX(${virtualItem.start}px)`,
                 }}
                 onClick={() => onSelect(index)}
-                onMouseEnter={(event) => handleThumbnailEnter(index, event)}
-                onMouseLeave={handleThumbnailLeave}
+                onMouseEnter={(event) =>
+                  updateHoverPreview(index, event.currentTarget)
+                }
+                onMouseLeave={clearHoverPreview}
                 aria-label={`Open ${photo.title}`}
                 aria-current={isActive}
               >

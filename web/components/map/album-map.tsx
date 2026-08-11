@@ -16,7 +16,7 @@ import {
 import { shouldPreviewClusterOnTouch } from './lib/map-preview-interaction'
 import { expandMapBounds, getMapMarkerImageLoading } from './lib/map-viewport'
 import { MapControls } from './map-controls'
-import { MapErrorState, MapLoadingState } from './map-loading-state'
+import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
 import {
   MobileMapPreviewSheet,
   type MobileMapPreview,
@@ -42,6 +42,14 @@ interface MapViewportState {
   bounds: MapBounds
   clusterBounds: MapBounds
   zoom: number
+}
+
+type MapLoadStatus = 'loading' | 'loaded' | 'failed'
+
+interface MobilePreviewState {
+  center: [longitude: number, latitude: number]
+  height: number
+  preview: MobileMapPreview
 }
 
 function makeClusterIndex(items: AlbumMapItem[]) {
@@ -108,18 +116,13 @@ export function AlbumMap({ items }: AlbumMapProps) {
     clusterBounds: WORLD_BOUNDS,
     zoom: 1,
   })
-  const [loaded, setLoaded] = useState(false)
-  const [loadFailed, setLoadFailed] = useState(false)
+  const [loadStatus, setLoadStatus] = useState<MapLoadStatus>('loading')
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
   const [showingAll, setShowingAll] = useState(false)
   const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
-  const [mobilePreview, setMobilePreview] = useState<MobileMapPreview | null>(
+  const [mobilePreview, setMobilePreview] = useState<MobilePreviewState | null>(
     null,
   )
-  const [mobilePreviewCenter, setMobilePreviewCenter] = useState<
-    [longitude: number, latitude: number] | null
-  >(null)
-  const [mobilePreviewHeight, setMobilePreviewHeight] = useState(0)
   const initialFocusItems = useMemo(() => getInitialFocusItems(items), [items])
   const clusterIndex = useMemo(() => makeClusterIndex(items), [items])
   const clusters = useMemo(
@@ -128,14 +131,14 @@ export function AlbumMap({ items }: AlbumMapProps) {
   )
 
   useEffect(() => {
-    if (loaded || loadFailed || items.length === 0) return
+    if (loadStatus !== 'loading' || items.length === 0) return
 
     const timeoutId = window.setTimeout(() => {
-      setLoadFailed(true)
+      setLoadStatus('failed')
     }, MAP_LOAD_TIMEOUT_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [items.length, loadFailed, loaded, mapInstanceKey])
+  }, [items.length, loadStatus, mapInstanceKey])
 
   const syncMapState = useCallback(() => {
     const map = mapRef.current
@@ -156,22 +159,18 @@ export function AlbumMap({ items }: AlbumMapProps) {
     fitMapToItems(map, initialFocusItems, false)
     requestAnimationFrame(() => {
       syncMapState()
-      setLoaded(true)
-      setLoadFailed(false)
+      setLoadStatus('loaded')
       setShowingAll(false)
     })
   }, [initialFocusItems, syncMapState])
 
   const retryMap = useCallback(() => {
-    setLoaded(false)
-    setLoadFailed(false)
+    setLoadStatus('loading')
     setMapInstanceKey((currentKey) => currentKey + 1)
   }, [])
 
   const closeMobilePreview = useCallback(() => {
     setMobilePreview(null)
-    setMobilePreviewCenter(null)
-    setMobilePreviewHeight(0)
     mapRef.current?.easeTo({
       padding: EMPTY_PADDING,
       duration: 220,
@@ -179,28 +178,26 @@ export function AlbumMap({ items }: AlbumMapProps) {
   }, [])
 
   useEffect(() => {
-    if (!mobilePreview || !mobilePreviewCenter || mobilePreviewHeight <= 0) {
+    if (!mobilePreview || mobilePreview.height <= 0) {
       return
     }
 
     mapRef.current?.easeTo({
-      center: mobilePreviewCenter,
+      center: mobilePreview.center,
       padding: {
         ...EMPTY_PADDING,
-        bottom: mobilePreviewHeight + MOBILE_PREVIEW_MAP_GAP,
+        bottom: mobilePreview.height + MOBILE_PREVIEW_MAP_GAP,
       },
       duration: 320,
     })
-  }, [mobilePreview, mobilePreviewCenter, mobilePreviewHeight])
+  }, [mobilePreview])
 
   const openMobilePreview = useCallback(
     (
       preview: MobileMapPreview,
       center: [longitude: number, latitude: number],
     ) => {
-      setMobilePreviewHeight(0)
-      setMobilePreviewCenter(center)
-      setMobilePreview(preview)
+      setMobilePreview({ center, height: 0, preview })
     },
     [],
   )
@@ -222,7 +219,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
         }}
         onLoad={handleLoad}
         onError={() => {
-          if (!loaded) setLoadFailed(true)
+          if (loadStatus === 'loading') setLoadStatus('failed')
         }}
         onMoveEnd={syncMapState}
       >
@@ -277,8 +274,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
                   }
 
                   setMobilePreview(null)
-                  setMobilePreviewCenter(null)
-                  setMobilePreviewHeight(0)
                   map.easeTo({
                     center: [longitude, latitude],
                     zoom: Math.min(expansionZoom, 16),
@@ -327,8 +322,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
           if (map) {
             setPinnedAlbumKey(null)
             setMobilePreview(null)
-            setMobilePreviewCenter(null)
-            setMobilePreviewHeight(0)
             map.setPadding(EMPTY_PADDING)
             if (showingAll) {
               fitMapToItems(map, initialFocusItems, true)
@@ -344,27 +337,25 @@ export function AlbumMap({ items }: AlbumMapProps) {
 
       {mobilePreview && (
         <MobileMapPreviewSheet
-          preview={mobilePreview}
+          preview={mobilePreview.preview}
           onDismiss={closeMobilePreview}
-          onHeightChange={setMobilePreviewHeight}
+          onHeightChange={(height) => {
+            setMobilePreview((currentPreview) =>
+              currentPreview ? { ...currentPreview, height } : null,
+            )
+          }}
         />
       )}
 
-      {!loaded && !loadFailed && (
+      {loadStatus === 'loading' && (
         <MapLoadingState className="absolute inset-0 z-30" />
       )}
 
-      {!loaded && loadFailed && (
+      {loadStatus === 'failed' && (
         <MapErrorState className="absolute inset-0 z-30" onRetry={retryMap} />
       )}
 
-      {loaded && items.length === 0 && (
-        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-          <p className="border-overlay bg-surface/95 text-subtle rounded-full border px-4 py-2 text-sm shadow-xl">
-            No mapped albums yet
-          </p>
-        </div>
-      )}
+      {loadStatus === 'loaded' && items.length === 0 && <MapEmptyState />}
     </main>
   )
 }
