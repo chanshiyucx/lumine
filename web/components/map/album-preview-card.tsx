@@ -16,16 +16,14 @@ export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
 
 export function AlbumPreviewContent({ item }: { item: AlbumMapItem }) {
   const photoCountLabel = `${item.photoCount} ${item.photoCount === 1 ? 'photo' : 'photos'}`
-  const detailLabel = [item.dateLabel, photoCountLabel]
-    .filter(Boolean)
-    .join(' · ')
+  const detailLabel = `${item.dateLabel} · ${photoCountLabel}`
 
   return (
     <>
       <div className="bg-overlay grid h-32 grid-cols-[3fr_2fr] grid-rows-2 gap-px">
-        {item.covers.slice(0, 3).map((cover, index) => (
+        {item.covers.map((cover, index) => (
           <AlbumCoverLink
-            key={`${cover.url}-${index}`}
+            key={cover.url}
             item={item}
             cover={cover}
             loading="eager"

@@ -28,13 +28,6 @@ export function formatMimeLabel(photo: Photo) {
   return photo.original.mime.replace('image/', '').toUpperCase()
 }
 
-export function formatAlbumChip(albumKey: string) {
-  const [, ...rest] = albumKey.split('-')
-  const label = rest.join(' ').trim()
-
-  return label || 'Masonry'
-}
-
 export function formatSentenceCase(value?: string) {
   if (!value) {
     return NOT_AVAILABLE_LABEL

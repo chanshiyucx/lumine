@@ -21,7 +21,10 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: siteConfig.title,
+  title: {
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.title}`,
+  },
   description: siteConfig.description,
   category: 'Photo Gallery',
   keywords: 'Blog, Gallery, Photos, Lumine',

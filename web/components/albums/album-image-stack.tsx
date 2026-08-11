@@ -2,8 +2,11 @@ import { ThumbnailImage, type ThumbnailImagePhoto } from '@/components/photo'
 import { ThumbHashImage } from '@/components/thumbhash'
 import { cn } from '@/lib/style'
 
+export type AlbumCoverLoading = 'eager' | 'lazy'
+
 interface AlbumImageStackProps {
-  photos: ThumbnailImagePhoto[]
+  photos: readonly ThumbnailImagePhoto[]
+  coverLoading: AlbumCoverLoading
 }
 
 const stackImageClassNames = [
@@ -12,10 +15,13 @@ const stackImageClassNames = [
   'z-10 translate-x-1 -translate-y-1 rotate-4 scale-[0.98] shadow-sm group-hover:rotate-7',
 ]
 
-export function AlbumImageStack({ photos }: AlbumImageStackProps) {
+export function AlbumImageStack({
+  photos,
+  coverLoading,
+}: AlbumImageStackProps) {
   return (
-    <div className="relative mb-4 aspect-3/2 w-full">
-      {photos.map((photo, index) => {
+    <div className="relative mb-4 aspect-3/2">
+      {photos.slice(0, stackImageClassNames.length).map((photo, index) => {
         const isCover = index === 0
 
         return (
@@ -27,11 +33,7 @@ export function AlbumImageStack({ photos }: AlbumImageStackProps) {
             )}
           >
             {isCover ? (
-              <ThumbnailImage
-                photo={photo}
-                fetchPriority="high"
-                loading="lazy"
-              />
+              <ThumbnailImage photo={photo} loading={coverLoading} />
             ) : (
               <ThumbHashImage
                 thumbHash={photo.thumbHash}

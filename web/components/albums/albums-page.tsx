@@ -1,22 +1,26 @@
-import { getAlbums } from '@/lib/albums'
-import { getPhotoCollection } from '@/lib/photo/collection'
+import { getAlbumCatalog } from '@/lib/album-catalog'
 import { AlbumCard } from './album-card'
 
+const EAGER_COVER_COUNT = 4
+
 export async function AlbumsPage() {
-  const photoCollection = await getPhotoCollection()
-  const albums = getAlbums(photoCollection.photos)
+  const catalog = await getAlbumCatalog()
 
   return (
     <main className="px-6 pt-28 pb-20 sm:px-8 lg:px-10">
       <div
-        className="mx-auto grid max-w-7xl justify-items-center gap-x-16 gap-y-16"
+        className="mx-auto grid max-w-7xl justify-items-center gap-16"
         style={{
           gridTemplateColumns:
             'repeat(auto-fit, minmax(min(100%, 16.25rem), 1fr))',
         }}
       >
-        {albums.map((album) => (
-          <AlbumCard key={album.key} album={album} />
+        {catalog.albums.map((album, index) => (
+          <AlbumCard
+            key={album.key}
+            album={album}
+            coverLoading={index < EAGER_COVER_COUNT ? 'eager' : 'lazy'}
+          />
         ))}
       </div>
     </main>

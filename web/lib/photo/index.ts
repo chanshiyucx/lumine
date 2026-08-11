@@ -58,8 +58,6 @@ export interface Photo extends PhotoManifestEntry {
   slug: string
   fileName: string
   albumKey: string
-  albumLabel: string
-  locationLabel: string
   aspectRatio: number
 }
 

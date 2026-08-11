@@ -1,3 +1,4 @@
+import { getAlbumDescriptor } from '@/lib/albums'
 import type { Photo } from '@/lib/photo'
 import {
   formatApertureValue,
@@ -18,6 +19,8 @@ interface InfoRowData {
 }
 
 export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
+  const album = getAlbumDescriptor(photo.albumKey)
+
   return [
     { label: 'File Name', value: photo.fileName },
     { label: 'Format', value: formatMimeLabel(photo) },
@@ -36,7 +39,7 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
     },
     {
       label: 'Location',
-      value: photo.locationLabel,
+      value: album.title,
     },
     { label: 'Taken At', value: formatDateTimeLabel(photo.takenAt) },
     { label: 'Time Zone', value: formatTimeZoneLabel(photo.takenAt) },

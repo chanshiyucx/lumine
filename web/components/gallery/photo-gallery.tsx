@@ -15,7 +15,7 @@ import { PhotoMasonry } from './photo-masonry'
 interface PhotoGalleryProps {
   photos: Photo[]
   initialPhotoSlug?: string
-  fixedHeaderLocation?: string
+  fixedHeaderDetail?: Required<GalleryHeaderState>
 }
 
 const HEADER_SCROLL_THRESHOLD = 500
@@ -23,7 +23,7 @@ const HEADER_SCROLL_THRESHOLD = 500
 export function PhotoGallery({
   photos,
   initialPhotoSlug,
-  fixedHeaderLocation,
+  fixedHeaderDetail,
 }: PhotoGalleryProps) {
   const scrollElement = useScrollElement()
   const viewer = useViewerController({
@@ -31,18 +31,11 @@ export function PhotoGallery({
     initialPhotoSlug,
   })
   const isViewerMounted = viewer.state.activeIndex !== null
-  const hasFixedHeader = fixedHeaderLocation !== undefined
+  const hasFixedHeader = fixedHeaderDetail !== undefined
   const [showHeaderDetail, setShowHeaderDetail] = useState(false)
   const [headerState, setHeaderState] = useState<GalleryHeaderState>({})
-  const fixedHeaderState = hasFixedHeader
-    ? getGalleryHeaderState(photos)
-    : undefined
-  const displayedDate = hasFixedHeader
-    ? fixedHeaderState?.date
-    : headerState.date
-  const displayedLocation = hasFixedHeader
-    ? fixedHeaderLocation
-    : headerState.location
+  const { date: displayedDate, location: displayedLocation } =
+    fixedHeaderDetail ?? headerState
 
   useEffect(() => {
     if (hasFixedHeader || !scrollElement) {

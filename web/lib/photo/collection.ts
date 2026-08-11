@@ -2,14 +2,10 @@ import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
+import { getAlbumKeyFromAssetPath } from '../albums'
 import { getMediaUrl, MEDIA_PATHS } from '../media-url'
-import { decodePathSegment } from '../url-segments'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
-const DEFAULT_ALBUM_KEY = 'gallery'
-const DEFAULT_ALBUM_LABEL = 'Selected Frames'
-const DEFAULT_LOCATION_LABEL = 'Not available'
-const ALBUM_FOLDER_PATTERN = /^(\d{4})(\d{2})(\d{2})-(.+)$/
 
 const photoAssetSchema = z.strictObject({
   url: z.string().min(1),
@@ -57,7 +53,7 @@ const photoManifestSchema = z.strictObject({
   thumbnail: photoAssetSchema,
   thumbHash: z.base64().min(8).max(36),
   title: z.string().min(1),
-  takenAt: z.string().min(1),
+  takenAt: z.iso.datetime({ offset: true }),
   location: photoLocationSchema.optional(),
   camera: photoCameraSchema,
   image: photoImageSchema,
@@ -71,36 +67,6 @@ const manifestSchema = z.strictObject({
 
 function resolveAssetUrl(pathname: string) {
   return getMediaUrl(pathname)
-}
-
-function parseAlbumPath(originalPath: string | undefined) {
-  const rawFolder = originalPath?.split('/')[1]
-  const folder = rawFolder ? decodePathSegment(rawFolder) : null
-
-  if (!folder) {
-    return null
-  }
-
-  const match = ALBUM_FOLDER_PATTERN.exec(folder)
-
-  if (!match) {
-    const label = folder.replaceAll('-', ' ')
-
-    return {
-      key: folder,
-      label,
-      locationLabel: label,
-    }
-  }
-
-  const [, year, month, day, location] = match
-  const locationLabel = location.replaceAll('-', ' ')
-
-  return {
-    key: folder,
-    label: `${locationLabel} · ${year}.${month}.${day}`,
-    locationLabel,
-  }
 }
 
 function normalizeAsset(asset: z.infer<typeof photoAssetSchema>): PhotoAsset {
@@ -150,7 +116,6 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
     photos: photos.map((photo, index) => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
-      const album = parseAlbumPath(photo.original.url)
 
       return {
         ...photo,
@@ -158,9 +123,7 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
         id: photo.original.url,
         slug: createPhotoSlug(photo.title),
         fileName: getFileNameFromAssetPath(photo.original.url),
-        albumKey: album?.key ?? DEFAULT_ALBUM_KEY,
-        albumLabel: album?.label ?? DEFAULT_ALBUM_LABEL,
-        locationLabel: album?.locationLabel ?? DEFAULT_LOCATION_LABEL,
+        albumKey: getAlbumKeyFromAssetPath(photo.original.url),
         aspectRatio: thumbnail.width / thumbnail.height,
         original,
         thumbnail,

@@ -38,11 +38,7 @@ function RadixScrollArea({
   return (
     <ScrollElementContext.Provider value={viewport}>
       <ScrollAreaPrimitive.Root
-        className={cn(
-          'relative overflow-hidden',
-          isPage && 'h-svh w-full',
-          className,
-        )}
+        className={cn('relative overflow-hidden', isPage && 'h-svh', className)}
         scrollHideDelay={600}
         type="scroll"
       >
@@ -51,7 +47,7 @@ function RadixScrollArea({
           aria-label={ariaLabel ?? (isPage ? 'Page content' : undefined)}
           className={cn(
             'size-full',
-            isPage && 'overscroll-none',
+            isPage && 'overscroll-none [&>div]:block!',
             viewportClassName,
           )}
           data-scroll-viewport={variant}

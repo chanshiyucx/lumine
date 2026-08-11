@@ -1,10 +1,15 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { getAlbumPath, getAlbums, type Album } from '@/lib/albums'
+import { getAlbumCatalog } from '@/lib/album-catalog'
+import {
+  formatAlbumDateCompact,
+  getAlbumPath,
+  normalizeAlbumKey,
+  type Album,
+} from '@/lib/albums'
 import { getMediaUrl, MEDIA_PATHS } from '@/lib/media-url'
 import { getPhotoPath } from '@/lib/photo'
-import { getPhotoCollection } from '@/lib/photo/collection'
 
 export interface AlbumMapCover {
   href: string
@@ -32,7 +37,6 @@ const albumMapSchema = z.object({
   locations: z.record(
     z.string(),
     z.object({
-      label: z.string().min(1),
       lat: z.number().min(-90).max(90),
       lng: z.number().min(-180).max(180),
     }),
@@ -41,17 +45,6 @@ const albumMapSchema = z.object({
 
 const ALBUM_MAP_REVALIDATE_SECONDS = 30
 const MAX_COVERS = 3
-const ALBUM_DATE_PATTERN = /^(\d{4})(\d{2})(\d{2})(?:-|$)/
-
-function normalizeAlbumKey(key: string) {
-  return key.normalize('NFC')
-}
-
-function getDateLabel(album: Album) {
-  const match = ALBUM_DATE_PATTERN.exec(album.key)
-
-  return match ? `${match[1]}.${match[2]}.${match[3]}` : ''
-}
 
 function getCovers(album: Album): AlbumMapCover[] {
   return album.photos.slice(0, MAX_COVERS).map((photo) => ({
@@ -87,11 +80,10 @@ const fetchAlbumMapData = cache(async () => {
 })
 
 export async function getAlbumMapItems(): Promise<AlbumMapItem[]> {
-  const [photoCollection, albumMapData] = await Promise.all([
-    getPhotoCollection(),
+  const [catalog, albumMapData] = await Promise.all([
+    getAlbumCatalog(),
     fetchAlbumMapData(),
   ])
-  const albums = getAlbums(photoCollection.photos)
   const locations = new Map(
     Object.entries(albumMapData.locations).map(([key, location]) => [
       normalizeAlbumKey(key),
@@ -99,9 +91,8 @@ export async function getAlbumMapItems(): Promise<AlbumMapItem[]> {
     ]),
   )
 
-  return albums.flatMap((album) => {
-    const normalizedKey = normalizeAlbumKey(album.key)
-    const mappedLocation = locations.get(normalizedKey)
+  return catalog.albums.flatMap((album) => {
+    const mappedLocation = locations.get(album.key)
     if (!mappedLocation) {
       return []
     }
@@ -110,8 +101,8 @@ export async function getAlbumMapItems(): Promise<AlbumMapItem[]> {
       {
         key: album.key,
         href: getAlbumPath(album.key),
-        label: mappedLocation.label,
-        dateLabel: getDateLabel(album),
+        label: album.title,
+        dateLabel: formatAlbumDateCompact(album.date),
         photoCount: album.photos.length,
         location: {
           lat: mappedLocation.lat,

@@ -1,10 +1,7 @@
 import { CaptureSettingChip, ThumbnailImage } from '@/components/photo'
+import { getAlbumDescriptor } from '@/lib/albums'
 import type { Photo } from '@/lib/photo'
-import {
-  formatAlbumChip,
-  formatBytes,
-  formatMimeLabel,
-} from '@/lib/photo/formatters'
+import { formatBytes, formatMimeLabel } from '@/lib/photo/formatters'
 import { getAvailableCaptureSettings } from '@/lib/photo/metadata'
 
 interface PhotoMasonryItemProps {
@@ -21,7 +18,7 @@ export function PhotoMasonryItem({
   onOpen,
 }: PhotoMasonryItemProps) {
   const mimeLabel = formatMimeLabel(photo)
-  const albumChip = formatAlbumChip(photo.albumKey)
+  const albumTitle = getAlbumDescriptor(photo.albumKey).title
   const captureSettings = getAvailableCaptureSettings(photo)
 
   return (
@@ -55,7 +52,7 @@ export function PhotoMasonryItem({
           </div>
           <div className="photo-masonry-expanded-info">
             <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
-              {albumChip}
+              {albumTitle}
             </span>
           </div>
           {captureSettings.length > 0 && (

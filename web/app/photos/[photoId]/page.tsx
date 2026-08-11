@@ -8,6 +8,20 @@ interface PhotoPageProps {
   params: Promise<{ photoId: string }>
 }
 
+async function getRequestedPhoto(params: PhotoPageProps['params']) {
+  const [{ photoId }, photoCollection] = await Promise.all([
+    params,
+    getPhotoCollection(),
+  ])
+  const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
+
+  if (!photo) {
+    notFound()
+  }
+
+  return { photo, photos: photoCollection.photos }
+}
+
 export async function generateStaticParams() {
   const photoCollection = await getPhotoCollection()
 
@@ -19,23 +33,12 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: PhotoPageProps): Promise<Metadata> {
-  const [{ photoId }, photoCollection] = await Promise.all([
-    params,
-    getPhotoCollection(),
-  ])
-  const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
-
-  if (!photo) {
-    return {}
-  }
-
-  const title = `${photo.title} | ${siteConfig.title}`
+  const { photo } = await getRequestedPhoto(params)
 
   return {
-    title,
-    description: siteConfig.description,
+    title: photo.title,
     openGraph: {
-      title,
+      title: photo.title,
       description: siteConfig.description,
       images: [
         {
@@ -50,20 +53,7 @@ export async function generateMetadata({
 }
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
-  const [{ photoId }, photoCollection] = await Promise.all([
-    params,
-    getPhotoCollection(),
-  ])
-  const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
+  const { photo, photos } = await getRequestedPhoto(params)
 
-  if (!photo) {
-    notFound()
-  }
-
-  return (
-    <PhotoGallery
-      photos={photoCollection.photos}
-      initialPhotoSlug={photo.slug}
-    />
-  )
+  return <PhotoGallery photos={photos} initialPhotoSlug={photo.slug} />
 }
