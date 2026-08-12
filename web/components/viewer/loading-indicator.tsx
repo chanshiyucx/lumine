@@ -1,9 +1,14 @@
 import { AlertCircle, LoaderCircle } from 'lucide-react'
-import { formatLoadingBytes } from './lib/loading-indicator'
 import type { PhotoResourceState } from './lib/photo-resource-store'
+
+const BYTES_PER_MEBIBYTE = 1024 * 1024
 
 interface LoadingIndicatorProps {
   state: PhotoResourceState
+}
+
+function formatLoadingBytes(bytes: number) {
+  return `${(bytes / BYTES_PER_MEBIBYTE).toFixed(1)} MB`
 }
 
 function getBytesLabel(loadedBytes: number, totalBytes: number) {

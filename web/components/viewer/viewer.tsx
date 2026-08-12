@@ -296,7 +296,6 @@ export function Viewer({
 
             <ViewerThumbnailRail
               activeIndex={activeIndex}
-              isInteractive={isInteractionEnabled}
               isVisible={isViewerSurfaceVisible}
               onSelect={goToPhoto}
               opacity={isMobile ? mobile.railOpacity : 1}

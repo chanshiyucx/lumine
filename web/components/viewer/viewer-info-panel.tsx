@@ -105,7 +105,7 @@ export function ViewerInfoPanel({
       inert={!isInteractive}
       className={cn(
         'fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] transition-[width] duration-200 ease-out motion-reduce:transition-none lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
-        isOpen ? 'lg:w-80' : 'pointer-events-none lg:w-0',
+        isOpen ? 'lg:w-80' : 'lg:w-0',
       )}
       style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
     >
@@ -137,17 +137,9 @@ export function ViewerInfoPanel({
         }
       >
         <m.div
-          className={cn(
-            'relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:w-80 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
-            !isMobileMotionControlled &&
-              (isOpen
-                ? 'translate-y-0 opacity-100'
-                : 'translate-y-full opacity-0 lg:translate-y-0'),
-          )}
+          className="relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:w-80 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]"
           style={{
             backgroundColor: 'rgb(40 40 40 / 0.56)',
-            opacity: 1,
-            y: 0,
             ...mobileStyle,
           }}
         >
@@ -155,7 +147,7 @@ export function ViewerInfoPanel({
             <div className="relative flex h-6 shrink-0 items-start justify-center px-3 pt-2.5 lg:hidden">
               <button
                 type="button"
-                className="absolute inset-x-0 top-0 flex h-6 cursor-default items-start justify-center pt-2.5"
+                className="absolute inset-x-0 top-0 flex h-6 items-start justify-center pt-2.5"
                 onClick={onClose}
                 aria-label="Close information panel"
               >

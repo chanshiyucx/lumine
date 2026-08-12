@@ -71,7 +71,6 @@ export function ZoomableImage({
       onTouchCancelCapture={handleTouchCancel}
     >
       <TransformWrapper
-        key={src}
         ref={transformRef}
         initialScale={INITIAL_SCALE}
         minScale={MIN_SCALE}

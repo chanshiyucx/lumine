@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useReducer, useRef } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { getPhotoPath, type Photo } from '@/lib/photo'
 import { decodePathSegment } from '@/lib/url-segments'
 import {
@@ -87,8 +87,7 @@ export function useViewerController({
   const initialIndex = initialPhotoSlug
     ? (slugToIndex.get(initialPhotoSlug) ?? null)
     : null
-  const [state, dispatch] = useReducer(
-    reduceViewerState,
+  const [state, setState] = useState(() =>
     initialIndex === null
       ? createClosedViewerState()
       : createDirectViewerState(initialIndex),
@@ -99,8 +98,9 @@ export function useViewerController({
   const restoreFocusElementRef = useRef<HTMLElement | null>(null)
 
   const applyAction = (action: ViewerAction) => {
-    stateRef.current = reduceViewerState(stateRef.current, action)
-    dispatch(action)
+    const nextState = reduceViewerState(stateRef.current, action)
+    stateRef.current = nextState
+    setState(nextState)
   }
 
   const getSessionId = () => {
