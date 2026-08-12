@@ -14,9 +14,11 @@ import { getPhotoPath } from '@/lib/photo'
 export interface AlbumMapCover {
   href: string
   thumbHash: string
-  url: string
-  width: number
-  height: number
+  thumbnail: {
+    url: string
+    width: number
+    height: number
+  }
 }
 
 export interface AlbumMapItem {
@@ -29,7 +31,7 @@ export interface AlbumMapItem {
     lat: number
     lng: number
   }
-  covers: AlbumMapCover[]
+  covers: [AlbumMapCover, ...AlbumMapCover[]]
 }
 
 const albumMapSchema = z.object({
@@ -46,14 +48,25 @@ const albumMapSchema = z.object({
 const ALBUM_MAP_REVALIDATE_SECONDS = 30
 const MAX_COVERS = 3
 
-function getCovers(album: Album): AlbumMapCover[] {
-  return album.photos.slice(0, MAX_COVERS).map((photo) => ({
+function getCover(photo: Album['photos'][number]): AlbumMapCover {
+  return {
     href: getPhotoPath(photo.slug),
     thumbHash: photo.thumbHash,
-    url: photo.thumbnail.url,
-    width: photo.thumbnail.width,
-    height: photo.thumbnail.height,
-  }))
+    thumbnail: {
+      url: photo.thumbnail.url,
+      width: photo.thumbnail.width,
+      height: photo.thumbnail.height,
+    },
+  }
+}
+
+function getCovers(album: Album): AlbumMapItem['covers'] {
+  const [firstPhoto, ...remainingPhotos] = album.photos
+
+  return [
+    getCover(firstPhoto),
+    ...remainingPhotos.slice(0, MAX_COVERS - 1).map(getCover),
+  ]
 }
 
 const fetchAlbumMapData = cache(async () => {

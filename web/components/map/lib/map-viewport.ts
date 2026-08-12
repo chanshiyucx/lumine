@@ -1,6 +1,6 @@
 import type { MapBounds } from './map-config'
 
-export const MAP_BOUNDS_OVERSCAN = 0.25
+const MAP_BOUNDS_OVERSCAN = 0.25
 
 function normalizeLongitude(longitude: number) {
   return ((((longitude + 180) % 360) + 360) % 360) - 180
@@ -22,7 +22,7 @@ export function expandMapBounds(
   ]
 }
 
-export function isPointWithinMapBounds(
+function isPointWithinMapBounds(
   longitude: number,
   latitude: number,
   bounds: MapBounds,

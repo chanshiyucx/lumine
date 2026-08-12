@@ -1,14 +1,11 @@
 import { Maximize2, Minimize2, Minus, Plus } from 'lucide-react'
-import { cn } from '@/lib/style'
 
 export function MapControls({
-  hidden = false,
   onZoomIn,
   onZoomOut,
   onToggleExtent,
   showingAll,
 }: {
-  hidden?: boolean
   onZoomIn: () => void
   onZoomOut: () => void
   onToggleExtent: () => void
@@ -31,20 +28,12 @@ export function MapControls({
   ]
 
   return (
-    <div
-      className={cn(
-        'border-overlay bg-surface/85 absolute bottom-6 left-3 z-10 flex flex-col overflow-hidden rounded-xl border shadow-xl backdrop-blur-xl transition-[opacity,transform] duration-150 sm:left-5',
-        hidden && 'pointer-events-none translate-y-2 opacity-0',
-      )}
-    >
-      {controls.map(({ label, icon: Icon, action }, index) => (
+    <div className="border-overlay bg-surface/85 divide-overlay absolute bottom-6 left-3 z-10 flex flex-col divide-y overflow-hidden rounded-xl border shadow-xl backdrop-blur-xl sm:left-5">
+      {controls.map(({ label, icon: Icon, action }) => (
         <button
           key={label}
           type="button"
-          className={cn(
-            'hover:bg-overlay focus-visible:outline-iris grid size-10 cursor-pointer place-items-center transition-colors focus-visible:z-10 focus-visible:outline-2',
-            index > 0 && 'border-overlay border-t',
-          )}
+          className="hover:bg-overlay focus-visible:outline-iris grid size-10 cursor-pointer place-items-center transition-colors focus-visible:z-10 focus-visible:outline-2"
           aria-label={label}
           onClick={action}
         >

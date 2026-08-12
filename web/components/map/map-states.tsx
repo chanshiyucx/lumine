@@ -3,13 +3,14 @@ import { cn } from '@/lib/style'
 export function MapLoadingState({ className }: { className?: string }) {
   return (
     <div
-      className={cn('bg-base grid place-items-center', className)}
+      className={cn(
+        'bg-base flex flex-col items-center justify-center text-center',
+        className,
+      )}
       role="status"
     >
-      <div className="text-center">
-        <div className="bg-overlay mx-auto mb-4 size-10 animate-pulse rounded-full motion-reduce:animate-none" />
-        <p className="text-subtle text-sm">Loading places…</p>
-      </div>
+      <div className="bg-overlay mb-4 size-10 animate-pulse rounded-full motion-reduce:animate-none" />
+      <p className="text-subtle text-sm">Loading places…</p>
     </div>
   )
 }

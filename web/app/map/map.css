@@ -16,15 +16,6 @@
   }
 }
 
-.mobile-map-preview-sheet {
-  padding-bottom: env(safe-area-inset-bottom);
-  animation: mobile-map-preview-in 220ms ease-out;
-}
-
-.mobile-map-preview-content {
-  max-height: calc(min(70svh, 34rem) - 1.75rem - env(safe-area-inset-bottom));
-}
-
 @keyframes album-map-preview-in {
   from {
     opacity: 0;
@@ -49,21 +40,8 @@
   }
 }
 
-@keyframes mobile-map-preview-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 24px, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .album-map-hover-preview,
-  .mobile-map-preview-sheet {
+  .album-map-hover-preview {
     animation: none;
   }
 }

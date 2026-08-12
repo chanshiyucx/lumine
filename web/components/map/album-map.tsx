@@ -1,34 +1,25 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/maplibre'
 import Supercluster from 'supercluster'
-import { useMediaQuery } from '@/hooks/use-media-query'
 import { AlbumMarker, ClusterMarker } from './album-map-marker'
 import type { AlbumMapItem } from './lib/album-map-data'
 import { getInitialFocusItems } from './lib/initial-map-focus'
 import {
+  CLUSTER_PREVIEW_CAPACITY,
   CLUSTER_RADIUS,
   MAX_CLUSTER_ZOOM,
   WORLD_BOUNDS,
   type MapBounds,
 } from './lib/map-config'
-import { shouldPreviewClusterOnTouch } from './lib/map-preview-interaction'
 import { expandMapBounds, getMapMarkerImageLoading } from './lib/map-viewport'
 import { MapControls } from './map-controls'
 import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
-import {
-  MobileMapPreviewSheet,
-  type MobileMapPreview,
-} from './mobile-map-preview-sheet'
 
 const MAP_STYLE_URL =
   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-const MAP_HOVER_PREVIEW_QUERY =
-  '(min-width: 768px) and (hover: hover) and (pointer: fine)'
-const MOBILE_PREVIEW_MAP_GAP = 16
 const MAP_LOAD_TIMEOUT_MS = 15_000
-const EMPTY_PADDING = { top: 0, right: 0, bottom: 0, left: 0 }
 
 interface AlbumPointProperties {
   item: AlbumMapItem
@@ -45,12 +36,6 @@ interface MapViewportState {
 }
 
 type MapLoadStatus = 'loading' | 'loaded' | 'failed'
-
-interface MobilePreviewState {
-  center: [longitude: number, latitude: number]
-  height: number
-  preview: MobileMapPreview
-}
 
 function makeClusterIndex(items: AlbumMapItem[]) {
   const points: Supercluster.PointFeature<AlbumPointProperties>[] = items.map(
@@ -110,7 +95,6 @@ function fitMapToItems(map: MapRef, items: AlbumMapItem[], animated: boolean) {
 
 export function AlbumMap({ items }: AlbumMapProps) {
   const mapRef = useRef<MapRef>(null)
-  const canHover = useMediaQuery(MAP_HOVER_PREVIEW_QUERY)
   const [viewport, setViewport] = useState<MapViewportState>({
     bounds: WORLD_BOUNDS,
     clusterBounds: WORLD_BOUNDS,
@@ -120,9 +104,6 @@ export function AlbumMap({ items }: AlbumMapProps) {
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
   const [showingAll, setShowingAll] = useState(false)
   const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
-  const [mobilePreview, setMobilePreview] = useState<MobilePreviewState | null>(
-    null,
-  )
   const initialFocusItems = useMemo(() => getInitialFocusItems(items), [items])
   const clusterIndex = useMemo(() => makeClusterIndex(items), [items])
   const clusters = useMemo(
@@ -138,9 +119,9 @@ export function AlbumMap({ items }: AlbumMapProps) {
     }, MAP_LOAD_TIMEOUT_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [items.length, loadStatus, mapInstanceKey])
+  }, [items.length, loadStatus])
 
-  const syncMapState = useCallback(() => {
+  const syncMapState = () => {
     const map = mapRef.current
     if (!map) return
 
@@ -150,57 +131,53 @@ export function AlbumMap({ items }: AlbumMapProps) {
       clusterBounds: expandMapBounds(bounds),
       zoom: Math.floor(map.getZoom()),
     })
-  }, [])
+  }
 
-  const handleLoad = useCallback(() => {
+  const handleLoad = () => {
     const map = mapRef.current
     if (!map) return
 
     fitMapToItems(map, initialFocusItems, false)
-    requestAnimationFrame(() => {
-      syncMapState()
-      setLoadStatus('loaded')
-      setShowingAll(false)
-    })
-  }, [initialFocusItems, syncMapState])
+    setLoadStatus('loaded')
+    setShowingAll(false)
+  }
 
-  const retryMap = useCallback(() => {
+  const retryMap = () => {
     setLoadStatus('loading')
     setMapInstanceKey((currentKey) => currentKey + 1)
-  }, [])
+  }
 
-  const closeMobilePreview = useCallback(() => {
-    setMobilePreview(null)
-    mapRef.current?.easeTo({
-      padding: EMPTY_PADDING,
-      duration: 220,
+  const handleClusterExpand = (
+    clusterId: number,
+    center: [longitude: number, latitude: number],
+  ) => {
+    setPinnedAlbumKey(null)
+
+    const map = mapRef.current
+    if (!map) return
+
+    map.easeTo({
+      center,
+      zoom: clusterIndex.getClusterExpansionZoom(clusterId),
+      duration: 700,
     })
-  }, [])
+  }
 
-  useEffect(() => {
-    if (!mobilePreview || mobilePreview.height <= 0) {
+  const handleToggleExtent = () => {
+    const map = mapRef.current
+    if (!map) return
+
+    setPinnedAlbumKey(null)
+
+    if (showingAll) {
+      fitMapToItems(map, initialFocusItems, true)
+      setShowingAll(false)
       return
     }
 
-    mapRef.current?.easeTo({
-      center: mobilePreview.center,
-      padding: {
-        ...EMPTY_PADDING,
-        bottom: mobilePreview.height + MOBILE_PREVIEW_MAP_GAP,
-      },
-      duration: 320,
-    })
-  }, [mobilePreview])
-
-  const openMobilePreview = useCallback(
-    (
-      preview: MobileMapPreview,
-      center: [longitude: number, latitude: number],
-    ) => {
-      setMobilePreview({ center, height: 0, preview })
-    },
-    [],
-  )
+    fitMapToItems(map, items, true)
+    setShowingAll(initialFocusItems.length < items.length)
+  }
 
   return (
     <main className="album-map relative h-svh overflow-hidden">
@@ -213,10 +190,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
         mapStyle={MAP_STYLE_URL}
         projection={{ type: 'mercator' }}
         attributionControl={false}
-        onClick={() => {
-          setPinnedAlbumKey(null)
-          if (mobilePreview) closeMobilePreview()
-        }}
+        onClick={() => setPinnedAlbumKey(null)}
         onLoad={handleLoad}
         onError={() => {
           if (loadStatus === 'loading') setLoadStatus('failed')
@@ -225,6 +199,12 @@ export function AlbumMap({ items }: AlbumMapProps) {
       >
         {clusters.map((feature) => {
           const [longitude, latitude] = feature.geometry.coordinates
+          const imageLoading = getMapMarkerImageLoading(
+            longitude,
+            latitude,
+            viewport.bounds,
+          )
+
           if (
             'cluster' in feature.properties &&
             feature.properties.cluster === true
@@ -232,7 +212,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
             const { cluster_id: clusterId, point_count: pointCount } =
               feature.properties
             const clusterItems = clusterIndex
-              .getLeaves(clusterId, 6)
+              .getLeaves(clusterId, CLUSTER_PREVIEW_CAPACITY)
               .map((leaf) => leaf.properties.item)
 
             return (
@@ -242,45 +222,10 @@ export function AlbumMap({ items }: AlbumMapProps) {
                 latitude={latitude}
                 count={pointCount}
                 items={clusterItems}
-                canHover={canHover}
-                imageLoading={getMapMarkerImageLoading(
-                  longitude,
-                  latitude,
-                  viewport.bounds,
-                )}
-                onExpand={() => {
-                  setPinnedAlbumKey(null)
-                  const map = mapRef.current
-                  if (!map) return
-
-                  const expansionZoom =
-                    clusterIndex.getClusterExpansionZoom(clusterId)
-                  if (
-                    shouldPreviewClusterOnTouch({
-                      canHover,
-                      expansionZoom,
-                      maxClusterZoom: MAX_CLUSTER_ZOOM,
-                    })
-                  ) {
-                    openMobilePreview(
-                      {
-                        type: 'cluster',
-                        count: pointCount,
-                        items: clusterItems,
-                      },
-                      [longitude, latitude],
-                    )
-                    return
-                  }
-
-                  setMobilePreview(null)
-                  map.easeTo({
-                    center: [longitude, latitude],
-                    zoom: Math.min(expansionZoom, 16),
-                    padding: EMPTY_PADDING,
-                    duration: 700,
-                  })
-                }}
+                imageLoading={imageLoading}
+                onExpand={() =>
+                  handleClusterExpand(clusterId, [longitude, latitude])
+                }
               />
             )
           }
@@ -291,59 +236,22 @@ export function AlbumMap({ items }: AlbumMapProps) {
             <AlbumMarker
               key={item.key}
               item={item}
-              canHover={canHover}
-              imageLoading={getMapMarkerImageLoading(
-                longitude,
-                latitude,
-                viewport.bounds,
-              )}
+              imageLoading={imageLoading}
               pinned={pinnedAlbumKey === item.key}
               onPinnedChange={(pinned) => {
                 setPinnedAlbumKey(pinned ? item.key : null)
               }}
-              onPreview={() =>
-                openMobilePreview({ type: 'album', item }, [
-                  item.location.lng,
-                  item.location.lat,
-                ])
-              }
             />
           )
         })}
       </Map>
 
-      <MapControls
-        hidden={mobilePreview !== null || items.length === 0}
-        showingAll={showingAll}
-        onZoomIn={() => mapRef.current?.zoomIn({ duration: 250 })}
-        onZoomOut={() => mapRef.current?.zoomOut({ duration: 250 })}
-        onToggleExtent={() => {
-          const map = mapRef.current
-          if (map) {
-            setPinnedAlbumKey(null)
-            setMobilePreview(null)
-            map.setPadding(EMPTY_PADDING)
-            if (showingAll) {
-              fitMapToItems(map, initialFocusItems, true)
-              setShowingAll(false)
-              return
-            }
-
-            fitMapToItems(map, items, true)
-            setShowingAll(initialFocusItems.length < items.length)
-          }
-        }}
-      />
-
-      {mobilePreview && (
-        <MobileMapPreviewSheet
-          preview={mobilePreview.preview}
-          onDismiss={closeMobilePreview}
-          onHeightChange={(height) => {
-            setMobilePreview((currentPreview) =>
-              currentPreview ? { ...currentPreview, height } : null,
-            )
-          }}
+      {items.length > 0 && (
+        <MapControls
+          showingAll={showingAll}
+          onZoomIn={() => mapRef.current?.zoomIn({ duration: 250 })}
+          onZoomOut={() => mapRef.current?.zoomOut({ duration: 250 })}
+          onToggleExtent={handleToggleExtent}
         />
       )}
 

@@ -4,7 +4,11 @@ import dynamic from 'next/dynamic'
 import type { AlbumMapItem } from './lib/album-map-data'
 import { MapLoadingState } from './map-states'
 
-const AlbumMap = dynamic(
+interface AlbumMapLoaderProps {
+  items: AlbumMapItem[]
+}
+
+export const AlbumMapLoader = dynamic<AlbumMapLoaderProps>(
   () => import('./album-map').then((module) => module.AlbumMap),
   {
     ssr: false,
@@ -15,11 +19,3 @@ const AlbumMap = dynamic(
     ),
   },
 )
-
-interface AlbumMapLoaderProps {
-  items: AlbumMapItem[]
-}
-
-export function AlbumMapLoader({ items }: AlbumMapLoaderProps) {
-  return <AlbumMap items={items} />
-}

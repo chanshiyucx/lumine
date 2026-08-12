@@ -17,22 +17,21 @@ export function MapHoverPreview({
   onPinnedChange?: (pinned: boolean) => void
 }) {
   const [hoverOpen, setHoverOpen] = useState(false)
-  const isPinnable = pinned !== undefined && onPinnedChange !== undefined
 
   return (
     <HoverCard.Root
-      open={isPinnable ? pinned || hoverOpen : undefined}
-      onOpenChange={isPinnable ? setHoverOpen : undefined}
+      open={onPinnedChange ? pinned || hoverOpen : undefined}
+      onOpenChange={onPinnedChange ? setHoverOpen : undefined}
       openDelay={openDelay}
       closeDelay={closeDelay}
     >
       <HoverCard.Trigger
         asChild
         onPointerDown={
-          isPinnable ? (event) => event.stopPropagation() : undefined
+          onPinnedChange ? (event) => event.stopPropagation() : undefined
         }
         onClick={
-          isPinnable
+          onPinnedChange
             ? (event) => {
                 event.stopPropagation()
                 const nextPinned = !pinned
@@ -50,8 +49,7 @@ export function MapHoverPreview({
           align="center"
           sideOffset={10}
           collisionPadding={16}
-          className="album-map-hover-preview z-50 w-80 outline-none"
-          onPointerDown={(event) => event.stopPropagation()}
+          className="album-map-hover-preview z-50 w-[min(20rem,calc(100vw-2rem))] outline-none"
         >
           {children}
         </HoverCard.Content>
