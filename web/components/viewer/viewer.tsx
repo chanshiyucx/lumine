@@ -71,14 +71,10 @@ export function Viewer({
   )
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const mediaStageRef = useRef<HTMLElement | null>(null)
-  const infoButtonRef = useRef<HTMLButtonElement | null>(null)
-  const shareButtonRef = useRef<HTMLButtonElement | null>(null)
   const activeIndex = state.activeIndex ?? 0
   const currentPhoto = photos[activeIndex]
   const isInteractionEnabled = state.phase === 'open'
   const isShareDialogPresent = isShareDialogOpen || isShareDialogExiting
-  const isViewerContentInteractive =
-    isInteractionEnabled && !isShareDialogPresent
   const canRevealWithoutSharedTransition = state.triggerElement === null
   const isViewerSurfaceVisible =
     state.phase !== 'exiting' &&
@@ -167,7 +163,7 @@ export function Viewer({
 
   useViewerKeyboardNavigation({
     activeIndex,
-    enabled: isViewerContentInteractive,
+    enabled: isInteractionEnabled && !isShareDialogPresent,
     onClose: handleClose,
     onGoTo: goToPhoto,
   })
@@ -184,9 +180,6 @@ export function Viewer({
   const handleInfoPanelClose = () => {
     if (isMobile) {
       mobile.settleInspector(false)
-      window.requestAnimationFrame(() => {
-        infoButtonRef.current?.focus({ preventScroll: true })
-      })
       return
     }
 
@@ -280,7 +273,6 @@ export function Viewer({
             >
               <ViewerToolbar
                 chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
-                infoButtonRef={infoButtonRef}
                 isInfoPanelOpen={isInfoPanelOpen}
                 isShareDialogOpen={isShareDialogOpen}
                 isVisible={isViewerControlsVisible}
@@ -288,7 +280,6 @@ export function Viewer({
                 onOpenShareDialog={handleOpenShareDialog}
                 onToggleInfoPanel={toggleInfoPanel}
                 phase={state.phase}
-                shareButtonRef={shareButtonRef}
               />
 
               <div
@@ -300,7 +291,7 @@ export function Viewer({
                   activeIndex={activeIndex}
                   isMobile={isMobile}
                   isSwipeDisabled={mobile.infoOpen}
-                  isInteractionEnabled={isViewerContentInteractive}
+                  isInteractionEnabled={isInteractionEnabled}
                   onActiveIndexChange={goToPhoto}
                   onZoomStateChange={onZoomStateChange}
                 />
@@ -328,7 +319,7 @@ export function Viewer({
           <ViewerInfoPanel
             photo={currentPhoto}
             isOpen={isInfoPanelOpen}
-            isViewerInteractive={isViewerContentInteractive}
+            isViewerInteractive={isInteractionEnabled}
             isViewerVisible={isViewerSurfaceVisible}
             mobileStyle={
               isMobile
@@ -347,7 +338,7 @@ export function Viewer({
             <ViewerShareDialog
               key={currentPhoto.slug}
               photo={currentPhoto}
-              returnFocusRef={shareButtonRef}
+              returnFocusRef={dialogRef}
               onClose={handleCloseShareDialog}
             />
           )}

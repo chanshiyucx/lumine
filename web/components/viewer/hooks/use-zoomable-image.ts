@@ -287,6 +287,10 @@ export function useZoomableImage({
 
   const handleWheel = useEffectEvent((event: WheelEvent) => {
     event.preventDefault()
+    if (Math.abs(event.deltaY) < 1) {
+      return
+    }
+
     zoomByFactorAt(
       event.clientX,
       event.clientY,

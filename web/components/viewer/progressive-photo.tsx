@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { startTransition, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
@@ -76,10 +76,8 @@ export function ProgressivePhoto({
     state.status === 'ready'
 
   const handleZoomChange = (scale: number) => {
-    startTransition(() => {
-      setCurrentScale(scale)
-      setShowScaleIndicator(true)
-    })
+    setCurrentScale(scale)
+    setShowScaleIndicator(true)
 
     if (scaleIndicatorTimeoutRef.current !== null) {
       window.clearTimeout(scaleIndicatorTimeoutRef.current)

@@ -26,7 +26,7 @@ import { useDialogFocus } from './hooks/use-dialog-focus'
 
 interface ViewerShareDialogProps {
   photo: Photo
-  returnFocusRef: RefObject<HTMLButtonElement | null>
+  returnFocusRef: RefObject<HTMLElement | null>
   onClose: () => void
 }
 

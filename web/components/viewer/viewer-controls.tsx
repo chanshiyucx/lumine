@@ -8,7 +8,6 @@ import {
   X,
 } from 'lucide-react'
 import { m, type MotionValue } from 'motion/react'
-import type { RefObject } from 'react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { VIEWER_MOTION } from './lib/viewer-motion'
@@ -20,7 +19,6 @@ const NAVIGATION_BUTTON_CLASS =
 
 interface ViewerToolbarProps {
   chromeOpacity: number | MotionValue<number>
-  infoButtonRef: RefObject<HTMLButtonElement | null>
   isInfoPanelOpen: boolean
   isShareDialogOpen: boolean
   isVisible: boolean
@@ -28,12 +26,10 @@ interface ViewerToolbarProps {
   onOpenShareDialog: () => void
   onToggleInfoPanel: () => void
   phase: ViewerPhase
-  shareButtonRef: RefObject<HTMLButtonElement | null>
 }
 
 export function ViewerToolbar({
   chromeOpacity,
-  infoButtonRef,
   isInfoPanelOpen,
   isShareDialogOpen,
   isVisible,
@@ -41,7 +37,6 @@ export function ViewerToolbar({
   onOpenShareDialog,
   onToggleInfoPanel,
   phase,
-  shareButtonRef,
 }: ViewerToolbarProps) {
   const isInteractive = isVisible && phase === 'open'
 
@@ -62,7 +57,6 @@ export function ViewerToolbar({
     >
       <m.div className="flex gap-2" style={{ opacity: chromeOpacity }}>
         <button
-          ref={infoButtonRef}
           type="button"
           className="circle-button"
           onClick={onToggleInfoPanel}
@@ -82,7 +76,6 @@ export function ViewerToolbar({
         </button>
 
         <button
-          ref={shareButtonRef}
           type="button"
           className="circle-button"
           onClick={onOpenShareDialog}

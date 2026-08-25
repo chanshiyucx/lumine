@@ -85,17 +85,7 @@ export function ZoomableImage({
         limitToBounds
         centerOnInit
         centerZoomedOut
-        smooth
-        autoAlignment={{
-          sizeX: 0,
-          sizeY: 0,
-          velocityAlignmentTime: 0.2,
-        }}
-        velocityAnimation={{
-          sensitivityTouch: 1,
-          sensitivityMouse: 1,
-          animationTime: 0.2,
-        }}
+        smooth={false}
         onInit={(transform) => notifyZoomChange(transform, true)}
         onTransform={(transform) => notifyZoomChange(transform)}
       >
@@ -104,6 +94,7 @@ export function ZoomableImage({
           contentStyle={{
             width: imageLayout?.contentWidth ?? '100%',
             height: imageLayout?.contentHeight ?? '100%',
+            willChange: 'transform',
           }}
         >
           <Image
