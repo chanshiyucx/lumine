@@ -81,3 +81,18 @@ export function CarbonIsoOutline(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+export function TwitterIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      {...props}
+    >
+      <path d="M23.95 4.57a9.83 9.83 0 0 1-2.82.77 4.93 4.93 0 0 0 2.16-2.72 9.86 9.86 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.95 13.95 0 0 1 1.64 3.15a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.92 4.92 0 0 0 3.95 4.82 4.92 4.92 0 0 1-2.22.08 4.93 4.93 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.94 13.94 0 0 0 7.55 2.21c9.06 0 14.01-7.5 14.01-14.01 0-.21 0-.43-.01-.64a10 10 0 0 0 2.4-2.53Z" />
+    </svg>
+  )
+}

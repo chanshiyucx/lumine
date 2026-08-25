@@ -4,6 +4,7 @@ import {
   Info,
   PanelRightClose,
   PanelRightOpen,
+  Share2,
   X,
 } from 'lucide-react'
 import { m, type MotionValue } from 'motion/react'
@@ -21,20 +22,26 @@ interface ViewerToolbarProps {
   chromeOpacity: number | MotionValue<number>
   infoButtonRef: RefObject<HTMLButtonElement | null>
   isInfoPanelOpen: boolean
+  isShareDialogOpen: boolean
   isVisible: boolean
   onClose: () => void
+  onOpenShareDialog: () => void
   onToggleInfoPanel: () => void
   phase: ViewerPhase
+  shareButtonRef: RefObject<HTMLButtonElement | null>
 }
 
 export function ViewerToolbar({
   chromeOpacity,
   infoButtonRef,
   isInfoPanelOpen,
+  isShareDialogOpen,
   isVisible,
   onClose,
+  onOpenShareDialog,
   onToggleInfoPanel,
   phase,
+  shareButtonRef,
 }: ViewerToolbarProps) {
   const isInteractive = isVisible && phase === 'open'
 
@@ -72,6 +79,18 @@ export function ViewerToolbar({
           ) : (
             <PanelRightOpen className="hidden size-4 lg:block" />
           )}
+        </button>
+
+        <button
+          ref={shareButtonRef}
+          type="button"
+          className="circle-button"
+          onClick={onOpenShareDialog}
+          aria-haspopup="dialog"
+          aria-expanded={isShareDialogOpen}
+          aria-label="Share photo"
+        >
+          <Share2 className="size-4" />
         </button>
 
         <button
