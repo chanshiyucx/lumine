@@ -11,6 +11,7 @@ import {
   getPhotoInfoRows,
 } from './lib/viewer-metadata'
 import { VIEWER_MOTION } from './lib/viewer-motion'
+import { PhotoHistogram } from './photo-histogram'
 
 interface InfoRowProps {
   label: string
@@ -69,6 +70,9 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
           {captureSettings.map((setting) => (
             <CaptureSettingChip key={setting.key} setting={setting} />
           ))}
+        </div>
+        <div className="mt-2">
+          <PhotoHistogram photo={photo} />
         </div>
       </section>
 

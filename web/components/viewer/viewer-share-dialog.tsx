@@ -23,6 +23,7 @@ import type { Photo } from '@/lib/photo'
 import { getPhotoOgPath, getPhotoShareUrl } from '@/lib/photo/share'
 import { siteConfig } from '@/lib/site-config'
 import { useDialogFocus } from './hooks/use-dialog-focus'
+import { photoResourceStore } from './lib/photo-resource-store'
 
 interface ViewerShareDialogProps {
   photo: Photo
@@ -53,7 +54,7 @@ function ShareActionButton({
       disabled={disabled}
       onClick={onClick}
     >
-      <span className="text-text flex size-[18px] items-center justify-center">
+      <span className="text-text flex size-4.5 items-center justify-center">
         {icon}
       </span>
       <span className="text-text w-full truncate text-center text-[10px] leading-tight">
@@ -112,6 +113,46 @@ function getOriginalDownloadName(photo: Photo) {
   return extension ? `${photo.fileName}.${extension}` : photo.fileName
 }
 
+function canShareFiles(files: File[]): boolean {
+  if (
+    typeof navigator === 'undefined' ||
+    typeof navigator.canShare !== 'function'
+  ) {
+    return false
+  }
+
+  try {
+    return navigator.canShare({ files })
+  } catch {
+    return false
+  }
+}
+
+async function createShareFile(photo: Photo): Promise<File | null> {
+  const snapshot = photoResourceStore.getSnapshot(photo.original.url)
+  const targetUrl =
+    snapshot.status === 'ready' ||
+    snapshot.status === 'cached' ||
+    snapshot.status === 'decoding'
+      ? snapshot.src
+      : photo.original.url
+
+  try {
+    const response = await fetch(targetUrl)
+    if (!response.ok) {
+      return null
+    }
+
+    const blob = await response.blob()
+    const fileName = getOriginalDownloadName(photo)
+    const mimeType = blob.type || photo.original.mime || 'image/jpeg'
+
+    return new File([blob], fileName, { type: mimeType })
+  } catch {
+    return null
+  }
+}
+
 export function ViewerShareDialog({
   photo,
   returnFocusRef,
@@ -126,7 +167,8 @@ export function ViewerShareDialog({
   const titleId = useId()
   const shareUrl = getPhotoShareUrl(photo.slug)
   const ogPreviewUrl = getPhotoOgPath(photo.slug)
-  const canUseNativeShare = typeof navigator.share === 'function'
+  const canUseNativeShare =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function'
   const getReturnFocusElement = useCallback(
     () => returnFocusRef.current,
     [returnFocusRef],
@@ -176,18 +218,47 @@ export function ViewerShareDialog({
   }
 
   const handleNativeShare = async () => {
+    const baseShareData: ShareData = {
+      title: photo.title,
+      text: `${photo.title} — ${siteConfig.name}`,
+      url: shareUrl,
+    }
+
     try {
-      await navigator.share({
-        title: photo.title,
-        text: `${photo.title} — ${siteConfig.name}`,
-        url: shareUrl,
-      })
-      onClose()
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
+      const shareFile = await createShareFile(photo)
+      const shareDataWithFiles: ShareData =
+        shareFile && canShareFiles([shareFile])
+          ? { ...baseShareData, files: [shareFile] }
+          : baseShareData
+
+      try {
+        await navigator.share(shareDataWithFiles)
+        onClose()
         return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+
+        // If file sharing failed due to platform restrictions, retry with URL-only share
+        if (shareDataWithFiles.files && shareDataWithFiles.files.length > 0) {
+          try {
+            await navigator.share(baseShareData)
+            onClose()
+            return
+          } catch (fallbackError) {
+            if (
+              fallbackError instanceof DOMException &&
+              fallbackError.name === 'AbortError'
+            ) {
+              return
+            }
+          }
+        }
       }
 
+      await handleCopyLink()
+    } catch {
       await handleCopyLink()
     }
   }
@@ -220,7 +291,7 @@ export function ViewerShareDialog({
   return (
     <>
       <m.div
-        className="fixed inset-0 z-300 bg-black/80"
+        className="bg-base/80 fixed inset-0 z-300 backdrop-blur-sm"
         aria-hidden="true"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -330,13 +401,13 @@ export function ViewerShareDialog({
         >
           {canUseNativeShare && (
             <ShareActionButton
-              icon={<Share2 className="size-[18px]" />}
+              icon={<Share2 className="size-4.5" />}
               label="System"
               onClick={handleNativeShare}
             />
           )}
           <ShareActionButton
-            icon={<TwitterIcon className="size-[18px]" />}
+            icon={<TwitterIcon className="size-4.5" />}
             label="Twitter"
             onClick={() =>
               handleSocialShare(
@@ -345,7 +416,7 @@ export function ViewerShareDialog({
             }
           />
           <ShareActionButton
-            icon={<Send className="size-[18px]" />}
+            icon={<Send className="size-4.5" />}
             label="Telegram"
             onClick={() =>
               handleSocialShare(
@@ -354,7 +425,7 @@ export function ViewerShareDialog({
             }
           />
           <ShareActionButton
-            icon={<CloudDownload className="size-[18px]" />}
+            icon={<CloudDownload className="size-4.5" />}
             label={downloadTarget === 'original' ? '…' : 'Original'}
             disabled={downloadTarget === 'original'}
             onClick={() =>
@@ -366,7 +437,7 @@ export function ViewerShareDialog({
             }
           />
           <ShareActionButton
-            icon={<ImageDown className="size-[18px]" />}
+            icon={<ImageDown className="size-4.5" />}
             label={downloadTarget === 'preview' ? '…' : 'Preview'}
             disabled={downloadTarget === 'preview'}
             onClick={() =>
