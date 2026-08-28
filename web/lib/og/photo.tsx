@@ -3,12 +3,9 @@ import type { ReactNode } from 'react'
 import sharp from 'sharp'
 import { getAlbumDescriptor } from '@/lib/albums'
 import type { Photo } from '@/lib/photo'
-import { getPhotoCollection } from '@/lib/photo/collection'
 import { siteConfig } from '@/lib/site-config'
-
-interface PhotoOgRouteContext {
-  params: Promise<{ photoId: string }>
-}
+import { OG_CACHE_CONTROL, OG_IMAGE_SIZE } from './config'
+import { formatCameraLabel } from './metadata'
 
 interface LayoutConfig {
   arrangement: 'split' | 'stack' | 'wide'
@@ -35,7 +32,7 @@ interface InfoPanelProps {
   compact: boolean
 }
 
-const CANVAS = { width: 1200, height: 628 }
+const CANVAS = OG_IMAGE_SIZE
 const OG_ASPECT_RATIO = CANVAS.width / CANVAS.height
 const THEME = {
   accent: '#c4a7e7',
@@ -45,8 +42,6 @@ const THEME = {
   text: '#e0def4',
 }
 
-export const runtime = 'nodejs'
-
 function formatPhotoDate(takenAt: string) {
   return new Intl.DateTimeFormat(siteConfig.locale, {
     year: 'numeric',
@@ -54,14 +49,6 @@ function formatPhotoDate(takenAt: string) {
     day: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(takenAt))
-}
-
-function getCameraLabel(photo: Photo) {
-  const label = [photo.camera.make, photo.camera.model]
-    .filter(Boolean)
-    .join(' ')
-
-  return label || null
 }
 
 function getExifItems(photo: Photo) {
@@ -168,30 +155,26 @@ function fitWithinBox(
   return { width, height }
 }
 
-async function getRenderablePhotoUrl(photo: Photo): Promise<string | null> {
-  try {
-    const response = await fetch(photo.thumbnail.url, {
-      next: { revalidate: 300 },
-    })
+async function getRenderablePhotoUrl(photo: Photo) {
+  const response = await fetch(photo.thumbnail.url, { cache: 'no-store' })
 
-    if (!response.ok) {
-      return null
-    }
-
-    const jpeg = await sharp(await response.arrayBuffer())
-      .resize({
-        width: 1400,
-        height: 1000,
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality: 88, mozjpeg: true })
-      .toBuffer()
-
-    return `data:image/jpeg;base64,${jpeg.toString('base64')}`
-  } catch {
-    return null
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch OG photo (${response.status} ${response.statusText})`,
+    )
   }
+
+  const jpeg = await sharp(await response.arrayBuffer())
+    .resize({
+      fit: 'inside',
+      height: 1000,
+      width: 1400,
+      withoutEnlargement: true,
+    })
+    .jpeg({ mozjpeg: true, quality: 88 })
+    .toBuffer()
+
+  return `data:image/jpeg;base64,${jpeg.toString('base64')}`
 }
 
 function PhotoFrame({
@@ -203,36 +186,8 @@ function PhotoFrame({
   width: number
   height: number
   fit: 'cover' | 'contain'
-  src: string | null
+  src: string
 }) {
-  if (!src) {
-    return (
-      <div
-        style={{
-          width,
-          height,
-          borderRadius: 12,
-          backgroundColor: THEME.surface,
-          boxShadow:
-            '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(224,222,244,0.05)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <span
-          style={{
-            color: 'rgba(144,140,170,0.5)',
-            fontSize: 14,
-            letterSpacing: '0.3px',
-          }}
-        >
-          No Preview
-        </span>
-      </div>
-    )
-  }
-
   return (
     <div
       style={{
@@ -492,17 +447,7 @@ function WideLayout({ gap, photo, info, photoWidth }: LayoutPieces) {
   )
 }
 
-export async function GET(_request: Request, { params }: PhotoOgRouteContext) {
-  const [{ photoId }, photoCollection] = await Promise.all([
-    params,
-    getPhotoCollection(),
-  ])
-  const photo = photoCollection.photos.find(({ slug }) => slug === photoId)
-
-  if (!photo) {
-    return new Response('Photo not found', { status: 404 })
-  }
-
+export async function renderPhotoOgImage(photo: Photo) {
   const album = getAlbumDescriptor(photo.albumKey)
   const layout = determineLayout(photo.aspectRatio)
   const photoSize = fitWithinBox(photo.aspectRatio, layout.photoBox)
@@ -520,7 +465,7 @@ export async function GET(_request: Request, { params }: PhotoOgRouteContext) {
       title={photo.title}
       tags={[album.title]}
       exifItems={getExifItems(photo)}
-      camera={getCameraLabel(photo)}
+      camera={formatCameraLabel(photo)}
       formattedDate={formatPhotoDate(photo.takenAt)}
       compact={layout.infoCompact}
     />
@@ -593,7 +538,7 @@ export async function GET(_request: Request, { params }: PhotoOgRouteContext) {
     {
       ...CANVAS,
       headers: {
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
+        'Cache-Control': OG_CACHE_CONTROL,
       },
     },
   )

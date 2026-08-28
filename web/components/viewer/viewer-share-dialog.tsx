@@ -361,8 +361,11 @@ export function ViewerShareDialog({
 
         <div className="mb-4 space-y-2">
           <p className="text-muted text-xs font-medium">Share preview</p>
-          <div className="border-overlay bg-base/60 relative overflow-hidden rounded-lg border">
-            <div className="w-full" style={{ aspectRatio: '1200 / 628' }}>
+          <div className="border-overlay bg-base/60 overflow-hidden rounded-lg border">
+            <div
+              className="relative w-full"
+              style={{ aspectRatio: '1200 / 628' }}
+            >
               {isPreviewLoading && !hasPreviewFailed && (
                 <div className="bg-overlay/35 absolute inset-0 flex items-center justify-center">
                   <div className="border-overlay border-t-iris size-8 animate-spin rounded-full border-2" />

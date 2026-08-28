@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { PhotoGallery } from '@/components/gallery'
 import { getPhotoCollection } from '@/lib/photo/collection'
-import { getPhotoOgPath } from '@/lib/photo/share'
 import { siteConfig } from '@/lib/site-config'
 
 interface PhotoPageProps {
@@ -35,27 +34,17 @@ export async function generateMetadata({
   params,
 }: PhotoPageProps): Promise<Metadata> {
   const { photo } = await getRequestedPhoto(params)
-  const ogImageUrl = getPhotoOgPath(photo.slug)
 
   return {
     title: photo.title,
     openGraph: {
       title: photo.title,
       description: siteConfig.description,
-      images: [
-        {
-          url: ogImageUrl,
-          width: 1200,
-          height: 628,
-          alt: photo.title,
-        },
-      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: photo.title,
       description: siteConfig.description,
-      images: [ogImageUrl],
     },
   }
 }

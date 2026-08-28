@@ -33,21 +33,16 @@ export async function generateMetadata({
 }: AlbumPageProps): Promise<Metadata> {
   const album = await getRequestedAlbum(params)
 
-  const cover = album.photos[0]
-
   return {
     title: album.title,
     openGraph: {
       title: album.title,
       description: siteConfig.description,
-      images: [
-        {
-          url: cover.thumbnail.url,
-          width: cover.thumbnail.width,
-          height: cover.thumbnail.height,
-          alt: album.title,
-        },
-      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: album.title,
+      description: siteConfig.description,
     },
   }
 }

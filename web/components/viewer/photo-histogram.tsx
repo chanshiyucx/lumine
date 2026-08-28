@@ -145,6 +145,7 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
     async function loadHistogram() {
       try {
         const response = await fetch(cacheKey, {
+          cache: 'no-store',
           signal: controller.signal,
         })
         if (!response.ok) {
