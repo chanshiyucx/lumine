@@ -17,6 +17,7 @@ interface ScrollAreaProps {
 }
 
 interface RadixScrollAreaProps extends ScrollAreaProps {
+  nativePageScroll?: boolean
   variant: 'page' | 'panel'
 }
 
@@ -28,17 +29,26 @@ function RadixScrollArea({
   ariaLabel,
   children,
   className,
+  nativePageScroll = false,
   scrollbarClassName,
   variant,
   viewportClassName,
 }: RadixScrollAreaProps) {
   const [viewport, setViewport] = useState<HTMLDivElement | null>(null)
   const isPage = variant === 'page'
+  const scrollElement = nativePageScroll
+    ? (viewport?.ownerDocument.body ?? null)
+    : viewport
 
   return (
-    <ScrollElementContext.Provider value={viewport}>
+    <ScrollElementContext.Provider value={scrollElement}>
       <ScrollAreaPrimitive.Root
-        className={cn('relative overflow-hidden', isPage && 'h-svh', className)}
+        className={cn(
+          'relative overflow-hidden',
+          isPage &&
+            'native-page-scroll:h-auto native-page-scroll:overflow-visible h-svh',
+          className,
+        )}
         scrollHideDelay={600}
         type="scroll"
       >
@@ -47,12 +57,14 @@ function RadixScrollArea({
           aria-label={ariaLabel ?? (isPage ? 'Page content' : undefined)}
           className={cn(
             'size-full',
-            isPage && 'overscroll-none [&>div]:block!',
+            // Let the body scroll on touch devices, overriding Radix's inline overflow.
+            isPage &&
+              'native-page-scroll:h-auto native-page-scroll:overflow-visible! native-page-scroll:overscroll-auto overscroll-none [&>div]:block!',
             viewportClassName,
           )}
           data-scroll-viewport={variant}
           role={ariaLabel !== undefined || isPage ? 'region' : undefined}
-          tabIndex={0}
+          tabIndex={nativePageScroll ? undefined : 0}
         >
           {children}
         </ScrollAreaPrimitive.Viewport>
@@ -61,7 +73,7 @@ function RadixScrollArea({
           className={cn(
             'z-90 flex w-2.5 touch-none p-0.5 transition-opacity duration-150 select-none',
             'data-[state=hidden]:opacity-0 data-[state=visible]:opacity-100',
-            isPage && 'mt-12',
+            isPage && 'native-page-scroll:hidden mt-12',
             scrollbarClassName,
           )}
           orientation="vertical"
@@ -82,13 +94,9 @@ export function PageScrollArea({
 }: Pick<ScrollAreaProps, 'children'>) {
   const isNativePageScroll = useMediaQuery(NATIVE_PAGE_SCROLL_QUERY)
 
-  if (isNativePageScroll) {
-    return (
-      <ScrollElementContext.Provider value={document.body}>
-        {children}
-      </ScrollElementContext.Provider>
-    )
-  }
-
-  return <RadixScrollArea variant="page">{children}</RadixScrollArea>
+  return (
+    <RadixScrollArea nativePageScroll={isNativePageScroll} variant="page">
+      {children}
+    </RadixScrollArea>
+  )
 }

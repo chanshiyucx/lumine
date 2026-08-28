@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Keep in sync with NATIVE_PAGE_SCROLL_QUERY in scroll-area.tsx. */
+@custom-variant native-page-scroll (@media (hover: none) and (pointer: coarse));
+
 /* https://rosepinetheme.com/zh-cn/palette/ingredients/ */
 @theme {
   --color-base: light-dark(hsl(32deg 57% 95%), hsl(246deg, 24%, 17%));
