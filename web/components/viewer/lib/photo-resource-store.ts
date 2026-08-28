@@ -1,4 +1,4 @@
-const DEFAULT_MAX_CACHED_PHOTOS = 10
+const DEFAULT_MAX_CACHED_PHOTOS = 3
 
 export interface PhotoResourceSource {
   bytes: number

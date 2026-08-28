@@ -16,44 +16,8 @@ interface ProgressivePhotoProps {
 
 const SCALE_INDICATOR_DURATION = 1000
 
-interface HighResolutionPhotoProps {
-  isVisible: boolean
-  photo: Photo
-  src: string
-  onError: (error: Error) => void
-  onLoad: () => void
-  onZoomChange: (scale: number) => void
-  onZoomStateChange?: (isZoomed: boolean) => void
-}
-
-function HighResolutionPhoto({
-  isVisible,
-  photo,
-  src,
-  onError,
-  onLoad,
-  onZoomChange,
-  onZoomStateChange,
-}: HighResolutionPhotoProps) {
-  return (
-    <div
-      className={cn(
-        'absolute inset-0 opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none',
-        isVisible && 'opacity-100',
-      )}
-    >
-      <ZoomableImage
-        src={src}
-        alt={photo.title}
-        width={photo.original.width}
-        height={photo.original.height}
-        onLoad={onLoad}
-        onZoomChange={onZoomChange}
-        onZoomStateChange={onZoomStateChange}
-        onError={onError}
-      />
-    </div>
-  )
+function formatScaleLabel(scale: number) {
+  return `${scale < 1 ? scale.toFixed(2) : scale.toFixed(1)}x`
 }
 
 export function ProgressivePhoto({
@@ -63,7 +27,7 @@ export function ProgressivePhoto({
   onZoomStateChange,
   shouldMountInteractiveImage = true,
 }: ProgressivePhotoProps) {
-  const [currentScale, setCurrentScale] = useState(1)
+  const [scaleLabel, setScaleLabel] = useState(() => formatScaleLabel(1))
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
   const scaleIndicatorTimeoutRef = useRef<number | null>(null)
   const { markDecoded, markRenderFailed, state } = useProgressivePhoto(photo, {
@@ -76,7 +40,10 @@ export function ProgressivePhoto({
     state.status === 'ready'
 
   const handleZoomChange = (scale: number) => {
-    setCurrentScale(scale)
+    const nextScaleLabel = formatScaleLabel(scale)
+    setScaleLabel((current) =>
+      current === nextScaleLabel ? current : nextScaleLabel,
+    )
     setShowScaleIndicator(true)
 
     if (scaleIndicatorTimeoutRef.current !== null) {
@@ -112,16 +79,24 @@ export function ProgressivePhoto({
       />
 
       {hasHighResolutionPhoto && isActive && shouldMountInteractiveImage && (
-        <HighResolutionPhoto
+        <div
           key={`${photo.id}:${state.src}`}
-          isVisible={state.status === 'ready'}
-          photo={photo}
-          src={state.src}
-          onError={markRenderFailed}
-          onLoad={markDecoded}
-          onZoomChange={handleZoomChange}
-          onZoomStateChange={onZoomStateChange}
-        />
+          className={cn(
+            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none',
+            state.status === 'ready' && 'pointer-events-auto opacity-100',
+          )}
+        >
+          <ZoomableImage
+            src={state.src}
+            alt={photo.title}
+            width={photo.original.width}
+            height={photo.original.height}
+            onLoad={markDecoded}
+            onZoomChange={handleZoomChange}
+            onZoomStateChange={onZoomStateChange}
+            onError={markRenderFailed}
+          />
+        </div>
       )}
 
       <LoadingIndicator state={state} />
@@ -132,7 +107,7 @@ export function ProgressivePhoto({
           showScaleIndicator && 'translate-y-0 opacity-100',
         )}
       >
-        {currentScale < 1 ? currentScale.toFixed(2) : currentScale.toFixed(1)}x
+        {scaleLabel}
       </div>
     </div>
   )
