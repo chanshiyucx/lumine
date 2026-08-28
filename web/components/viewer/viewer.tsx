@@ -1,6 +1,12 @@
 'use client'
 
-import { AnimatePresence, m } from 'motion/react'
+import {
+  AnimatePresence,
+  domAnimation,
+  LazyMotion,
+  m,
+  MotionConfig,
+} from 'motion/react'
 import { useRef, useState } from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
@@ -195,166 +201,172 @@ export function Viewer({
   }
 
   return (
-    <RemoveScroll enabled allowPinchZoom>
-      <m.div
-        ref={dialogRef}
-        className="fixed inset-0 z-100 overflow-hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Preview ${currentPhoto.title}`}
-        tabIndex={-1}
-        initial={state.entryMode === 'fade' ? { opacity: 0 } : false}
-        animate={{
-          opacity:
-            state.phase === 'exiting' && state.exitMode === 'fade' ? 0 : 1,
-        }}
-        transition={
-          state.phase === 'exiting'
-            ? VIEWER_MOTION.fadeExit
-            : VIEWER_MOTION.backdropEnter
-        }
-        onAnimationComplete={handleViewerAnimationComplete}
-      >
-        <m.div
-          data-viewer-layer="backdrop"
-          className="absolute inset-0"
-          style={{ opacity: isMobile ? mobile.backdropOpacity : 1 }}
-          animate={{ opacity: state.phase === 'exiting' ? 0 : 1 }}
-          transition={
-            state.phase === 'exiting'
-              ? VIEWER_MOTION.backdropExit
-              : VIEWER_MOTION.backdropEnter
-          }
-        >
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion="user">
+        <RemoveScroll enabled allowPinchZoom>
           <m.div
-            key={backdropEntryKey}
-            data-viewer-layer="backdrop-content"
-            className="bg-base absolute inset-0"
-            initial={
-              state.phase === 'entering' && state.entryMode === 'shared'
-                ? { opacity: 0 }
-                : false
+            ref={dialogRef}
+            className="fixed inset-0 z-100 overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Preview ${currentPhoto.title}`}
+            tabIndex={-1}
+            initial={state.entryMode === 'fade' ? { opacity: 0 } : false}
+            animate={{
+              opacity:
+                state.phase === 'exiting' && state.exitMode === 'fade' ? 0 : 1,
+            }}
+            transition={
+              state.phase === 'exiting'
+                ? VIEWER_MOTION.fadeExit
+                : VIEWER_MOTION.backdropEnter
             }
-            animate={{ opacity: 1 }}
-            transition={VIEWER_MOTION.backdropEnter}
+            onAnimationComplete={handleViewerAnimationComplete}
           >
-            <ViewerBackdrop photo={currentPhoto} />
-          </m.div>
-        </m.div>
-
-        <div
-          data-viewer-layer="content"
-          className="absolute inset-0 z-50 flex flex-col lg:flex-row"
-          inert={isShareDialogPresent}
-        >
-          <m.div
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-            style={
-              isMobile
-                ? {
-                    borderRadius: mobile.viewerBorderRadius,
-                    rotate: mobile.viewerRotate,
-                    scale: mobile.viewerScale,
-                    transformOrigin: '50% 18%',
-                    x: mobile.dismissX,
-                    y: mobile.viewerY,
-                  }
-                : undefined
-            }
-          >
-            <section
-              {...(isMobile ? mobile.bindStage() : {})}
-              ref={mediaStageRef}
-              className="group relative min-h-0 min-w-0 flex-1 overflow-hidden"
-              style={{
-                pointerEvents: isInteractionEnabled ? 'auto' : 'none',
-                touchAction: isMobile ? 'pan-x' : undefined,
-              }}
+            <m.div
+              data-viewer-layer="backdrop"
+              className="absolute inset-0"
+              style={{ opacity: isMobile ? mobile.backdropOpacity : 1 }}
+              animate={{ opacity: state.phase === 'exiting' ? 0 : 1 }}
+              transition={
+                state.phase === 'exiting'
+                  ? VIEWER_MOTION.backdropExit
+                  : VIEWER_MOTION.backdropEnter
+              }
             >
-              <ViewerToolbar
-                chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
-                isInfoPanelOpen={isInfoPanelOpen}
-                isShareDialogOpen={isShareDialogOpen}
-                isVisible={isViewerControlsVisible}
-                onClose={handleClose}
-                onOpenShareDialog={handleOpenShareDialog}
-                onToggleInfoPanel={toggleInfoPanel}
-                phase={state.phase}
-              />
-
-              <div
-                className="absolute inset-0"
-                style={{ opacity: sharedTransition ? 0 : 1 }}
+              <m.div
+                key={backdropEntryKey}
+                data-viewer-layer="backdrop-content"
+                className="bg-base absolute inset-0"
+                initial={
+                  state.phase === 'entering' && state.entryMode === 'shared'
+                    ? { opacity: 0 }
+                    : false
+                }
+                animate={{ opacity: 1 }}
+                transition={VIEWER_MOTION.backdropEnter}
               >
-                <PhotoCarousel
-                  photos={photos}
+                <ViewerBackdrop photo={currentPhoto} />
+              </m.div>
+            </m.div>
+
+            <div
+              data-viewer-layer="content"
+              className="absolute inset-0 z-50 flex flex-col lg:flex-row"
+              inert={isShareDialogPresent}
+            >
+              <m.div
+                className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                style={
+                  isMobile
+                    ? {
+                        borderRadius: mobile.viewerBorderRadius,
+                        rotate: mobile.viewerRotate,
+                        scale: mobile.viewerScale,
+                        transformOrigin: '50% 18%',
+                        x: mobile.dismissX,
+                        y: mobile.viewerY,
+                      }
+                    : undefined
+                }
+              >
+                <section
+                  {...(isMobile ? mobile.bindStage() : {})}
+                  ref={mediaStageRef}
+                  className="group relative min-h-0 min-w-0 flex-1 overflow-hidden"
+                  style={{
+                    pointerEvents: isInteractionEnabled ? 'auto' : 'none',
+                    touchAction: isMobile ? 'pan-x' : undefined,
+                  }}
+                >
+                  <ViewerToolbar
+                    chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
+                    isInfoPanelOpen={isInfoPanelOpen}
+                    isShareDialogOpen={isShareDialogOpen}
+                    isVisible={isViewerControlsVisible}
+                    onClose={handleClose}
+                    onOpenShareDialog={handleOpenShareDialog}
+                    onToggleInfoPanel={toggleInfoPanel}
+                    phase={state.phase}
+                  />
+
+                  <div
+                    className="absolute inset-0"
+                    style={{ opacity: sharedTransition ? 0 : 1 }}
+                  >
+                    <PhotoCarousel
+                      photos={photos}
+                      activeIndex={activeIndex}
+                      isMobile={isMobile}
+                      isSwipeDisabled={mobile.infoOpen}
+                      isInteractionEnabled={isInteractionEnabled}
+                      onActiveIndexChange={goToPhoto}
+                      onZoomStateChange={onZoomStateChange}
+                    />
+                  </div>
+
+                  <ViewerNavigation
+                    activeIndex={activeIndex}
+                    isVisible={isViewerControlsVisible}
+                    onSelect={goToPhoto}
+                    phase={state.phase}
+                    photoCount={photos.length}
+                  />
+                </section>
+
+                <ViewerThumbnailRail
                   activeIndex={activeIndex}
-                  isMobile={isMobile}
-                  isSwipeDisabled={mobile.infoOpen}
-                  isInteractionEnabled={isInteractionEnabled}
-                  onActiveIndexChange={goToPhoto}
-                  onZoomStateChange={onZoomStateChange}
+                  isVisible={isViewerSurfaceVisible}
+                  onSelect={goToPhoto}
+                  opacity={isMobile ? mobile.railOpacity : 1}
+                  phase={state.phase}
+                  photos={photos}
                 />
-              </div>
+              </m.div>
 
-              <ViewerNavigation
-                activeIndex={activeIndex}
-                isVisible={isViewerControlsVisible}
-                onSelect={goToPhoto}
-                phase={state.phase}
-                photoCount={photos.length}
+              <ViewerInfoPanel
+                photo={currentPhoto}
+                isOpen={isInfoPanelOpen}
+                isViewerInteractive={isInteractionEnabled}
+                isViewerVisible={isViewerSurfaceVisible}
+                mobileStyle={
+                  isMobile
+                    ? {
+                        opacity: mobile.infoPanelOpacity,
+                        y: mobile.infoPanelY,
+                      }
+                    : undefined
+                }
+                onClose={handleInfoPanelClose}
               />
-            </section>
+            </div>
 
-            <ViewerThumbnailRail
-              activeIndex={activeIndex}
-              isVisible={isViewerSurfaceVisible}
-              onSelect={goToPhoto}
-              opacity={isMobile ? mobile.railOpacity : 1}
-              phase={state.phase}
-              photos={photos}
+            <AnimatePresence
+              onExitComplete={() => setIsShareDialogExiting(false)}
+            >
+              {isShareDialogOpen && (
+                <ViewerShareDialog
+                  key={currentPhoto.slug}
+                  photo={currentPhoto}
+                  returnFocusRef={dialogRef}
+                  onClose={handleCloseShareDialog}
+                />
+              )}
+            </AnimatePresence>
+
+            <SharedPhotoTransition
+              activeTransition={sharedTransition}
+              exitFrame={dragExitFrame}
+              mediaStageRef={mediaStageRef}
+              onEntryComplete={onEntryComplete}
+              onEntryHandoff={revealSurfaces}
+              onExitComplete={onExitComplete}
+              onPresenceExitComplete={revealControls}
+              photo={currentPhoto}
             />
           </m.div>
-
-          <ViewerInfoPanel
-            photo={currentPhoto}
-            isOpen={isInfoPanelOpen}
-            isViewerInteractive={isInteractionEnabled}
-            isViewerVisible={isViewerSurfaceVisible}
-            mobileStyle={
-              isMobile
-                ? {
-                    opacity: mobile.infoPanelOpacity,
-                    y: mobile.infoPanelY,
-                  }
-                : undefined
-            }
-            onClose={handleInfoPanelClose}
-          />
-        </div>
-
-        <AnimatePresence onExitComplete={() => setIsShareDialogExiting(false)}>
-          {isShareDialogOpen && (
-            <ViewerShareDialog
-              key={currentPhoto.slug}
-              photo={currentPhoto}
-              returnFocusRef={dialogRef}
-              onClose={handleCloseShareDialog}
-            />
-          )}
-        </AnimatePresence>
-
-        <SharedPhotoTransition
-          activeTransition={sharedTransition}
-          exitFrame={dragExitFrame}
-          mediaStageRef={mediaStageRef}
-          onEntryComplete={onEntryComplete}
-          onEntryHandoff={revealSurfaces}
-          onExitComplete={onExitComplete}
-          onPresenceExitComplete={revealControls}
-          photo={currentPhoto}
-        />
-      </m.div>
-    </RemoveScroll>
+        </RemoveScroll>
+      </MotionConfig>
+    </LazyMotion>
   )
 }
