@@ -1,5 +1,5 @@
 import { ThumbnailImage, type ThumbnailImagePhoto } from '@/components/photo'
-import { ThumbHashImage } from '@/components/thumbhash'
+import { ServerThumbHashImage } from '@/components/thumbhash/server'
 import { cn } from '@/lib/style'
 
 export type AlbumCoverLoading = 'eager' | 'lazy'
@@ -35,7 +35,7 @@ export function AlbumImageStack({
             {isCover ? (
               <ThumbnailImage photo={photo} loading={coverLoading} />
             ) : (
-              <ThumbHashImage
+              <ServerThumbHashImage
                 thumbHash={photo.thumbHash}
                 className="object-cover"
               />

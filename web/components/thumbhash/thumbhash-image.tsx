@@ -6,10 +6,15 @@ interface ThumbHashImageProps extends Omit<
   'alt' | 'fill' | 'height' | 'src' | 'width'
 > {
   thumbHash: string
+  placeholderSrc?: string
 }
 
-export function ThumbHashImage({ thumbHash, ...props }: ThumbHashImageProps) {
-  const src = getThumbHashAsset(thumbHash).dataUrl
+export function ThumbHashImage({
+  thumbHash,
+  placeholderSrc,
+  ...props
+}: ThumbHashImageProps) {
+  const src = placeholderSrc ?? getThumbHashAsset(thumbHash).dataUrl
 
   return (
     <Image

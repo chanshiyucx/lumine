@@ -16,6 +16,11 @@ const Viewer = dynamic(() =>
   import('@/components/viewer/viewer').then((module) => module.Viewer),
 )
 
+const preloadViewer = () =>
+  import('@/components/viewer/viewer').catch(() => {
+    // Optional preload; opening the viewer still uses next/dynamic.
+  })
+
 interface PhotoGalleryProps {
   photos: Photo[]
   initialPhotoSlug?: string
@@ -40,6 +45,15 @@ export function PhotoGallery({
   const [headerState, setHeaderState] = useState<GalleryHeaderState>({})
   const { date: displayedDate, location: displayedLocation } =
     fixedHeaderDetail ?? headerState
+
+  useEffect(() => {
+    if (initialPhotoSlug || !('requestIdleCallback' in window)) {
+      return
+    }
+
+    const idleId = window.requestIdleCallback(preloadViewer)
+    return () => window.cancelIdleCallback(idleId)
+  }, [initialPhotoSlug])
 
   useEffect(() => {
     if (hasFixedHeader || !scrollElement) {
