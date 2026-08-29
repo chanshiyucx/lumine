@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Swiper as SwiperInstance } from 'swiper'
 import { A11y, Virtual } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
+import 'swiper/css'
+import 'swiper/css/virtual'
 import type { Photo } from '@/lib/photo'
 import { ProgressivePhoto } from './progressive-photo'
 

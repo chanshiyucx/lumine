@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist } from 'next/font/google'
-import 'swiper/css'
-import 'swiper/css/virtual'
 import { siteConfig } from '@/lib/site-config'
 import '@/styles/globals.css'
 import { Header } from '@/components/header'

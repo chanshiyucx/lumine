@@ -1,5 +1,5 @@
 import { ThumbnailImage, type ThumbnailImagePhoto } from '@/components/photo'
-import { ServerThumbHashImage } from '@/components/thumbhash/server'
+import { ServerThumbHashImage } from '@/components/thumbhash/server-thumbhash-image'
 import { cn } from '@/lib/style'
 
 export type AlbumCoverLoading = 'eager' | 'lazy'

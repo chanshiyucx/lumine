@@ -23,23 +23,15 @@ const THEME = {
   text: '#e0def4',
 }
 
+const MOSAIC_PHOTO_COUNT = 6
+
 async function getMosaicPhotoUrls(photos: Photo[]) {
   if (photos.length === 0) {
     return []
   }
 
-  const candidates: Photo[] = []
-  while (candidates.length < 6) {
-    for (const p of photos) {
-      candidates.push(p)
-      if (candidates.length === 6) {
-        break
-      }
-    }
-  }
-
-  const results = await Promise.all(
-    candidates.map(async (photo) => {
+  const photoUrls = await Promise.all(
+    photos.slice(0, MOSAIC_PHOTO_COUNT).map(async (photo) => {
       const response = await fetch(photo.thumbnail.url, { cache: 'no-store' })
 
       if (!response.ok) {
@@ -61,7 +53,10 @@ async function getMosaicPhotoUrls(photos: Photo[]) {
     }),
   )
 
-  return results
+  return Array.from(
+    { length: MOSAIC_PHOTO_COUNT },
+    (_, index) => photoUrls[index % photoUrls.length],
+  )
 }
 
 export async function renderMosaicOgImage({

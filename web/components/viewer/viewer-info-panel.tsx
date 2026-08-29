@@ -50,7 +50,13 @@ interface ViewerInfoPanelProps {
   onClose: () => void
 }
 
-function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
+function ViewerInfoPanelContent({
+  photo,
+  isActive,
+}: {
+  photo: Photo
+  isActive: boolean
+}) {
   const photoInfoRows = getPhotoInfoRows(photo)
   const captureSettings = getCaptureSettings(photo)
   const deviceInfoRows = getDeviceInfoRows(photo)
@@ -72,7 +78,7 @@ function ViewerInfoPanelContent({ photo }: { photo: Photo }) {
           ))}
         </div>
         <div className="mt-2">
-          <PhotoHistogram photo={photo} />
+          <PhotoHistogram photo={photo} isActive={isActive} />
         </div>
       </section>
 
@@ -167,7 +173,7 @@ export function ViewerInfoPanel({
               scrollbarClassName="my-2"
               viewportClassName="viewer-info-scroll-mask overscroll-contain"
             >
-              <ViewerInfoPanelContent photo={photo} />
+              <ViewerInfoPanelContent photo={photo} isActive={isInteractive} />
             </ScrollArea>
           </div>
         </m.div>

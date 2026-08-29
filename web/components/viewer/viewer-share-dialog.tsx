@@ -23,7 +23,6 @@ import type { Photo } from '@/lib/photo'
 import { getPhotoOgPath, getPhotoShareUrl } from '@/lib/photo/share'
 import { siteConfig } from '@/lib/site-config'
 import { useDialogFocus } from './hooks/use-dialog-focus'
-import { photoResourceStore } from './lib/photo-resource-store'
 
 interface ViewerShareDialogProps {
   photo: Photo
@@ -113,46 +112,6 @@ function getOriginalDownloadName(photo: Photo) {
   return extension ? `${photo.fileName}.${extension}` : photo.fileName
 }
 
-function canShareFiles(files: File[]): boolean {
-  if (
-    typeof navigator === 'undefined' ||
-    typeof navigator.canShare !== 'function'
-  ) {
-    return false
-  }
-
-  try {
-    return navigator.canShare({ files })
-  } catch {
-    return false
-  }
-}
-
-async function createShareFile(photo: Photo): Promise<File | null> {
-  const snapshot = photoResourceStore.getSnapshot(photo.original.url)
-  const targetUrl =
-    snapshot.status === 'ready' ||
-    snapshot.status === 'cached' ||
-    snapshot.status === 'decoding'
-      ? snapshot.src
-      : photo.original.url
-
-  try {
-    const response = await fetch(targetUrl)
-    if (!response.ok) {
-      return null
-    }
-
-    const blob = await response.blob()
-    const fileName = getOriginalDownloadName(photo)
-    const mimeType = blob.type || photo.original.mime || 'image/jpeg'
-
-    return new File([blob], fileName, { type: mimeType })
-  } catch {
-    return null
-  }
-}
-
 export function ViewerShareDialog({
   photo,
   returnFocusRef,
@@ -218,47 +177,20 @@ export function ViewerShareDialog({
   }
 
   const handleNativeShare = async () => {
-    const baseShareData: ShareData = {
+    const shareData: ShareData = {
       title: photo.title,
       text: `${photo.title} — ${siteConfig.name}`,
       url: shareUrl,
     }
 
     try {
-      const shareFile = await createShareFile(photo)
-      const shareDataWithFiles: ShareData =
-        shareFile && canShareFiles([shareFile])
-          ? { ...baseShareData, files: [shareFile] }
-          : baseShareData
-
-      try {
-        await navigator.share(shareDataWithFiles)
-        onClose()
+      await navigator.share(shareData)
+      onClose()
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         return
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return
-        }
-
-        // If file sharing failed due to platform restrictions, retry with URL-only share
-        if (shareDataWithFiles.files && shareDataWithFiles.files.length > 0) {
-          try {
-            await navigator.share(baseShareData)
-            onClose()
-            return
-          } catch (fallbackError) {
-            if (
-              fallbackError instanceof DOMException &&
-              fallbackError.name === 'AbortError'
-            ) {
-              return
-            }
-          }
-        }
       }
 
-      await handleCopyLink()
-    } catch {
       await handleCopyLink()
     }
   }

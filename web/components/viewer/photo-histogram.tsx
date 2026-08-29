@@ -79,10 +79,15 @@ function cacheHistogram(key: string, bins: HistogramBins): void {
 
 interface PhotoHistogramProps {
   className?: string
+  isActive: boolean
   photo: Photo
 }
 
-export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
+export function PhotoHistogram({
+  className,
+  isActive,
+  photo,
+}: PhotoHistogramProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const previousHistogramRef = useRef<HistogramBins | null>(null)
@@ -101,6 +106,10 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
 
   // 1. Observe container size safely without layout thrashing
   useEffect(() => {
+    if (!isActive) {
+      return
+    }
+
     const container = containerRef.current
     if (!container) {
       return
@@ -128,10 +137,14 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
     observer.observe(container)
 
     return () => observer.disconnect()
-  }, [])
+  }, [isActive])
 
   // 2. Fetch and sample image data with in-memory caching and AbortController
   useEffect(() => {
+    if (!isActive) {
+      return
+    }
+
     const cacheKey = photo.thumbnail.url
     const cachedBins = histogramCache.get(cacheKey)
 
@@ -145,7 +158,6 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
     async function loadHistogram() {
       try {
         const response = await fetch(cacheKey, {
-          cache: 'no-store',
           signal: controller.signal,
         })
         if (!response.ok) {
@@ -229,10 +241,16 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
     return () => {
       controller.abort()
     }
-  }, [photo.thumbnail.url])
+  }, [isActive, photo.thumbnail.url])
 
   // 3. High-performance canvas rendering with Spring physics interpolation
   useEffect(() => {
+    if (!isActive) {
+      previousHistogramRef.current = histogram
+      currentVisualHistogramRef.current = histogram
+      return
+    }
+
     const canvas = canvasRef.current
     if (
       !canvas ||
@@ -341,7 +359,7 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
     const startFromHistogram =
       currentVisualHistogramRef.current ?? previousHistogramRef.current
 
-    if (!startFromHistogram) {
+    if (!startFromHistogram || previousHistogramRef.current === histogram) {
       renderHistogram(histogram)
       previousHistogramRef.current = histogram
       currentVisualHistogramRef.current = histogram
@@ -390,7 +408,7 @@ export function PhotoHistogram({ className, photo }: PhotoHistogramProps) {
         animationRef.current = null
       }
     }
-  }, [dimensions, histogram])
+  }, [dimensions, histogram, isActive])
 
   return (
     <div
