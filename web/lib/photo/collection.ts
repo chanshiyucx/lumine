@@ -3,7 +3,7 @@ import { cache } from 'react'
 import { z } from 'zod'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
 import { getAlbumKeyFromAssetPath } from '../albums'
-import { getMediaUrl, MEDIA_PATHS } from '../media-url'
+import { getPhotoAssetUrl, getPhotoManifestUrl } from '../media-url'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 
@@ -65,14 +65,10 @@ const manifestSchema = z.strictObject({
   photos: z.array(photoManifestSchema),
 })
 
-function resolveAssetUrl(pathname: string) {
-  return getMediaUrl(pathname)
-}
-
 function normalizeAsset(asset: z.infer<typeof photoAssetSchema>): PhotoAsset {
   return {
     ...asset,
-    url: resolveAssetUrl(asset.url),
+    url: getPhotoAssetUrl(asset.url),
   }
 }
 
@@ -83,7 +79,7 @@ function getFileNameFromAssetPath(pathname: string) {
 }
 
 async function fetchManifestJson() {
-  const manifestUrl = getMediaUrl(MEDIA_PATHS.photoManifest)
+  const manifestUrl = getPhotoManifestUrl()
   const response = await fetch(manifestUrl, {
     next: { revalidate: PHOTO_MANIFEST_REVALIDATE_SECONDS },
   })
@@ -113,13 +109,12 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
 
   return {
     updatedAt: manifest.updatedAt,
-    photos: photos.map((photo, index) => {
+    photos: photos.map((photo) => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
 
       return {
         ...photo,
-        index,
         id: photo.original.url,
         slug: createPhotoSlug(photo.title),
         fileName: getFileNameFromAssetPath(photo.original.url),

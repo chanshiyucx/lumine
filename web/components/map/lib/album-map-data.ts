@@ -8,7 +8,7 @@ import {
   normalizeAlbumKey,
   type Album,
 } from '@/lib/albums'
-import { getMediaUrl, MEDIA_PATHS } from '@/lib/media-url'
+import { getAlbumMapUrl } from '@/lib/media-url'
 import { getPhotoPath } from '@/lib/photo'
 
 export interface AlbumMapCover {
@@ -70,7 +70,7 @@ function getCovers(album: Album): AlbumMapItem['covers'] {
 }
 
 const fetchAlbumMapData = cache(async () => {
-  const mapUrl = getMediaUrl(MEDIA_PATHS.albumMap)
+  const mapUrl = getAlbumMapUrl()
   const response = await fetch(mapUrl, {
     next: { revalidate: ALBUM_MAP_REVALIDATE_SECONDS },
   })

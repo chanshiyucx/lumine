@@ -54,7 +54,6 @@ export interface PhotoManifestEntry {
 
 export interface Photo extends PhotoManifestEntry {
   id: string
-  index: number
   slug: string
   fileName: string
   albumKey: string

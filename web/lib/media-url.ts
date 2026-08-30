@@ -1,27 +1,39 @@
-import { z } from 'zod'
 import { MEDIA_ORIGIN_ENV } from './env'
 
-const mediaOriginSchema = z.url()
+let cachedMediaOrigin: URL | undefined
 
-export const MEDIA_PATHS = {
-  albumMap: 'map.json',
-  photoManifest: 'manifest.json',
-} as const
+const ALBUM_MAP_PATH = 'map.json'
+const PHOTO_MANIFEST_PATH = 'manifest.json'
 
 function getMediaOrigin() {
-  const parsedOrigin = mediaOriginSchema.safeParse(
-    process.env[MEDIA_ORIGIN_ENV],
-  )
+  if (cachedMediaOrigin) {
+    return cachedMediaOrigin
+  }
 
-  if (!parsedOrigin.success) {
+  const mediaOrigin = process.env[MEDIA_ORIGIN_ENV]
+
+  if (!mediaOrigin) {
     throw new Error(
-      `Missing or invalid ${MEDIA_ORIGIN_ENV}. Set it to the media host origin, for example https://cloud.example.com.`,
+      `Missing ${MEDIA_ORIGIN_ENV}. Set it to the media host origin, for example https://cloud.example.com.`,
     )
   }
 
-  return new URL('/', parsedOrigin.data)
+  cachedMediaOrigin = new URL('/', mediaOrigin)
+  return cachedMediaOrigin
 }
 
-export function getMediaUrl(pathname: string) {
+function resolveMediaUrl(pathname: string) {
   return new URL(pathname.replace(/^\/+/, ''), getMediaOrigin()).toString()
+}
+
+export function getPhotoAssetUrl(pathname: string) {
+  return resolveMediaUrl(pathname)
+}
+
+export function getPhotoManifestUrl() {
+  return resolveMediaUrl(PHOTO_MANIFEST_PATH)
+}
+
+export function getAlbumMapUrl() {
+  return resolveMediaUrl(ALBUM_MAP_PATH)
 }

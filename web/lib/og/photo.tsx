@@ -41,14 +41,15 @@ const THEME = {
   overlay: '#2a273f',
   text: '#e0def4',
 }
+const PHOTO_DATE_FORMATTER = new Intl.DateTimeFormat(siteConfig.locale, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+})
 
 function formatPhotoDate(takenAt: string) {
-  return new Intl.DateTimeFormat(siteConfig.locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(takenAt))
+  return PHOTO_DATE_FORMATTER.format(new Date(takenAt))
 }
 
 function getExifItems(photo: Photo) {

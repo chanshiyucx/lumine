@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { getAlbumCatalog } from '@/lib/album-catalog'
 import { formatReadableDate } from '@/lib/date'
 import { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from '@/lib/og/config'
-import { formatCameraLabel } from '@/lib/og/metadata'
+import { findCameraLabel } from '@/lib/og/metadata'
 import { renderMosaicOgImage, type StatItem } from '@/lib/og/mosaic'
 import { siteConfig } from '@/lib/site-config'
 
@@ -25,9 +25,7 @@ export default async function AlbumOpenGraphImage({
     notFound()
   }
 
-  const cameraLabel = album.photos
-    .map(formatCameraLabel)
-    .find((label) => label !== null)
+  const cameraLabel = findCameraLabel(album.photos)
   const formattedDate = formatReadableDate(album.date)
 
   const stats: StatItem[] = [{ label: 'photos', value: album.photos.length }]

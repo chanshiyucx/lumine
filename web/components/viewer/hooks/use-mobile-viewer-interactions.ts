@@ -84,10 +84,24 @@ export function useMobileViewerInteractions({
   }
 
   useEffect(() => {
-    const handleResize = () => setViewport(getViewport())
+    if (!enabled) {
+      return
+    }
+
+    const handleResize = () => {
+      const nextViewport = getViewport()
+      setViewport((currentViewport) =>
+        currentViewport.height === nextViewport.height &&
+        currentViewport.width === nextViewport.width
+          ? currentViewport
+          : nextViewport,
+      )
+    }
+
+    handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) {

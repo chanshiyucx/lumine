@@ -1,6 +1,6 @@
 import { getAlbumCatalog } from '@/lib/album-catalog'
 import { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from '@/lib/og/config'
-import { formatCameraLabel } from '@/lib/og/metadata'
+import { findCameraLabel } from '@/lib/og/metadata'
 import { renderMosaicOgImage, type StatItem } from '@/lib/og/mosaic'
 import { getPhotoCollection } from '@/lib/photo/collection'
 import { siteConfig } from '@/lib/site-config'
@@ -24,9 +24,7 @@ export default async function OpenGraphImage() {
   const candidatePhotos =
     albumCovers.length >= 6 ? albumCovers : photoCollection.photos.slice(0, 6)
 
-  const mainCamera = photoCollection.photos
-    .map(formatCameraLabel)
-    .find((label) => label !== null)
+  const mainCamera = findCameraLabel(photoCollection.photos)
 
   const stats: StatItem[] = [
     { label: 'photos', value: photoCollection.photos.length },
