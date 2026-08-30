@@ -11,8 +11,14 @@ const HISTOGRAM_ANIMATION_REST_DELTA = 0.001
 
 type Channel = 'red' | 'green' | 'blue' | 'luminance'
 type HistogramBins = Record<Channel, number[]>
+interface DisplayedHistogram {
+  bins: HistogramBins
+  key: string
+}
 
 const histogramCache = new Map<string, HistogramBins>()
+const histogramRequests = new Map<string, Promise<HistogramBins>>()
+const CHANNELS: readonly Channel[] = ['luminance', 'red', 'green', 'blue']
 
 const CHANNEL_CONFIG: Record<Channel, { alpha: number; rgb: string }> = {
   red: { alpha: 0.75, rgb: '235, 111, 146' }, // Rose Pine Love
@@ -21,13 +27,17 @@ const CHANNEL_CONFIG: Record<Channel, { alpha: number; rgb: string }> = {
   luminance: { alpha: 0.28, rgb: '224, 222, 244' }, // Rose Pine Text
 }
 
-function calculateHistogram(imageData: ImageData): HistogramBins {
-  const bins: HistogramBins = {
+function createHistogramBins(): HistogramBins {
+  return {
     blue: new Array<number>(BIN_COUNT).fill(0),
     green: new Array<number>(BIN_COUNT).fill(0),
     luminance: new Array<number>(BIN_COUNT).fill(0),
     red: new Array<number>(BIN_COUNT).fill(0),
   }
+}
+
+function calculateHistogram(imageData: ImageData): HistogramBins {
+  const bins = createHistogramBins()
 
   const { data } = imageData
   for (let i = 0; i < data.length; i += 4) {
@@ -61,13 +71,40 @@ function calculateSpringProgress(
   return Math.max(0, Math.min(1, value))
 }
 
-function lerpArray(from: number[], to: number[], progress: number): number[] {
-  return from.map(
-    (value, index) => value + ((to[index] ?? 0) - value) * progress,
-  )
+function copyHistogram(from: HistogramBins, to: HistogramBins): HistogramBins {
+  for (const channel of CHANNELS) {
+    const sourceBins = from[channel]
+    const targetBins = to[channel]
+    for (let index = 0; index < BIN_COUNT; index++) {
+      targetBins[index] = sourceBins[index] ?? 0
+    }
+  }
+
+  return to
+}
+
+function interpolateHistogram(
+  from: HistogramBins,
+  to: HistogramBins,
+  progress: number,
+  output: HistogramBins,
+): HistogramBins {
+  for (const channel of CHANNELS) {
+    const fromBins = from[channel]
+    const toBins = to[channel]
+    const outputBins = output[channel]
+    for (let index = 0; index < BIN_COUNT; index++) {
+      const fromValue = fromBins[index] ?? 0
+      outputBins[index] =
+        fromValue + ((toBins[index] ?? 0) - fromValue) * progress
+    }
+  }
+
+  return output
 }
 
 function cacheHistogram(key: string, bins: HistogramBins): void {
+  histogramCache.delete(key)
   if (histogramCache.size >= MAX_HISTOGRAM_CACHE_SIZE) {
     const oldestKey = histogramCache.keys().next().value
     if (oldestKey) {
@@ -75,6 +112,105 @@ function cacheHistogram(key: string, bins: HistogramBins): void {
     }
   }
   histogramCache.set(key, bins)
+}
+
+function getCachedHistogram(key: string): HistogramBins | null {
+  const bins = histogramCache.get(key)
+  if (!bins) {
+    return null
+  }
+
+  histogramCache.delete(key)
+  histogramCache.set(key, bins)
+  return bins
+}
+
+async function computeHistogram(key: string): Promise<HistogramBins> {
+  const response = await fetch(key)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch thumbnail: ${response.status}`)
+  }
+
+  const blob = await response.blob()
+  let imageBitmap: ImageBitmap | null = null
+  let imageSource: ImageBitmap | HTMLImageElement
+
+  if (typeof createImageBitmap === 'function') {
+    imageBitmap = await createImageBitmap(blob)
+    imageSource = imageBitmap
+  } else {
+    const objectUrl = URL.createObjectURL(blob)
+    const image = new Image()
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve()
+        image.onerror = () => reject(new Error('Failed to decode image'))
+        image.src = objectUrl
+      })
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    imageSource = image
+  }
+
+  try {
+    const sourceWidth =
+      imageSource instanceof HTMLImageElement
+        ? imageSource.naturalWidth
+        : imageSource.width
+    const sourceHeight =
+      imageSource instanceof HTMLImageElement
+        ? imageSource.naturalHeight
+        : imageSource.height
+    const maxSize = 240
+    const scale = Math.min(1, maxSize / sourceWidth, maxSize / sourceHeight)
+    const scaledWidth = Math.max(1, Math.floor(sourceWidth * scale))
+    const scaledHeight = Math.max(1, Math.floor(sourceHeight * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = scaledWidth
+    canvas.height = scaledHeight
+
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) {
+      throw new Error('Failed to create histogram canvas context')
+    }
+
+    context.drawImage(imageSource, 0, 0, scaledWidth, scaledHeight)
+    return calculateHistogram(
+      context.getImageData(0, 0, scaledWidth, scaledHeight),
+    )
+  } finally {
+    imageBitmap?.close()
+  }
+}
+
+function getHistogram(key: string): Promise<HistogramBins> {
+  const cachedBins = getCachedHistogram(key)
+  if (cachedBins) {
+    return Promise.resolve(cachedBins)
+  }
+
+  const pendingRequest = histogramRequests.get(key)
+  if (pendingRequest) {
+    return pendingRequest
+  }
+
+  const request = computeHistogram(key).then((bins) => {
+    cacheHistogram(key, bins)
+    return bins
+  })
+  histogramRequests.set(key, request)
+
+  const removeRequest = () => {
+    if (histogramRequests.get(key) === request) {
+      histogramRequests.delete(key)
+    }
+  }
+  void request.then(removeRequest, removeRequest)
+
+  return request
 }
 
 interface PhotoHistogramProps {
@@ -92,10 +228,16 @@ export function PhotoHistogram({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const previousHistogramRef = useRef<HistogramBins | null>(null)
   const currentVisualHistogramRef = useRef<HistogramBins | null>(null)
+  const animationStartHistogramRef = useRef<HistogramBins | null>(null)
+  const interpolationBufferRef = useRef<HistogramBins | null>(null)
   const animationRef = useRef<number | null>(null)
-  const [histogram, setHistogram] = useState<HistogramBins | null>(() => {
-    return histogramCache.get(photo.thumbnail.url) ?? null
-  })
+  const [displayedHistogram, setDisplayedHistogram] =
+    useState<DisplayedHistogram | null>(() => {
+      const key = photo.thumbnail.url
+      const bins = histogramCache.get(key)
+      return bins ? { bins, key } : null
+    })
+  const histogram = displayedHistogram?.bins ?? null
   const [dimensions, setDimensions] = useState<{
     height: number
     width: number
@@ -104,7 +246,6 @@ export function PhotoHistogram({
     width: 0,
   })
 
-  // 1. Observe container size safely without layout thrashing
   useEffect(() => {
     if (!isActive) {
       return
@@ -139,111 +280,43 @@ export function PhotoHistogram({
     return () => observer.disconnect()
   }, [isActive])
 
-  // 2. Fetch and sample image data with in-memory caching and AbortController
   useEffect(() => {
     if (!isActive) {
       return
     }
 
     const cacheKey = photo.thumbnail.url
-    const cachedBins = histogramCache.get(cacheKey)
+    let isCurrent = true
 
-    if (cachedBins) {
-      setHistogram(cachedBins)
-      return
-    }
-
-    const controller = new AbortController()
-
-    async function loadHistogram() {
-      try {
-        const response = await fetch(cacheKey, {
-          signal: controller.signal,
-        })
-        if (!response.ok) {
-          throw new Error(`Failed to fetch thumbnail: ${response.status}`)
-        }
-
-        const blob = await response.blob()
-        if (controller.signal.aborted) {
+    void getHistogram(cacheKey).then(
+      (bins) => {
+        if (!isCurrent) {
           return
         }
 
-        let imageSource: CanvasImageSource
-
-        if (typeof createImageBitmap === 'function') {
-          imageSource = await createImageBitmap(blob)
-        } else {
-          const objectUrl = URL.createObjectURL(blob)
-          const img = new Image()
-          await new Promise<void>((resolve, reject) => {
-            img.onload = () => resolve()
-            img.onerror = () => reject(new Error('Failed to decode image'))
-            img.src = objectUrl
-          })
-          URL.revokeObjectURL(objectUrl)
-          imageSource = img
-        }
-
-        if (controller.signal.aborted) {
-          if (
-            typeof ImageBitmap !== 'undefined' &&
-            imageSource instanceof ImageBitmap
-          ) {
-            imageSource.close()
-          }
+        setDisplayedHistogram((current) =>
+          current?.key === cacheKey && current.bins === bins
+            ? current
+            : { bins, key: cacheKey },
+        )
+      },
+      (error: unknown) => {
+        if (!isCurrent) {
           return
         }
 
-        const sourceWidth =
-          'width' in imageSource ? Number(imageSource.width) : 240
-        const sourceHeight =
-          'height' in imageSource ? Number(imageSource.height) : 160
-
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d', { willReadFrequently: true })
-        if (!ctx) {
-          return
-        }
-
-        const maxSize = 240
-        const scale = Math.min(1, maxSize / sourceWidth, maxSize / sourceHeight)
-        const scaledWidth = Math.max(1, Math.floor(sourceWidth * scale))
-        const scaledHeight = Math.max(1, Math.floor(sourceHeight * scale))
-
-        canvas.width = scaledWidth
-        canvas.height = scaledHeight
-        ctx.drawImage(imageSource, 0, 0, scaledWidth, scaledHeight)
-
-        if (
-          typeof ImageBitmap !== 'undefined' &&
-          imageSource instanceof ImageBitmap
-        ) {
-          imageSource.close()
-        }
-
-        const imageData = ctx.getImageData(0, 0, scaledWidth, scaledHeight)
-        const bins = calculateHistogram(imageData)
-
-        if (!controller.signal.aborted) {
-          cacheHistogram(cacheKey, bins)
-          setHistogram(bins)
-        }
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
-          console.error('Failed to compute histogram:', error)
-        }
-      }
-    }
-
-    void loadHistogram()
+        setDisplayedHistogram((current) =>
+          current?.key === cacheKey ? current : null,
+        )
+        console.error('Failed to compute histogram:', error)
+      },
+    )
 
     return () => {
-      controller.abort()
+      isCurrent = false
     }
   }, [isActive, photo.thumbnail.url])
 
-  // 3. High-performance canvas rendering with Spring physics interpolation
   useEffect(() => {
     if (!isActive) {
       previousHistogramRef.current = histogram
@@ -270,11 +343,34 @@ export function PhotoHistogram({
     const dpr = window.devicePixelRatio || 1
     canvas.width = Math.round(width * dpr)
     canvas.height = Math.round(height * dpr)
+    const barWidth = width / BIN_COUNT
+    const barSpacing = Math.max(1, barWidth * 0.85)
+    let channelGradients: Record<Channel, CanvasGradient> | null = null
+    let highlightGradient: CanvasGradient | null = null
 
     const renderHistogram = (data: HistogramBins) => {
       ctx.save()
       ctx.scale(dpr, dpr)
       ctx.clearRect(0, 0, width, height)
+
+      if (!channelGradients) {
+        channelGradients = {
+          blue: ctx.createLinearGradient(0, 0, 0, height),
+          green: ctx.createLinearGradient(0, 0, 0, height),
+          luminance: ctx.createLinearGradient(0, 0, 0, height),
+          red: ctx.createLinearGradient(0, 0, 0, height),
+        }
+
+        for (const channel of CHANNELS) {
+          const config = CHANNEL_CONFIG[channel]
+          const gradient = channelGradients[channel]
+          gradient.addColorStop(0, `rgba(${config.rgb}, ${config.alpha})`)
+          gradient.addColorStop(
+            1,
+            `rgba(${config.rgb}, ${config.alpha * 0.12})`,
+          )
+        }
+      }
 
       // Draw subtle exposure reference lines at 25%, 50%, 75%
       ctx.strokeStyle = 'rgba(224, 222, 244, 0.04)'
@@ -295,14 +391,10 @@ export function PhotoHistogram({
       )
 
       if (maxVal > 0) {
-        const drawChannel = (bins: number[], rgb: string, alpha: number) => {
-          const gradient = ctx.createLinearGradient(0, 0, 0, height)
-          gradient.addColorStop(0, `rgba(${rgb}, ${alpha})`)
-          gradient.addColorStop(1, `rgba(${rgb}, ${alpha * 0.08})`)
-          ctx.fillStyle = gradient
-
-          const barWidth = width / BIN_COUNT
-          const barSpacing = Math.max(1, barWidth * 0.85)
+        const gradients = channelGradients
+        const drawChannel = (channel: Channel) => {
+          const bins = data[channel]
+          ctx.fillStyle = gradients[channel]
 
           for (let i = 0; i < bins.length; i++) {
             const val = bins[i] ?? 0
@@ -320,33 +412,23 @@ export function PhotoHistogram({
         }
 
         // Draw luminance backdrop
-        drawChannel(
-          data.luminance,
-          CHANNEL_CONFIG.luminance.rgb,
-          CHANNEL_CONFIG.luminance.alpha,
-        )
+        drawChannel('luminance')
 
         // Blend Red, Green, Blue with screen composition
         ctx.globalCompositeOperation = 'screen'
-        drawChannel(data.red, CHANNEL_CONFIG.red.rgb, CHANNEL_CONFIG.red.alpha)
-        drawChannel(
-          data.green,
-          CHANNEL_CONFIG.green.rgb,
-          CHANNEL_CONFIG.green.alpha,
-        )
-        drawChannel(
-          data.blue,
-          CHANNEL_CONFIG.blue.rgb,
-          CHANNEL_CONFIG.blue.alpha,
-        )
+        drawChannel('red')
+        drawChannel('green')
+        drawChannel('blue')
         ctx.globalCompositeOperation = 'source-over'
       }
 
       // Top ambient light sheen
-      const highlight = ctx.createLinearGradient(0, 0, 0, height * 0.25)
-      highlight.addColorStop(0, 'rgba(224, 222, 244, 0.03)')
-      highlight.addColorStop(1, 'rgba(224, 222, 244, 0)')
-      ctx.fillStyle = highlight
+      if (!highlightGradient) {
+        highlightGradient = ctx.createLinearGradient(0, 0, 0, height * 0.25)
+        highlightGradient.addColorStop(0, 'rgba(224, 222, 244, 0.03)')
+        highlightGradient.addColorStop(1, 'rgba(224, 222, 244, 0)')
+      }
+      ctx.fillStyle = highlightGradient
       ctx.fillRect(0, 0, width, height * 0.25)
       ctx.restore()
     }
@@ -356,32 +438,36 @@ export function PhotoHistogram({
       animationRef.current = null
     }
 
-    const startFromHistogram =
+    const currentStartHistogram =
       currentVisualHistogramRef.current ?? previousHistogramRef.current
 
-    if (!startFromHistogram || previousHistogramRef.current === histogram) {
+    if (!currentStartHistogram || previousHistogramRef.current === histogram) {
       renderHistogram(histogram)
       previousHistogramRef.current = histogram
       currentVisualHistogramRef.current = histogram
       return
     }
 
+    const animationStartHistogram = copyHistogram(
+      currentStartHistogram,
+      animationStartHistogramRef.current ?? createHistogramBins(),
+    )
+    animationStartHistogramRef.current = animationStartHistogram
+    const interpolationBuffer =
+      interpolationBufferRef.current ?? createHistogramBins()
+    interpolationBufferRef.current = interpolationBuffer
     const startAt = performance.now()
 
     const animate = (now: number) => {
       const elapsedMs = now - startAt
       const progress = calculateSpringProgress(elapsedMs / 1000)
 
-      const interpolated: HistogramBins = {
-        blue: lerpArray(startFromHistogram.blue, histogram.blue, progress),
-        green: lerpArray(startFromHistogram.green, histogram.green, progress),
-        luminance: lerpArray(
-          startFromHistogram.luminance,
-          histogram.luminance,
-          progress,
-        ),
-        red: lerpArray(startFromHistogram.red, histogram.red, progress),
-      }
+      const interpolated = interpolateHistogram(
+        animationStartHistogram,
+        histogram,
+        progress,
+        interpolationBuffer,
+      )
 
       currentVisualHistogramRef.current = interpolated
       renderHistogram(interpolated)

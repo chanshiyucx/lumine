@@ -329,13 +329,16 @@ export function Viewer({
                 isOpen={isInfoPanelOpen}
                 isViewerInteractive={isInteractionEnabled}
                 isViewerVisible={isViewerSurfaceVisible}
-                mobileStyle={
+                presentation={
                   isMobile
                     ? {
-                        opacity: mobile.infoPanelOpacity,
-                        y: mobile.infoPanelY,
+                        mode: 'mobile',
+                        style: {
+                          opacity: mobile.infoPanelOpacity,
+                          y: mobile.infoPanelY,
+                        },
                       }
-                    : undefined
+                    : { mode: 'desktop' }
                 }
                 onClose={handleInfoPanelClose}
               />

@@ -10,6 +10,7 @@ import {
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import { DoubleTapRecognizer } from '../lib/double-tap-recognizer'
 import {
+  calculateImageLayout,
   clamp,
   constrainPosition,
   DOUBLE_CLICK_ANIMATION_TIME,
@@ -19,6 +20,8 @@ import {
   isSameLayout,
   MAX_SCALE,
   MIN_SCALE,
+  preserveLayoutTransform,
+  resolveLayoutTransform,
   SCALE_EPSILON,
   TRANSFORM_ANIMATION,
   WHEEL_STEP,
@@ -33,6 +36,11 @@ interface UseZoomableImageOptions {
   onZoomChange?: (pixelScale: number, relativeScale: number) => void
   onZoomStateChange?: (isZoomed: boolean) => void
   src: string
+  width: number
+}
+
+interface ViewportSize {
+  height: number
   width: number
 }
 
@@ -59,7 +67,7 @@ export function useZoomableImage({
     ? getMaximumRelativeScale(imageLayout.fitScale)
     : MAX_SCALE
 
-  const measureImageLayout = () => {
+  const measureImageLayout = (observedViewport?: ViewportSize) => {
     const container = containerRef.current
     const image = imageRef.current
     const sourceWidth = width > 0 ? width : (image?.naturalWidth ?? 0)
@@ -69,25 +77,17 @@ export function useZoomableImage({
       return
     }
 
-    const viewportWidth = container.clientWidth
-    const viewportHeight = container.clientHeight
-    if (viewportWidth <= 0 || viewportHeight <= 0) {
-      return
-    }
-
-    const fitScale = Math.min(
-      viewportWidth / sourceWidth,
-      viewportHeight / sourceHeight,
-    )
-    const nextLayout: ImageLayout = {
-      contentHeight: sourceHeight * fitScale,
-      contentWidth: sourceWidth * fitScale,
-      fitScale,
+    const viewportWidth = observedViewport?.width ?? container.clientWidth
+    const viewportHeight = observedViewport?.height ?? container.clientHeight
+    const nextLayout = calculateImageLayout({
       source: src,
       sourceHeight,
       sourceWidth,
       viewportHeight,
       viewportWidth,
+    })
+    if (!nextLayout) {
+      return
     }
     const previousLayout = imageLayoutRef.current
 
@@ -97,19 +97,11 @@ export function useZoomableImage({
 
     const transform = transformRef.current
     if (previousLayout && transform) {
-      const currentScale = transform.state.scale
-      pendingLayoutTransformRef.current = {
-        centerOffsetX:
-          transform.state.positionX +
-          (previousLayout.contentWidth * currentScale) / 2 -
-          previousLayout.viewportWidth / 2,
-        centerOffsetY:
-          transform.state.positionY +
-          (previousLayout.contentHeight * currentScale) / 2 -
-          previousLayout.viewportHeight / 2,
-        layout: nextLayout,
-        pixelScale: currentScale * previousLayout.fitScale,
-      }
+      pendingLayoutTransformRef.current = preserveLayoutTransform(
+        previousLayout,
+        nextLayout,
+        transform.state,
+      )
     } else {
       pendingLayoutTransformRef.current = null
     }
@@ -126,7 +118,16 @@ export function useZoomableImage({
     }
 
     measureImageLayoutFromEffect()
-    const observer = new ResizeObserver(measureImageLayoutFromEffect)
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) {
+        return
+      }
+
+      measureImageLayoutFromEffect({
+        height: Math.round(entry.contentRect.height),
+        width: Math.round(entry.contentRect.width),
+      })
+    })
     observer.observe(container)
 
     return () => observer.disconnect()
@@ -135,45 +136,22 @@ export function useZoomableImage({
   useLayoutEffect(() => {
     const pendingTransform = pendingLayoutTransformRef.current
     const transform = transformRef.current
-    const wrapper = transform?.instance.wrapperComponent
-    const content = transform?.instance.contentComponent
 
     if (
       !pendingTransform ||
       pendingTransform.layout !== imageLayout ||
-      !transform ||
-      !wrapper ||
-      !content
+      !transform
     ) {
       return
     }
 
-    const minimumPixelScale = imageLayout.fitScale * MIN_SCALE
-    const maximumPixelScale =
-      imageLayout.fitScale * getMaximumRelativeScale(imageLayout.fitScale)
-    const pixelScale = clamp(
-      pendingTransform.pixelScale,
-      minimumPixelScale,
-      maximumPixelScale,
-    )
-    const relativeScale = pixelScale / imageLayout.fitScale
-    const position = constrainPosition(
-      imageLayout.viewportWidth / 2 +
-        pendingTransform.centerOffsetX -
-        (imageLayout.contentWidth * relativeScale) / 2,
-      imageLayout.viewportHeight / 2 +
-        pendingTransform.centerOffsetY -
-        (imageLayout.contentHeight * relativeScale) / 2,
-      relativeScale,
-      wrapper,
-      content,
-    )
+    const nextTransform = resolveLayoutTransform(pendingTransform, imageLayout)
 
     pendingLayoutTransformRef.current = null
     transform.setTransform(
-      position.positionX,
-      position.positionY,
-      relativeScale,
+      nextTransform.positionX,
+      nextTransform.positionY,
+      nextTransform.scale,
       0,
     )
   }, [imageLayout])
@@ -240,8 +218,12 @@ export function useZoomableImage({
       pointerX - contentX * targetScale,
       pointerY - contentY * targetScale,
       targetScale,
-      wrapper,
-      content,
+      {
+        contentHeight: content.offsetHeight,
+        contentWidth: content.offsetWidth,
+        viewportHeight: wrapper.clientHeight,
+        viewportWidth: wrapper.clientWidth,
+      },
     )
 
     transform.setTransform(

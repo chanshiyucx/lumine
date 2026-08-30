@@ -27,12 +27,66 @@ export interface PendingLayoutTransform {
   pixelScale: number
 }
 
+export interface PositionBounds {
+  contentHeight: number
+  contentWidth: number
+  viewportHeight: number
+  viewportWidth: number
+}
+
+export interface TransformState {
+  positionX: number
+  positionY: number
+  scale: number
+}
+
+interface CalculateImageLayoutOptions {
+  source: string
+  sourceHeight: number
+  sourceWidth: number
+  viewportHeight: number
+  viewportWidth: number
+}
+
 export function clamp(value: number, minimum: number, maximum: number) {
   return Math.max(minimum, Math.min(maximum, value))
 }
 
 export function getMaximumRelativeScale(fitScale: number) {
   return Math.max(MAX_SCALE, 1 / fitScale)
+}
+
+export function calculateImageLayout({
+  source,
+  sourceHeight,
+  sourceWidth,
+  viewportHeight,
+  viewportWidth,
+}: CalculateImageLayoutOptions): ImageLayout | null {
+  if (
+    sourceHeight <= 0 ||
+    sourceWidth <= 0 ||
+    viewportHeight <= 0 ||
+    viewportWidth <= 0
+  ) {
+    return null
+  }
+
+  const fitScale = Math.min(
+    viewportWidth / sourceWidth,
+    viewportHeight / sourceHeight,
+  )
+
+  return {
+    contentHeight: sourceHeight * fitScale,
+    contentWidth: sourceWidth * fitScale,
+    fitScale,
+    source,
+    sourceHeight,
+    sourceWidth,
+    viewportHeight,
+    viewportWidth,
+  }
 }
 
 export function isSameLayout(first: ImageLayout, second: ImageLayout) {
@@ -49,22 +103,72 @@ export function constrainPosition(
   positionX: number,
   positionY: number,
   scale: number,
-  wrapper: HTMLDivElement,
-  content: HTMLDivElement,
+  bounds: PositionBounds,
 ) {
-  const scaledWidth = content.offsetWidth * scale
-  const scaledHeight = content.offsetHeight * scale
+  const scaledWidth = bounds.contentWidth * scale
+  const scaledHeight = bounds.contentHeight * scale
 
   return {
     positionX:
-      scaledWidth <= wrapper.clientWidth
-        ? (wrapper.clientWidth - scaledWidth) / 2
-        : clamp(positionX, wrapper.clientWidth - scaledWidth, 0),
+      scaledWidth <= bounds.viewportWidth
+        ? (bounds.viewportWidth - scaledWidth) / 2
+        : clamp(positionX, bounds.viewportWidth - scaledWidth, 0),
     positionY:
-      scaledHeight <= wrapper.clientHeight
-        ? (wrapper.clientHeight - scaledHeight) / 2
-        : clamp(positionY, wrapper.clientHeight - scaledHeight, 0),
+      scaledHeight <= bounds.viewportHeight
+        ? (bounds.viewportHeight - scaledHeight) / 2
+        : clamp(positionY, bounds.viewportHeight - scaledHeight, 0),
   }
+}
+
+export function preserveLayoutTransform(
+  previousLayout: ImageLayout,
+  nextLayout: ImageLayout,
+  transform: TransformState,
+): PendingLayoutTransform {
+  return {
+    centerOffsetX:
+      transform.positionX +
+      (previousLayout.contentWidth * transform.scale) / 2 -
+      previousLayout.viewportWidth / 2,
+    centerOffsetY:
+      transform.positionY +
+      (previousLayout.contentHeight * transform.scale) / 2 -
+      previousLayout.viewportHeight / 2,
+    layout: nextLayout,
+    pixelScale: transform.scale * previousLayout.fitScale,
+  }
+}
+
+export function resolveLayoutTransform(
+  pendingTransform: PendingLayoutTransform,
+  layout: ImageLayout,
+): TransformState {
+  const minimumPixelScale = layout.fitScale * MIN_SCALE
+  const maximumPixelScale =
+    layout.fitScale * getMaximumRelativeScale(layout.fitScale)
+  const pixelScale = clamp(
+    pendingTransform.pixelScale,
+    minimumPixelScale,
+    maximumPixelScale,
+  )
+  const scale = pixelScale / layout.fitScale
+  const position = constrainPosition(
+    layout.viewportWidth / 2 +
+      pendingTransform.centerOffsetX -
+      (layout.contentWidth * scale) / 2,
+    layout.viewportHeight / 2 +
+      pendingTransform.centerOffsetY -
+      (layout.contentHeight * scale) / 2,
+    scale,
+    {
+      contentHeight: Math.round(layout.contentHeight),
+      contentWidth: Math.round(layout.contentWidth),
+      viewportHeight: layout.viewportHeight,
+      viewportWidth: layout.viewportWidth,
+    },
+  )
+
+  return { ...position, scale }
 }
 
 export function getImageMetrics(

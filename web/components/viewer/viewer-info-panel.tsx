@@ -46,9 +46,13 @@ interface ViewerInfoPanelProps {
   isOpen: boolean
   isViewerInteractive: boolean
   isViewerVisible: boolean
-  mobileStyle?: MotionStyle
+  presentation: { mode: 'desktop' } | { mode: 'mobile'; style: MotionStyle }
   onClose: () => void
 }
+
+const DESKTOP_PANEL_WIDTH_CLASS = 'lg:w-80'
+const DESKTOP_PANEL_MOTION_CLASS =
+  'motion-reduce:transition-none lg:transition-[width] lg:duration-200 lg:ease-out'
 
 function ViewerInfoPanelContent({
   photo,
@@ -102,10 +106,10 @@ export function ViewerInfoPanel({
   isOpen,
   isViewerInteractive,
   isViewerVisible,
-  mobileStyle,
+  presentation,
   onClose,
 }: ViewerInfoPanelProps) {
-  const isMobileMotionControlled = mobileStyle !== undefined
+  const isMobilePresentation = presentation.mode === 'mobile'
   const isInteractive = isOpen && isViewerVisible && isViewerInteractive
 
   return (
@@ -114,8 +118,9 @@ export function ViewerInfoPanel({
       aria-hidden={!isInteractive}
       inert={!isInteractive}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] transition-[width] duration-200 ease-out motion-reduce:transition-none lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
-        isOpen ? 'lg:w-80' : 'lg:w-0',
+        'fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
+        DESKTOP_PANEL_MOTION_CLASS,
+        isOpen ? DESKTOP_PANEL_WIDTH_CLASS : 'lg:w-0',
       )}
       style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
     >
@@ -123,12 +128,12 @@ export function ViewerInfoPanel({
         data-viewer-chrome="info-panel"
         className="h-full"
         initial={
-          isMobileMotionControlled
+          isMobilePresentation
             ? { opacity: 0, x: 0, y: 24 }
             : { opacity: 0, x: 32, y: 0 }
         }
         animate={
-          isMobileMotionControlled
+          isMobilePresentation
             ? {
                 opacity: isViewerVisible ? 1 : 0,
                 x: 0,
@@ -147,10 +152,15 @@ export function ViewerInfoPanel({
         }
       >
         <m.div
-          className="relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:w-80 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]"
+          className={cn(
+            'relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
+            DESKTOP_PANEL_WIDTH_CLASS,
+          )}
           style={{
             backgroundColor: 'rgb(40 40 40 / 0.56)',
-            ...mobileStyle,
+            ...(presentation.mode === 'mobile'
+              ? presentation.style
+              : undefined),
           }}
         >
           <div className="relative flex min-h-0 flex-1 flex-col">
