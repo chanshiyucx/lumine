@@ -102,31 +102,28 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const columnCount = layout?.columnCount ?? 1
   const columnWidth = layout?.columnWidth ?? 1
 
-  const estimateSize = useCallback(
-    (index: number) => getPhotoMasonryHeight(photos[index], columnWidth),
-    [columnWidth, photos],
-  )
+  const estimateSize = (index: number) =>
+    getPhotoMasonryHeight(photos[index], columnWidth)
   const getItemKey = useCallback((index: number) => photos[index].id, [photos])
-  const handleVirtualizerChange = useCallback(
-    (virtualizer: Virtualizer<HTMLElement, HTMLLIElement>) => {
-      if (!scrollElement || !onVisiblePhotoChange) {
-        return
-      }
+  const handleVirtualizerChange = (
+    virtualizer: Virtualizer<HTMLElement, HTMLLIElement>,
+  ) => {
+    if (!scrollElement || !onVisiblePhotoChange) {
+      return
+    }
 
-      const visiblePhoto = getFirstVisiblePhoto(
-        photos,
-        virtualizer,
-        scrollElement,
-      )
-      if (lastVisiblePhotoRef.current === visiblePhoto) {
-        return
-      }
+    const visiblePhoto = getFirstVisiblePhoto(
+      photos,
+      virtualizer,
+      scrollElement,
+    )
+    if (lastVisiblePhotoRef.current === visiblePhoto) {
+      return
+    }
 
-      lastVisiblePhotoRef.current = visiblePhoto
-      onVisiblePhotoChange(visiblePhoto)
-    },
-    [onVisiblePhotoChange, photos, scrollElement],
-  )
+    lastVisiblePhotoRef.current = visiblePhoto
+    onVisiblePhotoChange(visiblePhoto)
+  }
 
   // TanStack Virtual owns its imperative state and cannot be memoized safely.
   // eslint-disable-next-line react-hooks/incompatible-library

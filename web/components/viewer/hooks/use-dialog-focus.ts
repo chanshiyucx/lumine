@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useEffectEvent, type RefObject } from 'react'
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -24,6 +24,10 @@ export function useDialogFocus(
   dialogRef: RefObject<HTMLElement | null>,
   getRestoreFocusElement?: () => HTMLElement | null,
 ) {
+  const getLatestRestoreFocusElement = useEffectEvent(
+    () => getRestoreFocusElement?.() ?? null,
+  )
+
   useEffect(() => {
     const previouslyFocused =
       document.activeElement instanceof HTMLElement
@@ -78,12 +82,12 @@ export function useDialogFocus(
       document.removeEventListener('keydown', handleKeyDown)
 
       const restoreTarget =
-        getRestoreFocusElement?.() ??
+        getLatestRestoreFocusElement() ??
         (previouslyFocused?.isConnected ? previouslyFocused : null)
 
       window.requestAnimationFrame(() => {
         restoreTarget?.focus({ preventScroll: true })
       })
     }
-  }, [dialogRef, getRestoreFocusElement])
+  }, [dialogRef])
 }

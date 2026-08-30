@@ -10,7 +10,6 @@ import {
 import { m } from 'motion/react'
 import Image from 'next/image'
 import {
-  useCallback,
   useEffect,
   useId,
   useRef,
@@ -128,12 +127,8 @@ export function ViewerShareDialog({
   const ogPreviewUrl = getPhotoOgPath(photo.slug)
   const canUseNativeShare =
     typeof navigator !== 'undefined' && typeof navigator.share === 'function'
-  const getReturnFocusElement = useCallback(
-    () => returnFocusRef.current,
-    [returnFocusRef],
-  )
 
-  useDialogFocus(dialogRef, getReturnFocusElement)
+  useDialogFocus(dialogRef, () => returnFocusRef.current)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

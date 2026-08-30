@@ -48,37 +48,28 @@ export function useMobileViewerInteractions({
   const dismissY = useMotionValue(0)
   const inspectorProgress = useMotionValue(0)
   const closingRef = useRef(false)
-  const animationsRef = useRef<ReturnType<typeof animate>[]>([])
   const metrics = getMobileGestureMetrics(viewport.height)
 
   const stopAnimations = () => {
-    animationsRef.current.forEach((animation) => animation.stop())
-    animationsRef.current = []
-  }
-
-  const registerAnimation = (animation: ReturnType<typeof animate>) => {
-    animationsRef.current.push(animation)
-    return animation
+    dismissX.stop()
+    dismissY.stop()
+    inspectorProgress.stop()
   }
 
   const settle = (value: typeof dismissX, target: number, velocity = 0) => {
-    return registerAnimation(
-      animate(value, target, {
-        ...VIEWER_MOTION.settle,
-        velocity,
-      }),
-    )
+    return animate(value, target, {
+      ...VIEWER_MOTION.settle,
+      velocity,
+    })
   }
 
   const settleInspector = (open: boolean, velocity = 0) => {
     stopAnimations()
     setInfoOpen(open)
-    registerAnimation(
-      animate(inspectorProgress, open ? 1 : 0, {
-        ...VIEWER_MOTION.inspector[open ? 'open' : 'close'],
-        velocity: getInspectorSettleVelocity(open, velocity),
-      }),
-    )
+    animate(inspectorProgress, open ? 1 : 0, {
+      ...VIEWER_MOTION.inspector[open ? 'open' : 'close'],
+      velocity: getInspectorSettleVelocity(open, velocity),
+    })
     settle(dismissX, 0)
     settle(dismissY, 0)
   }
@@ -104,13 +95,19 @@ export function useMobileViewerInteractions({
   }, [enabled])
 
   useEffect(() => {
+    return () => {
+      dismissX.stop()
+      dismissY.stop()
+      inspectorProgress.stop()
+    }
+  }, [dismissX, dismissY, inspectorProgress])
+
+  useEffect(() => {
     if (!enabled) {
-      animationsRef.current.forEach((animation) => animation.stop())
-      animationsRef.current = []
       closingRef.current = false
-      dismissX.set(0)
-      dismissY.set(0)
-      inspectorProgress.set(infoOpen ? 1 : 0)
+      dismissX.jump(0)
+      dismissY.jump(0)
+      inspectorProgress.jump(infoOpen ? 1 : 0)
     }
   }, [dismissX, dismissY, enabled, infoOpen, inspectorProgress])
 
@@ -130,35 +127,31 @@ export function useMobileViewerInteractions({
       viewport.height * 0.42,
     )
 
-    registerAnimation(
-      animate(dismissX, targetX, {
-        type: 'spring',
-        duration: 0.18,
-        bounce: 0.08,
-      }),
-    )
-    registerAnimation(
-      animate(dismissY, targetY, {
-        type: 'spring',
-        duration: 0.18,
-        bounce: 0.04,
-        onComplete: () => {
-          const presentation = getDismissPresentation(
-            targetX,
-            targetY,
-            metrics.dismissTravel,
-            viewport.width,
-          )
-          onDismiss({
-            borderRadius: presentation.borderRadius,
-            rotate: presentation.rotate,
-            scale: presentation.scale,
-            translateX: targetX,
-            translateY: targetY,
-          })
-        },
-      }),
-    )
+    animate(dismissX, targetX, {
+      type: 'spring',
+      duration: 0.18,
+      bounce: 0.08,
+    })
+    animate(dismissY, targetY, {
+      type: 'spring',
+      duration: 0.18,
+      bounce: 0.04,
+      onComplete: () => {
+        const presentation = getDismissPresentation(
+          targetX,
+          targetY,
+          metrics.dismissTravel,
+          viewport.width,
+        )
+        onDismiss({
+          borderRadius: presentation.borderRadius,
+          rotate: presentation.rotate,
+          scale: presentation.scale,
+          translateX: targetX,
+          translateY: targetY,
+        })
+      },
+    })
   }
 
   const bindStage = useDrag(

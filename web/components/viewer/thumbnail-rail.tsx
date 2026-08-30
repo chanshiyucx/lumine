@@ -1,6 +1,13 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useReducedMotion } from 'motion/react'
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { ThumbnailImage } from '@/components/photo'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
@@ -79,15 +86,16 @@ export const ThumbnailRail = memo(function ThumbnailRail({
 
   useHorizontalWheelScroll(railViewportRef)
 
-  const estimateSize = useCallback(
-    (index: number) => {
-      const photo = photos[index]
+  const estimateSize = (index: number) => {
+    const photo = photos[index]
 
-      return photo
-        ? Math.max(1, Math.round(thumbnailHeight * photo.aspectRatio))
-        : thumbnailHeight
-    },
-    [photos, thumbnailHeight],
+    return photo
+      ? Math.max(1, Math.round(thumbnailHeight * photo.aspectRatio))
+      : thumbnailHeight
+  }
+  const getItemKey = useCallback(
+    (index: number) => photos[index]?.id ?? index,
+    [photos],
   )
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual manages imperative scroll state internally and stays local to this component.
@@ -97,8 +105,12 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     estimateSize,
     horizontal: true,
     overscan: THUMBNAIL_OVERSCAN,
-    getItemKey: (index) => photos[index]?.id ?? index,
+    getItemKey,
   })
+
+  useLayoutEffect(() => {
+    virtualizer.measure()
+  }, [thumbnailHeight, virtualizer])
 
   useEffect(() => {
     if (photos.length === 0) {
