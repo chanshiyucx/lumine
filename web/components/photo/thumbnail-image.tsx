@@ -46,7 +46,9 @@ export function ThumbnailImage({
     !fadeIn ||
     loadedUrl === thumbnailUrl ||
     loadedThumbnailUrls.has(thumbnailUrl)
-  const objectFitClassName =
+  const placeholderFitClassName =
+    fit === 'contain' ? 'object-fill' : 'object-cover'
+  const imageFitClassName =
     fit === 'contain' ? 'object-contain' : 'object-cover'
 
   const handleLoad: NonNullable<ImageProps['onLoad']> = (event) => {
@@ -65,7 +67,7 @@ export function ThumbnailImage({
     >
       <ThumbHashImage
         thumbHash={photo.thumbHash}
-        className={objectFitClassName}
+        className={placeholderFitClassName}
       />
       {loadImage ? (
         <Image
@@ -76,7 +78,7 @@ export function ThumbnailImage({
           height={photo.thumbnail.height}
           className={cn(
             'absolute inset-0 size-full',
-            objectFitClassName,
+            imageFitClassName,
             fadeIn &&
               'transition-opacity duration-300 ease-out motion-reduce:transition-none',
             isLoaded ? 'opacity-100' : 'opacity-0',
