@@ -20,12 +20,18 @@ export interface ImageLayout {
   viewportWidth: number
 }
 
-export interface PendingLayoutTransform {
-  centerOffsetX: number
-  centerOffsetY: number
-  layout: ImageLayout
-  pixelScale: number
-}
+export type PendingLayoutTransform =
+  | {
+      layout: ImageLayout
+      mode: 'fit'
+    }
+  | {
+      centerOffsetX: number
+      centerOffsetY: number
+      layout: ImageLayout
+      mode: 'zoom'
+      pixelScale: number
+    }
 
 export interface PositionBounds {
   contentHeight: number
@@ -125,6 +131,10 @@ export function preserveLayoutTransform(
   nextLayout: ImageLayout,
   transform: TransformState,
 ): PendingLayoutTransform {
+  if (Math.abs(transform.scale - INITIAL_SCALE) < ZOOM_STATE_EPSILON) {
+    return { layout: nextLayout, mode: 'fit' }
+  }
+
   return {
     centerOffsetX:
       transform.positionX +
@@ -135,6 +145,7 @@ export function preserveLayoutTransform(
       (previousLayout.contentHeight * transform.scale) / 2 -
       previousLayout.viewportHeight / 2,
     layout: nextLayout,
+    mode: 'zoom',
     pixelScale: transform.scale * previousLayout.fitScale,
   }
 }
@@ -143,6 +154,14 @@ export function resolveLayoutTransform(
   pendingTransform: PendingLayoutTransform,
   layout: ImageLayout,
 ): TransformState {
+  if (pendingTransform.mode === 'fit') {
+    return {
+      positionX: (layout.viewportWidth - layout.contentWidth) / 2,
+      positionY: (layout.viewportHeight - layout.contentHeight) / 2,
+      scale: INITIAL_SCALE,
+    }
+  }
+
   const minimumPixelScale = layout.fitScale * MIN_SCALE
   const maximumPixelScale =
     layout.fitScale * getMaximumRelativeScale(layout.fitScale)

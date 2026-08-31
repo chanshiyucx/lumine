@@ -111,6 +111,9 @@ export function ViewerInfoPanel({
 }: ViewerInfoPanelProps) {
   const isMobilePresentation = presentation.mode === 'mobile'
   const isInteractive = isOpen && isViewerVisible && isViewerInteractive
+  const panelMotionStyle: MotionStyle = isMobilePresentation
+    ? presentation.style
+    : { opacity: 1, y: 0 }
 
   return (
     <aside
@@ -158,9 +161,7 @@ export function ViewerInfoPanel({
           )}
           style={{
             backgroundColor: 'rgb(40 40 40 / 0.56)',
-            ...(presentation.mode === 'mobile'
-              ? presentation.style
-              : undefined),
+            ...panelMotionStyle,
           }}
         >
           <div className="relative flex min-h-0 flex-1 flex-col">
