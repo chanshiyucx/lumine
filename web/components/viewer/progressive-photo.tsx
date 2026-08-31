@@ -1,3 +1,4 @@
+import { m, useReducedMotion } from 'motion/react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
@@ -27,6 +28,9 @@ export function ProgressivePhoto({
   onZoomStateChange,
   shouldMountInteractiveImage = true,
 }: ProgressivePhotoProps) {
+  const reduceMotion = useReducedMotion()
+  const [loadedSource, setLoadedSource] = useState<string | null>(null)
+  const [settledSource, setSettledSource] = useState<string | null>(null)
   const [scaleLabel, setScaleLabel] = useState(() => formatScaleLabel(1))
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
   const scaleIndicatorTimeoutRef = useRef<number | null>(null)
@@ -38,6 +42,30 @@ export function ProgressivePhoto({
     state.status === 'cached' ||
     state.status === 'decoding' ||
     state.status === 'ready'
+  const highResolutionSource = hasHighResolutionPhoto ? state.src : null
+  const isOriginalReady = state.status === 'ready' && loadedSource === state.src
+  const isOriginalSettled = isOriginalReady && settledSource === state.src
+  const isOriginalDisplayed =
+    isActive && shouldMountInteractiveImage && isOriginalSettled
+
+  const handleOriginalLoad = () => {
+    if (!highResolutionSource) {
+      return
+    }
+
+    setLoadedSource(highResolutionSource)
+    markDecoded()
+
+    if (reduceMotion) {
+      setSettledSource(highResolutionSource)
+    }
+  }
+
+  const handleOriginalAnimationComplete = () => {
+    if (state.status === 'ready' && loadedSource === state.src) {
+      setSettledSource(state.src)
+    }
+  }
 
   const handleZoomChange = (scale: number) => {
     const nextScaleLabel = formatScaleLabel(scale)
@@ -67,23 +95,32 @@ export function ProgressivePhoto({
 
   return (
     <div className="relative size-full overflow-hidden">
-      <Image
-        src={photo.thumbnail.url}
-        alt=""
-        aria-hidden
-        width={photo.thumbnail.width}
-        height={photo.thumbnail.height}
-        className="absolute inset-0 size-full object-contain"
-        loading="eager"
-        unoptimized
-      />
+      {!isOriginalDisplayed && (
+        <Image
+          src={photo.thumbnail.url}
+          alt=""
+          aria-hidden
+          width={photo.thumbnail.width}
+          height={photo.thumbnail.height}
+          className="absolute inset-0 size-full object-contain"
+          loading="eager"
+          unoptimized
+        />
+      )}
 
       {hasHighResolutionPhoto && isActive && shouldMountInteractiveImage && (
-        <div
+        <m.div
           key={`${photo.id}:${state.src}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isOriginalReady ? 1 : 0 }}
+          transition={{
+            duration: reduceMotion ? 0 : 0.2,
+            ease: 'easeOut',
+          }}
+          onAnimationComplete={handleOriginalAnimationComplete}
           className={cn(
-            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none',
-            state.status === 'ready' && 'pointer-events-auto opacity-100',
+            'pointer-events-none absolute inset-0',
+            isOriginalSettled && 'pointer-events-auto',
           )}
         >
           <ZoomableImage
@@ -91,12 +128,12 @@ export function ProgressivePhoto({
             alt={photo.title}
             width={photo.original.width}
             height={photo.original.height}
-            onLoad={markDecoded}
+            onLoad={handleOriginalLoad}
             onZoomChange={handleZoomChange}
             onZoomStateChange={onZoomStateChange}
             onError={markRenderFailed}
           />
-        </div>
+        </m.div>
       )}
 
       <LoadingIndicator state={state} />
