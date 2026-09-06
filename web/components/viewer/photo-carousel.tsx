@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/virtual'
 import type { Photo } from '@/lib/photo'
+import { useSwiperResize } from './hooks/use-swiper-resize'
 import { ProgressivePhoto } from './progressive-photo'
 
 interface PhotoCarouselProps {
@@ -42,6 +43,8 @@ export function PhotoCarousel({
     zoomState.photoId === activePhotoId && zoomState.isZoomed
   const allowTouchMove =
     isInteractionEnabled && isMobile && !isImageZoomed && !isSwipeDisabled
+
+  useSwiperResize(swiperRef)
 
   useEffect(() => {
     const swiper = swiperRef.current
@@ -82,6 +85,8 @@ export function PhotoCarousel({
       allowTouchMove={allowTouchMove}
       resistanceRatio={0.65}
       preventInteractionOnTransition
+      resizeObserver={false}
+      updateOnWindowResize={false}
       virtual
       a11y={{
         enabled: true,

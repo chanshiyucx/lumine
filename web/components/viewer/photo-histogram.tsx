@@ -367,7 +367,7 @@ export function PhotoHistogram({
           gradient.addColorStop(0, `rgba(${config.rgb}, ${config.alpha})`)
           gradient.addColorStop(
             1,
-            `rgba(${config.rgb}, ${config.alpha * 0.12})`,
+            `rgba(${config.rgb}, ${config.alpha * 0.15})`,
           )
         }
       }

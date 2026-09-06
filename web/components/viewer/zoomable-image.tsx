@@ -40,12 +40,12 @@ export function ZoomableImage({
     containerRef,
     effectiveMaxScale,
     handleImageLoad,
+    handleInit,
     handleMouseDoubleClick,
     handleTouchCancel,
     handleTouchEnd,
     handleTouchMove,
     handleTouchStart,
-    imageLayout,
     imageRef,
     isZoomed,
     notifyZoomChange,
@@ -83,17 +83,14 @@ export function ZoomableImage({
           velocityDisabled: true,
         }}
         limitToBounds
-        centerOnInit
         centerZoomedOut
         smooth={false}
-        onInit={(transform) => notifyZoomChange(transform, true)}
+        onInit={handleInit}
         onTransform={(transform) => notifyZoomChange(transform)}
       >
         <TransformComponent
           wrapperStyle={TRANSFORM_WRAPPER_STYLE}
           contentStyle={{
-            width: imageLayout?.contentWidth ?? '100%',
-            height: imageLayout?.contentHeight ?? '100%',
             willChange: 'transform',
           }}
         >

@@ -27,7 +27,6 @@ import {
   WHEEL_STEP,
   ZOOM_STATE_EPSILON,
   type ImageLayout,
-  type PendingLayoutTransform,
 } from '../lib/zoomable-image'
 
 interface UseZoomableImageOptions {
@@ -56,24 +55,28 @@ export function useZoomableImage({
   const transformRef = useRef<ReactZoomPanPinchRef | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const imageLayoutRef = useRef<ImageLayout | null>(null)
-  const pendingLayoutTransformRef = useRef<PendingLayoutTransform | null>(null)
   const lastNotifiedPixelScaleRef = useRef<number | null>(null)
   const lastZoomedStateRef = useRef(false)
   const isOriginalSizeRef = useRef(false)
   const [doubleTapRecognizer] = useState(() => new DoubleTapRecognizer())
-  const [imageLayout, setImageLayout] = useState<ImageLayout | null>(null)
+  const [effectiveMaxScale, setEffectiveMaxScale] = useState(MAX_SCALE)
   const [isZoomed, setIsZoomed] = useState(false)
-  const effectiveMaxScale = imageLayout
-    ? getMaximumRelativeScale(imageLayout.fitScale)
-    : MAX_SCALE
 
   const measureImageLayout = (observedViewport?: ViewportSize) => {
     const container = containerRef.current
     const image = imageRef.current
+    const transform = transformRef.current
+    const content = transform?.instance.contentComponent
     const sourceWidth = width > 0 ? width : (image?.naturalWidth ?? 0)
     const sourceHeight = height > 0 ? height : (image?.naturalHeight ?? 0)
 
-    if (!container || sourceWidth <= 0 || sourceHeight <= 0) {
+    if (
+      !container ||
+      !transform ||
+      !content ||
+      sourceWidth <= 0 ||
+      sourceHeight <= 0
+    ) {
       return
     }
 
@@ -95,19 +98,24 @@ export function useZoomableImage({
       return
     }
 
-    const transform = transformRef.current
-    if (previousLayout && transform) {
-      pendingLayoutTransformRef.current = preserveLayoutTransform(
-        previousLayout,
-        nextLayout,
-        transform.state,
-      )
-    } else {
-      pendingLayoutTransformRef.current = null
-    }
+    const nextTransform = resolveLayoutTransform(
+      previousLayout
+        ? preserveLayoutTransform(previousLayout, nextLayout, transform.state)
+        : { layout: nextLayout, mode: 'fit' },
+      nextLayout,
+    )
 
     imageLayoutRef.current = nextLayout
-    setImageLayout(nextLayout)
+    // Keep content size and transform in the same paint, outside React's render cycle.
+    content.style.width = `${nextLayout.contentWidth}px`
+    content.style.height = `${nextLayout.contentHeight}px`
+    transform.setTransform(
+      nextTransform.positionX,
+      nextTransform.positionY,
+      nextTransform.scale,
+      0,
+    )
+    setEffectiveMaxScale(getMaximumRelativeScale(nextLayout.fitScale))
   }
   const measureImageLayoutFromEffect = useEffectEvent(measureImageLayout)
 
@@ -132,29 +140,6 @@ export function useZoomableImage({
 
     return () => observer.disconnect()
   }, [])
-
-  useLayoutEffect(() => {
-    const pendingTransform = pendingLayoutTransformRef.current
-    const transform = transformRef.current
-
-    if (
-      !pendingTransform ||
-      pendingTransform.layout !== imageLayout ||
-      !transform
-    ) {
-      return
-    }
-
-    const nextTransform = resolveLayoutTransform(pendingTransform, imageLayout)
-
-    pendingLayoutTransformRef.current = null
-    transform.setTransform(
-      nextTransform.positionX,
-      nextTransform.positionY,
-      nextTransform.scale,
-      0,
-    )
-  }, [imageLayout])
 
   const getMetrics = (requestedTransform?: ReactZoomPanPinchRef | null) =>
     getImageMetrics(
@@ -203,7 +188,10 @@ export function useZoomableImage({
       return
     }
 
-    const targetScale = clamp(requestedScale, MIN_SCALE, effectiveMaxScale)
+    const maxScale = imageLayoutRef.current
+      ? getMaximumRelativeScale(imageLayoutRef.current.fitScale)
+      : MAX_SCALE
+    const targetScale = clamp(requestedScale, MIN_SCALE, maxScale)
     const currentScale = transform.state.scale
     if (targetScale === currentScale) {
       return
@@ -307,6 +295,12 @@ export function useZoomableImage({
     onLoad?.()
   }
 
+  const handleInit = (transform: ReactZoomPanPinchRef) => {
+    transformRef.current = transform
+    measureImageLayout()
+    notifyZoomChange(transform, true)
+  }
+
   const handleMouseDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
     event.preventDefault()
     performDoubleClickAction(event.clientX, event.clientY)
@@ -345,12 +339,12 @@ export function useZoomableImage({
     containerRef,
     effectiveMaxScale,
     handleImageLoad,
+    handleInit,
     handleMouseDoubleClick,
     handleTouchCancel: () => doubleTapRecognizer.reset(),
     handleTouchEnd,
     handleTouchMove,
     handleTouchStart,
-    imageLayout,
     imageRef,
     isZoomed,
     notifyZoomChange,
