@@ -17,19 +17,21 @@ export function useProgressivePhoto(
   const resourceKey = photo.original.url
   const subscribe = useCallback(
     (listener: () => void) =>
-      photoResourceStore.subscribe(resourceKey, listener),
-    [resourceKey],
+      isActive ? photoResourceStore.subscribe(resourceKey, listener) : () => {},
+    [isActive, resourceKey],
   )
   const getSnapshot = useCallback(
-    () => photoResourceStore.getSnapshot(resourceKey),
-    [resourceKey],
+    () =>
+      isActive
+        ? photoResourceStore.getSnapshot(resourceKey)
+        : getIdlePhotoResourceState(),
+    [isActive, resourceKey],
   )
-  const storedState = useSyncExternalStore(
+  const state = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getIdlePhotoResourceState,
   )
-  const state = isActive ? storedState : getIdlePhotoResourceState()
 
   useEffect(() => {
     if (!isActive) {

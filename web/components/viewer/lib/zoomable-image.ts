@@ -20,19 +20,6 @@ export interface ImageLayout {
   viewportWidth: number
 }
 
-export type PendingLayoutTransform =
-  | {
-      layout: ImageLayout
-      mode: 'fit'
-    }
-  | {
-      centerOffsetX: number
-      centerOffsetY: number
-      layout: ImageLayout
-      mode: 'zoom'
-      pixelScale: number
-    }
-
 export interface PositionBounds {
   contentHeight: number
   contentWidth: number
@@ -126,35 +113,15 @@ export function constrainPosition(
   }
 }
 
-export function preserveLayoutTransform(
-  previousLayout: ImageLayout,
-  nextLayout: ImageLayout,
-  transform: TransformState,
-): PendingLayoutTransform {
-  if (Math.abs(transform.scale - INITIAL_SCALE) < ZOOM_STATE_EPSILON) {
-    return { layout: nextLayout, mode: 'fit' }
-  }
-
-  return {
-    centerOffsetX:
-      transform.positionX +
-      (previousLayout.contentWidth * transform.scale) / 2 -
-      previousLayout.viewportWidth / 2,
-    centerOffsetY:
-      transform.positionY +
-      (previousLayout.contentHeight * transform.scale) / 2 -
-      previousLayout.viewportHeight / 2,
-    layout: nextLayout,
-    mode: 'zoom',
-    pixelScale: transform.scale * previousLayout.fitScale,
-  }
-}
-
-export function resolveLayoutTransform(
-  pendingTransform: PendingLayoutTransform,
+export function getResizedImageTransform(
+  previousLayout: ImageLayout | null,
   layout: ImageLayout,
+  transform: TransformState,
 ): TransformState {
-  if (pendingTransform.mode === 'fit') {
+  if (
+    !previousLayout ||
+    Math.abs(transform.scale - INITIAL_SCALE) < ZOOM_STATE_EPSILON
+  ) {
     return {
       positionX: (layout.viewportWidth - layout.contentWidth) / 2,
       positionY: (layout.viewportHeight - layout.contentHeight) / 2,
@@ -162,21 +129,29 @@ export function resolveLayoutTransform(
     }
   }
 
+  const centerOffsetX =
+    transform.positionX +
+    (previousLayout.contentWidth * transform.scale) / 2 -
+    previousLayout.viewportWidth / 2
+  const centerOffsetY =
+    transform.positionY +
+    (previousLayout.contentHeight * transform.scale) / 2 -
+    previousLayout.viewportHeight / 2
   const minimumPixelScale = layout.fitScale * MIN_SCALE
   const maximumPixelScale =
     layout.fitScale * getMaximumRelativeScale(layout.fitScale)
   const pixelScale = clamp(
-    pendingTransform.pixelScale,
+    transform.scale * previousLayout.fitScale,
     minimumPixelScale,
     maximumPixelScale,
   )
   const scale = pixelScale / layout.fitScale
   const position = constrainPosition(
     layout.viewportWidth / 2 +
-      pendingTransform.centerOffsetX -
+      centerOffsetX -
       (layout.contentWidth * scale) / 2,
     layout.viewportHeight / 2 +
-      pendingTransform.centerOffsetY -
+      centerOffsetY -
       (layout.contentHeight * scale) / 2,
     scale,
     {

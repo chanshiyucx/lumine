@@ -16,12 +16,11 @@ import {
   DOUBLE_CLICK_ANIMATION_TIME,
   getImageMetrics,
   getMaximumRelativeScale,
+  getResizedImageTransform,
   INITIAL_SCALE,
   isSameLayout,
   MAX_SCALE,
   MIN_SCALE,
-  preserveLayoutTransform,
-  resolveLayoutTransform,
   SCALE_EPSILON,
   TRANSFORM_ANIMATION,
   WHEEL_STEP,
@@ -98,11 +97,10 @@ export function useZoomableImage({
       return
     }
 
-    const nextTransform = resolveLayoutTransform(
-      previousLayout
-        ? preserveLayoutTransform(previousLayout, nextLayout, transform.state)
-        : { layout: nextLayout, mode: 'fit' },
+    const nextTransform = getResizedImageTransform(
+      previousLayout,
       nextLayout,
+      transform.state,
     )
 
     imageLayoutRef.current = nextLayout
