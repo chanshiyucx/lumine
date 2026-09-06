@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { CaptureSettingChip, ThumbnailImage } from '@/components/photo'
 import { getAlbumDescriptor } from '@/lib/albums'
 import type { Photo } from '@/lib/photo'
@@ -11,7 +12,7 @@ interface PhotoMasonryItemProps {
   onOpen: (index: number, triggerElement: HTMLElement) => void
 }
 
-export function PhotoMasonryItem({
+export const PhotoMasonryItem = memo(function PhotoMasonryItem({
   photo,
   index,
   imageLoading,
@@ -70,4 +71,4 @@ export function PhotoMasonryItem({
       </span>
     </button>
   )
-}
+})

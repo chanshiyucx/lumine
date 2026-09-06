@@ -22,6 +22,14 @@ export function subscribeGalleryHeaderDetail(listener: () => void) {
 }
 
 export function publishGalleryHeaderDetail(detail: GalleryHeaderDetail) {
+  if (
+    currentGalleryHeaderDetail.date === detail.date &&
+    currentGalleryHeaderDetail.location === detail.location &&
+    currentGalleryHeaderDetail.showDate === detail.showDate
+  ) {
+    return
+  }
+
   currentGalleryHeaderDetail = detail
 
   galleryHeaderDetailListeners.forEach((listener) => {
