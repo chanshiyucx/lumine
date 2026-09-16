@@ -2,12 +2,12 @@ import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 
 const DOUBLE_CLICK_SCALE_EPSILON = 0.01
 
-export const DOUBLE_CLICK_ANIMATION_TIME = 200
+export const DOUBLE_CLICK_ANIMATION_TIME = 260
 export const INITIAL_SCALE = 1
 export const MAX_SCALE = 20
 export const MIN_SCALE = 1
 export const SCALE_EPSILON = 0.0001
-export const TRANSFORM_ANIMATION = 'easeOutQuart'
+export const TRANSFORM_ANIMATION = 'easeOut'
 export const WHEEL_STEP = 0.1
 export const ZOOM_STATE_EPSILON = 0.01
 

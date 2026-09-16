@@ -88,19 +88,14 @@ export function ZoomableImage({
         onInit={handleInit}
         onTransform={(transform) => notifyZoomChange(transform)}
       >
-        <TransformComponent
-          wrapperStyle={TRANSFORM_WRAPPER_STYLE}
-          contentStyle={{
-            willChange: 'transform',
-          }}
-        >
+        <TransformComponent wrapperStyle={TRANSFORM_WRAPPER_STYLE}>
           <Image
             ref={imageRef}
             src={src}
             alt={alt}
             width={width}
             height={height}
-            className="block size-full object-contain"
+            className="block size-full object-contain will-change-transform"
             draggable={false}
             loading="eager"
             decoding="async"
