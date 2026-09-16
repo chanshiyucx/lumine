@@ -298,6 +298,7 @@ export function Viewer({
                       photos={photos}
                       activeIndex={activeIndex}
                       isMobile={isMobile}
+                      isZoomed={state.isZoomed}
                       isSwipeDisabled={mobile.infoOpen}
                       isInteractionEnabled={isInteractionEnabled}
                       onActiveIndexChange={goToPhoto}

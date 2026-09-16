@@ -147,7 +147,8 @@ export function useViewerController({
 
   const select = (index: number) => {
     const photo = photos[index]
-    if (!photo || stateRef.current.phase !== 'open') {
+    const current = stateRef.current
+    if (!photo || current.phase !== 'open' || current.activeIndex === index) {
       return
     }
 

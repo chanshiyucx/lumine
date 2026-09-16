@@ -73,7 +73,7 @@ export function reduceViewerState(
     }
 
     case 'select': {
-      if (state.phase !== 'open') {
+      if (state.phase !== 'open' || state.activeIndex === action.index) {
         return state
       }
 

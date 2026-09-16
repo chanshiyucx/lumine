@@ -12,37 +12,27 @@ interface PhotoCarouselProps {
   photos: Photo[]
   activeIndex: number
   isMobile: boolean
+  isZoomed: boolean
   isSwipeDisabled: boolean
   isInteractionEnabled: boolean
   onActiveIndexChange: (index: number) => void
   onZoomStateChange: (isZoomed: boolean) => void
 }
 
-interface ZoomState {
-  photoId: string | null
-  isZoomed: boolean
-}
-
 export function PhotoCarousel({
   photos,
   activeIndex,
   isMobile,
+  isZoomed,
   isSwipeDisabled,
   isInteractionEnabled,
   onActiveIndexChange,
   onZoomStateChange,
 }: PhotoCarouselProps) {
   const swiperRef = useRef<SwiperInstance | null>(null)
-  const activePhotoId = photos[activeIndex]?.id ?? null
-  const [zoomState, setZoomState] = useState<ZoomState>({
-    photoId: activePhotoId,
-    isZoomed: false,
-  })
-  const [initialPhotoId] = useState(activePhotoId)
-  const isImageZoomed =
-    zoomState.photoId === activePhotoId && zoomState.isZoomed
+  const [initialPhotoId] = useState(photos[activeIndex]?.id ?? null)
   const allowTouchMove =
-    isInteractionEnabled && isMobile && !isImageZoomed && !isSwipeDisabled
+    isInteractionEnabled && isMobile && !isZoomed && !isSwipeDisabled
 
   useSwiperResize(swiperRef)
 
@@ -58,20 +48,6 @@ export function PhotoCarousel({
       swiperRef.current.allowTouchMove = allowTouchMove
     }
   }, [allowTouchMove])
-
-  const handleZoomStateChange = (isZoomed: boolean) => {
-    setZoomState((current) => {
-      if (current.photoId === activePhotoId && current.isZoomed === isZoomed) {
-        return current
-      }
-
-      return {
-        photoId: activePhotoId,
-        isZoomed,
-      }
-    })
-    onZoomStateChange(isZoomed)
-  }
 
   return (
     <Swiper
@@ -118,7 +94,7 @@ export function PhotoCarousel({
               isActive={isActive}
               loadDelayMs={photo.id === initialPhotoId ? 0 : 150}
               shouldMountInteractiveImage={isInteractionEnabled}
-              onZoomStateChange={isActive ? handleZoomStateChange : undefined}
+              onZoomStateChange={isActive ? onZoomStateChange : undefined}
             />
           </SwiperSlide>
         )
