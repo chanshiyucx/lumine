@@ -16,6 +16,7 @@ import {
   DOUBLE_CLICK_ANIMATION_TIME,
   getImageMetrics,
   getMaximumRelativeScale,
+  getNextDoubleClickScale,
   getResizedImageTransform,
   INITIAL_SCALE,
   isSameLayout,
@@ -56,7 +57,6 @@ export function useZoomableImage({
   const imageLayoutRef = useRef<ImageLayout | null>(null)
   const lastNotifiedPixelScaleRef = useRef<number | null>(null)
   const lastZoomedStateRef = useRef(false)
-  const isOriginalSizeRef = useRef(false)
   const [doubleTapRecognizer] = useState(() => new DoubleTapRecognizer())
   const [effectiveMaxScale, setEffectiveMaxScale] = useState(MAX_SCALE)
   const [isZoomed, setIsZoomed] = useState(false)
@@ -234,21 +234,17 @@ export function useZoomableImage({
 
   const performDoubleClickAction = (clientX: number, clientY: number) => {
     const transform = transformRef.current
-    const metrics = getMetrics(transform)
-    if (!transform || !metrics) {
+    const layout = imageLayoutRef.current
+    if (!transform || !layout || layout.source !== src) {
       return
     }
 
-    const targetScale = isOriginalSizeRef.current
-      ? Math.max(MIN_SCALE, Math.min(effectiveMaxScale, 1))
-      : Math.max(MIN_SCALE, Math.min(effectiveMaxScale, 1 / metrics.fitScale))
+    const targetScale = getNextDoubleClickScale(layout, transform.state.scale)
 
     setScaleAtPoint(clientX, clientY, targetScale, DOUBLE_CLICK_ANIMATION_TIME)
-    isOriginalSizeRef.current = !isOriginalSizeRef.current
   }
 
   useEffect(() => {
-    isOriginalSizeRef.current = false
     lastNotifiedPixelScaleRef.current = null
     doubleTapRecognizer.reset()
   }, [doubleTapRecognizer, src])

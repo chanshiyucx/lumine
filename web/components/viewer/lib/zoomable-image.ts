@@ -1,5 +1,7 @@
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 
+const DOUBLE_CLICK_SCALE_EPSILON = 0.01
+
 export const DOUBLE_CLICK_ANIMATION_TIME = 200
 export const INITIAL_SCALE = 1
 export const MAX_SCALE = 20
@@ -47,6 +49,52 @@ export function clamp(value: number, minimum: number, maximum: number) {
 
 export function getMaximumRelativeScale(fitScale: number) {
   return Math.max(MAX_SCALE, 1 / fitScale)
+}
+
+function isSameScale(first: number, second: number) {
+  return Math.abs(first / second - 1) < DOUBLE_CLICK_SCALE_EPSILON
+}
+
+export function getNextDoubleClickScale(
+  layout: ImageLayout,
+  currentScale: number,
+) {
+  const originalScale = clamp(
+    1 / layout.fitScale,
+    MIN_SCALE,
+    getMaximumRelativeScale(layout.fitScale),
+  )
+  const fillScale =
+    Math.max(
+      layout.viewportWidth / layout.sourceWidth,
+      layout.viewportHeight / layout.sourceHeight,
+    ) / layout.fitScale
+  const stages = [INITIAL_SCALE]
+
+  if (
+    fillScale < originalScale &&
+    !isSameScale(fillScale, INITIAL_SCALE) &&
+    !isSameScale(fillScale, originalScale)
+  ) {
+    stages.push(fillScale)
+  }
+
+  if (!isSameScale(originalScale, stages.at(-1)!)) {
+    stages.push(originalScale)
+  }
+
+  const currentStage = stages.findIndex((stage) =>
+    isSameScale(currentScale, stage),
+  )
+  if (currentStage >= 0) {
+    return stages[(currentStage + 1) % stages.length]
+  }
+
+  return (
+    stages.find(
+      (stage) => stage > currentScale * (1 + DOUBLE_CLICK_SCALE_EPSILON),
+    ) ?? INITIAL_SCALE
+  )
 }
 
 export function calculateImageLayout({
