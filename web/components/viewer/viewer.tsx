@@ -19,7 +19,7 @@ import {
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
 import { resolveSharedPhotoTransition } from './lib/shared-photo-transition'
 import { VIEWER_MOTION } from './lib/viewer-motion'
-import type { ViewerState } from './lib/viewer-state'
+import type { MountedViewerState } from './lib/viewer-state'
 import { PhotoCarousel } from './photo-carousel'
 import { SharedPhotoTransition } from './transition/shared-photo-transition'
 import {
@@ -44,7 +44,7 @@ import { ViewerShareDialog } from './viewer-share-dialog'
 
 interface ViewerProps {
   photos: Photo[]
-  state: ViewerState
+  state: MountedViewerState
   getRestoreFocusElement: () => HTMLElement | null
   onClose: () => void
   onActiveIndexChange: (index: number) => void
@@ -77,7 +77,7 @@ export function Viewer({
   )
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const mediaStageRef = useRef<HTMLElement | null>(null)
-  const activeIndex = state.activeIndex ?? 0
+  const activeIndex = state.activeIndex
   const currentPhoto = photos[activeIndex]
   const isInteractionEnabled = state.phase === 'open'
   const isShareDialogPresent = isShareDialogOpen || isShareDialogExiting

@@ -34,7 +34,8 @@ export function PhotoGallery({
     photos,
     initialPhotoSlug,
   })
-  const isViewerMounted = viewer.state.activeIndex !== null
+  const viewerState = viewer.state
+  const isViewerMounted = viewerState.phase !== 'closed'
   const hasFixedHeader = fixedHeaderDetail !== undefined
   const handleVisiblePhotoChange = useGalleryHeader(
     scrollElement,
@@ -83,7 +84,7 @@ export function PhotoGallery({
       {isViewerMounted && (
         <Viewer
           photos={photos}
-          state={viewer.state}
+          state={viewerState}
           getRestoreFocusElement={viewer.getRestoreFocusElement}
           onActiveIndexChange={viewer.select}
           onClose={viewer.close}

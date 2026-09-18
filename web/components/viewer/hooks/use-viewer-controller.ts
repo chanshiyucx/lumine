@@ -167,9 +167,12 @@ export function useViewerController({
 
   const beginClose = () => {
     const current = stateRef.current
-    const photo =
-      current.activeIndex === null ? null : photos[current.activeIndex]
-    if (!photo || current.phase === 'closed' || current.phase === 'exiting') {
+    if (current.phase === 'closed' || current.phase === 'exiting') {
+      return false
+    }
+
+    const photo = photos[current.activeIndex]
+    if (!photo) {
       return false
     }
 
@@ -236,7 +239,7 @@ export function useViewerController({
       const photo = photos[index]
       const triggerElement = resolveViewerTrigger(
         photo.id,
-        current.triggerElement,
+        current.phase === 'closed' ? null : current.triggerElement,
       )
       restoreFocusElementRef.current = triggerElement
       applyAction({

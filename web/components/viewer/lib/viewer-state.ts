@@ -2,15 +2,23 @@ export type ViewerPhase = 'closed' | 'entering' | 'open' | 'exiting'
 export type ViewerEntryMode = 'none' | 'fade' | 'shared'
 export type ViewerExitMode = 'fade' | 'shared'
 
-export interface ViewerState {
-  activeIndex: number | null
+export interface ClosedViewerState {
+  activeIndex: null
+  operationId: number
+  phase: 'closed'
+}
+
+export interface MountedViewerState {
+  activeIndex: number
   entryMode: ViewerEntryMode
   exitMode: ViewerExitMode | null
   isZoomed: boolean
   operationId: number
-  phase: ViewerPhase
+  phase: Exclude<ViewerPhase, 'closed'>
   triggerElement: HTMLElement | null
 }
+
+export type ViewerState = ClosedViewerState | MountedViewerState
 
 export type ViewerAction =
   | {
@@ -29,19 +37,15 @@ export type ViewerAction =
   | { type: 'entry-complete'; operationId: number }
   | { type: 'exit-complete'; operationId: number }
 
-export function createClosedViewerState(): ViewerState {
+export function createClosedViewerState(): ClosedViewerState {
   return {
     activeIndex: null,
-    entryMode: 'none',
-    exitMode: null,
-    isZoomed: false,
     operationId: 0,
     phase: 'closed',
-    triggerElement: null,
   }
 }
 
-export function createDirectViewerState(index: number): ViewerState {
+export function createDirectViewerState(index: number): MountedViewerState {
   return {
     activeIndex: index,
     entryMode: 'none',
@@ -138,12 +142,8 @@ export function reduceViewerState(
 
       return {
         activeIndex: null,
-        entryMode: 'none',
-        exitMode: null,
-        isZoomed: false,
         operationId: state.operationId,
         phase: 'closed',
-        triggerElement: null,
       }
     }
   }
