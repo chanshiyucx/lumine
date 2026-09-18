@@ -48,7 +48,7 @@ function ShareActionButton({
   return (
     <button
       type="button"
-      className="border-overlay bg-overlay/45 text-subtle hover:border-muted/60 hover:bg-overlay/65 hover:text-text focus-visible:outline-iris flex min-w-0 flex-col items-center gap-1.5 rounded border px-2 py-2.5 text-xs transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      className="border-overlay bg-overlay/45 text-subtle hover:border-muted/60 hover:bg-overlay/65 hover:text-text focus-visible:outline-iris flex min-w-0 flex-col items-center gap-1.5 rounded border px-2 py-2.5 text-xs transition-[color,background-color,border-color,opacity] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={disabled}
       onClick={onClick}
     >
@@ -202,13 +202,13 @@ export function ViewerShareDialog({
   ) => {
     setDownloadTarget(target)
 
-    try {
-      await downloadFile(url, fileName)
-    } catch {
-      window.open(url, '_blank', 'noopener,noreferrer')
-    } finally {
-      setDownloadTarget(null)
-    }
+    await downloadFile(url, fileName)
+      .catch(() => {
+        window.open(url, '_blank', 'noopener,noreferrer')
+      })
+      .finally(() => {
+        setDownloadTarget(null)
+      })
   }
 
   const shareText = `${photo.title} — ${siteConfig.name}`
@@ -262,17 +262,17 @@ export function ViewerShareDialog({
             <span className="min-w-0 flex-1 truncate text-xs">{shareUrl}</span>
             <button
               type="button"
-              className="border-overlay text-subtle hover:text-text focus-visible:outline-iris shrink-0 rounded-lg border p-1.5 transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="border-overlay text-subtle hover:text-text focus-visible:outline-iris shrink-0 rounded-lg border p-1.5 transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2"
               onClick={handleCopyLink}
               aria-label={copyStatus === 'copied' ? 'Link copied' : 'Copy link'}
               disabled={copyStatus === 'copied'}
             >
               <span className="relative block size-4">
                 <Copy
-                  className={`absolute inset-0 size-4 transition-all duration-300 ${copyStatus === 'copied' ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+                  className={`absolute inset-0 size-4 transition-[opacity,transform] duration-300 ${copyStatus === 'copied' ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
                 />
                 <Check
-                  className={`text-foam absolute inset-0 size-4 transition-all duration-300 ${copyStatus === 'copied' ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                  className={`text-foam absolute inset-0 size-4 transition-[opacity,transform] duration-300 ${copyStatus === 'copied' ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
                 />
               </span>
             </button>
