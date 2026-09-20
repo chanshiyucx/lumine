@@ -1,39 +1,31 @@
 import type { Transition } from 'motion/react'
 
-const VIEWER_EASE_OUT = [0.22, 1, 0.36, 1] as const
+const VIEWER_OUT_EASE = [0.22, 1, 0.36, 1] as const
 const VIEWER_EXIT_EASE = [0.4, 0, 0.2, 1] as const
+const VIEWER_SURFACE_TRANSITIONS = {
+  enter: {
+    type: 'spring',
+    duration: 0.3,
+    bounce: 0,
+  } satisfies Transition,
+  exit: {
+    type: 'spring',
+    duration: 0.26,
+    bounce: 0,
+  } satisfies Transition,
+}
 
 export const VIEWER_MOTION = {
   backdropEnter: { duration: 0.18, ease: 'easeOut' } satisfies Transition,
   backdropExit: { duration: 0.24, ease: 'easeOut' } satisfies Transition,
   photoSwitch: { duration: 0.3, ease: 'linear' } satisfies Transition,
   chrome: {
-    panel: {
-      enter: {
-        duration: 0.28,
-        ease: VIEWER_EASE_OUT,
-      } satisfies Transition,
-      exit: {
-        duration: 0.3,
-        ease: VIEWER_EXIT_EASE,
-      } satisfies Transition,
-    },
-    rail: {
-      enter: {
-        delay: 0.04,
-        duration: 0.24,
-        ease: VIEWER_EASE_OUT,
-      } satisfies Transition,
-      exit: {
-        delay: 0.04,
-        duration: 0.26,
-        ease: VIEWER_EXIT_EASE,
-      } satisfies Transition,
-    },
+    panel: VIEWER_SURFACE_TRANSITIONS,
+    rail: VIEWER_SURFACE_TRANSITIONS,
     toolbar: {
       enter: {
         duration: 0.12,
-        ease: VIEWER_EASE_OUT,
+        ease: VIEWER_OUT_EASE,
       } satisfies Transition,
       exit: {
         duration: 0.14,
@@ -58,11 +50,11 @@ export const VIEWER_MOTION = {
   sharedEntryHandoffDelay: 0.3,
   sharedEnter: {
     duration: 0.48,
-    ease: VIEWER_EASE_OUT,
+    ease: VIEWER_OUT_EASE,
   } satisfies Transition,
   sharedExit: {
     duration: 0.43,
-    ease: VIEWER_EASE_OUT,
+    ease: VIEWER_OUT_EASE,
   } satisfies Transition,
   settle: {
     type: 'spring',
