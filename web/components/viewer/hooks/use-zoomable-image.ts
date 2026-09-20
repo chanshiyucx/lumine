@@ -14,9 +14,9 @@ import {
   clamp,
   constrainPosition,
   DOUBLE_CLICK_ANIMATION_TIME,
+  getDoubleClickTargetScale,
   getImageMetrics,
   getMaximumRelativeScale,
-  getNextDoubleClickScale,
   getResizedImageTransform,
   INITIAL_SCALE,
   isSameLayout,
@@ -239,7 +239,7 @@ export function useZoomableImage({
       return
     }
 
-    const targetScale = getNextDoubleClickScale(layout, transform.state.scale)
+    const targetScale = getDoubleClickTargetScale(layout, transform.state.scale)
 
     setScaleAtPoint(clientX, clientY, targetScale, DOUBLE_CLICK_ANIMATION_TIME)
   }

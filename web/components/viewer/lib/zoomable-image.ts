@@ -1,6 +1,8 @@
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 
 const DOUBLE_CLICK_SCALE_EPSILON = 0.01
+const SMART_FILL_FALLBACK_SCALE = 2
+const SMART_FILL_MINIMUM_DELTA = 0.15
 
 export const DOUBLE_CLICK_ANIMATION_TIME = 260
 export const INITIAL_SCALE = 1
@@ -55,46 +57,34 @@ function isSameScale(first: number, second: number) {
   return Math.abs(first / second - 1) < DOUBLE_CLICK_SCALE_EPSILON
 }
 
-export function getNextDoubleClickScale(
-  layout: ImageLayout,
-  currentScale: number,
-) {
-  const originalScale = clamp(
-    1 / layout.fitScale,
-    MIN_SCALE,
-    getMaximumRelativeScale(layout.fitScale),
-  )
+function getSmartFillScale(layout: ImageLayout) {
+  const maximumScale = getMaximumRelativeScale(layout.fitScale)
+  const originalScale = clamp(1 / layout.fitScale, MIN_SCALE, maximumScale)
+  if (isSameScale(originalScale, INITIAL_SCALE)) {
+    return INITIAL_SCALE
+  }
+
   const fillScale =
     Math.max(
       layout.viewportWidth / layout.sourceWidth,
       layout.viewportHeight / layout.sourceHeight,
     ) / layout.fitScale
-  const stages = [INITIAL_SCALE]
+  const cappedFillScale = Math.min(fillScale, originalScale)
 
-  if (
-    fillScale < originalScale &&
-    !isSameScale(fillScale, INITIAL_SCALE) &&
-    !isSameScale(fillScale, originalScale)
-  ) {
-    stages.push(fillScale)
+  if (cappedFillScale >= INITIAL_SCALE * (1 + SMART_FILL_MINIMUM_DELTA)) {
+    return cappedFillScale
   }
 
-  if (!isSameScale(originalScale, stages.at(-1)!)) {
-    stages.push(originalScale)
-  }
+  return Math.min(SMART_FILL_FALLBACK_SCALE, originalScale)
+}
 
-  const currentStage = stages.findIndex((stage) =>
-    isSameScale(currentScale, stage),
-  )
-  if (currentStage >= 0) {
-    return stages[(currentStage + 1) % stages.length]
-  }
-
-  return (
-    stages.find(
-      (stage) => stage > currentScale * (1 + DOUBLE_CLICK_SCALE_EPSILON),
-    ) ?? INITIAL_SCALE
-  )
+export function getDoubleClickTargetScale(
+  layout: ImageLayout,
+  currentScale: number,
+) {
+  return isSameScale(currentScale, INITIAL_SCALE)
+    ? getSmartFillScale(layout)
+    : INITIAL_SCALE
 }
 
 export function calculateImageLayout({
