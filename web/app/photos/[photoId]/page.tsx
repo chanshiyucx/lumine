@@ -22,12 +22,8 @@ async function getRequestedPhoto(params: PhotoPageProps['params']) {
   return { photo, photos: photoCollection.photos }
 }
 
-export async function generateStaticParams() {
-  const photoCollection = await getPhotoCollection()
-
-  return photoCollection.photos.map((photo) => ({
-    photoId: photo.slug,
-  }))
+export function generateStaticParams() {
+  return []
 }
 
 export async function generateMetadata({
