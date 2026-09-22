@@ -105,7 +105,9 @@ async function fetchManifestJson() {
 
 export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
   const manifest = await fetchManifestJson()
-  const photos = manifest.photos.slice().reverse()
+  const photos = manifest.photos.toSorted(
+    (left, right) => Date.parse(right.takenAt) - Date.parse(left.takenAt),
+  )
 
   return {
     updatedAt: manifest.updatedAt,
