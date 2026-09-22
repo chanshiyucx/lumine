@@ -2,7 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { getAlbumDescriptor, type Album } from './albums'
 import { getPhotoCollection } from './photo/collection'
-import { decodePathSegment } from './url-segments'
+import { normalizePathSegment } from './url-segments'
 
 function compareAlbums(left: Album, right: Album) {
   return right.date.localeCompare(left.date)
@@ -31,6 +31,6 @@ export const getAlbumCatalog = cache(async () => {
   return {
     albums,
     getByKey: (albumKey: string) =>
-      albumsByKey.get(decodePathSegment(albumKey)),
+      albumsByKey.get(normalizePathSegment(albumKey)),
   }
 })

@@ -1,10 +1,9 @@
-import { notFound } from 'next/navigation'
-import { getAlbumCatalog } from '@/lib/album-catalog'
 import { formatReadableDate } from '@/lib/date'
 import { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from '@/lib/og/config'
 import { findCameraLabel } from '@/lib/og/metadata'
 import { renderMosaicOgImage, type StatItem } from '@/lib/og/mosaic'
 import { siteConfig } from '@/lib/site-config'
+import { loadAlbumRouteData } from './_data'
 
 interface AlbumOpenGraphImageProps {
   params: Promise<{ albumKey: string }>
@@ -18,12 +17,7 @@ export const runtime = 'nodejs'
 export default async function AlbumOpenGraphImage({
   params,
 }: AlbumOpenGraphImageProps) {
-  const [{ albumKey }, catalog] = await Promise.all([params, getAlbumCatalog()])
-  const album = catalog.getByKey(albumKey)
-
-  if (!album) {
-    notFound()
-  }
+  const album = await loadAlbumRouteData(params)
 
   const cameraLabel = findCameraLabel(album.photos)
   const formattedDate = formatReadableDate(album.date)

@@ -1,22 +1,11 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { PhotoGallery } from '@/components/gallery'
 import { getAlbumCatalog } from '@/lib/album-catalog'
 import { formatReadableDate } from '@/lib/date'
 import { siteConfig } from '@/lib/site-config'
+import { loadAlbumRouteData } from './_data'
 
 type AlbumPageProps = PageProps<'/albums/[albumKey]'>
-
-async function getRequestedAlbum(params: AlbumPageProps['params']) {
-  const [{ albumKey }, catalog] = await Promise.all([params, getAlbumCatalog()])
-  const album = catalog.getByKey(albumKey)
-
-  if (!album) {
-    notFound()
-  }
-
-  return album
-}
 
 export async function generateStaticParams() {
   const catalog = await getAlbumCatalog()
@@ -29,7 +18,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: AlbumPageProps): Promise<Metadata> {
-  const album = await getRequestedAlbum(params)
+  const album = await loadAlbumRouteData(params)
 
   return {
     title: album.title,
@@ -46,7 +35,7 @@ export async function generateMetadata({
 }
 
 export default async function AlbumPage({ params }: AlbumPageProps) {
-  const album = await getRequestedAlbum(params)
+  const album = await loadAlbumRouteData(params)
 
   return (
     <PhotoGallery

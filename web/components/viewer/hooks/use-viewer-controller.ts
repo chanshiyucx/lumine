@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { getPhotoPath, type Photo } from '@/lib/photo'
-import { decodePathSegment } from '@/lib/url-segments'
+import { decodeRawPathSegment } from '@/lib/url-segments'
 import {
   createClosedViewerState,
   createDirectViewerState,
@@ -31,7 +31,7 @@ function getPhotoIndexFromPathname(
     return null
   }
 
-  return slugToIndex.get(decodePathSegment(match[1])) ?? null
+  return slugToIndex.get(decodeRawPathSegment(match[1])) ?? null
 }
 
 function getHistoryMarker(): ViewerHistoryMarker | null {
