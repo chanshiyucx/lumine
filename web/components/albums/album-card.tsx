@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { formatAlbumDateCompact, getAlbumPath, type Album } from '@/lib/albums'
+import { formatAlbumDateCompact, type Album } from '@/lib/albums'
+import { getAlbumPath } from '@/lib/route-paths'
 import { AlbumImageStack, type AlbumCoverLoading } from './album-image-stack'
 
 interface AlbumCardProps {

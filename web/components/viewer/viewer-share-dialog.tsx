@@ -19,7 +19,8 @@ import {
 } from 'react'
 import { TwitterIcon } from '@/components/icons'
 import type { Photo } from '@/lib/photo'
-import { getPhotoOgPath, getPhotoShareUrl } from '@/lib/photo/share'
+import { getPhotoShareUrl } from '@/lib/photo/share'
+import { getPhotoOgPath } from '@/lib/route-paths'
 import { siteConfig } from '@/lib/site-config'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 

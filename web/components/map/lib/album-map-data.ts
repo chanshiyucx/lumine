@@ -4,12 +4,11 @@ import { z } from 'zod'
 import { getAlbumCatalog } from '@/lib/album-catalog'
 import {
   formatAlbumDateCompact,
-  getAlbumPath,
   normalizeAlbumKey,
   type Album,
 } from '@/lib/albums'
 import { getAlbumMapUrl } from '@/lib/media-url'
-import { getPhotoPath } from '@/lib/photo'
+import { getAlbumPath, getPhotoPath } from '@/lib/route-paths'
 
 export interface AlbumMapCover {
   href: string

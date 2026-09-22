@@ -1,5 +1,5 @@
 import type { Photo } from './photo'
-import { encodePathSegment, normalizePathSegment } from './url-segments'
+import { normalizePathSegment } from './url-segments'
 
 const DATED_ALBUM_PATTERN = /^(\d{4})(\d{2})(\d{2})-(.+)$/
 
@@ -14,10 +14,6 @@ export interface Album extends AlbumDescriptor {
 }
 
 const descriptorCache = new Map<string, AlbumDescriptor>()
-
-export function getAlbumPath(albumKey: string) {
-  return `/albums/${encodePathSegment(albumKey)}`
-}
 
 export function normalizeAlbumKey(albumKey: string) {
   return normalizePathSegment(albumKey)

@@ -1,4 +1,4 @@
-import { getPhotoPath } from '.'
+import { getPhotoPath } from '../route-paths'
 import { siteConfig } from '../site-config'
 
 function getRuntimeOrigin() {
@@ -9,8 +9,4 @@ function getRuntimeOrigin() {
 
 export function getPhotoShareUrl(slug: string) {
   return new URL(getPhotoPath(slug), getRuntimeOrigin()).toString()
-}
-
-export function getPhotoOgPath(slug: string) {
-  return `${getPhotoPath(slug)}/opengraph-image`
 }

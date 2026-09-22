@@ -1,6 +1,10 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { getPhotoPath, type Photo } from '@/lib/photo'
-import { decodeRawPathSegment } from '@/lib/url-segments'
+import type { Photo } from '@/lib/photo'
+import {
+  getPhotoPath,
+  getPhotoSlugFromPathname,
+  isPhotoPathname,
+} from '@/lib/route-paths'
 import {
   createClosedViewerState,
   createDirectViewerState,
@@ -25,13 +29,13 @@ function getPhotoIndexFromPathname(
   pathname: string,
   slugToIndex: Map<string, number>,
 ) {
-  const match = /^\/photos\/([^/]+)$/.exec(pathname)
+  const photoSlug = getPhotoSlugFromPathname(pathname)
 
-  if (!match) {
+  if (photoSlug === null) {
     return null
   }
 
-  return slugToIndex.get(decodeRawPathSegment(match[1])) ?? null
+  return slugToIndex.get(photoSlug) ?? null
 }
 
 function getHistoryMarker(): ViewerHistoryMarker | null {
@@ -126,7 +130,7 @@ export function useViewerController({
 
     const triggerElement = resolveViewerTrigger(photo.id, explicitTrigger)
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
-    if (!window.location.pathname.startsWith('/photos/')) {
+    if (!isPhotoPathname(window.location.pathname)) {
       baseUrlRef.current = currentUrl
     }
 

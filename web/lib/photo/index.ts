@@ -1,4 +1,4 @@
-import { encodePathSegment, normalizePathSegment } from '../url-segments'
+import { normalizePathSegment } from '../url-segments'
 
 export interface PhotoAsset {
   url: string
@@ -70,8 +70,4 @@ export function createPhotoSlug(title: string) {
     '/',
     '-',
   )
-}
-
-export function getPhotoPath(slug: string) {
-  return `/photos/${encodePathSegment(slug)}`
 }
