@@ -1,5 +1,5 @@
-import type { Photo } from './photo'
-import { normalizePathSegment } from './url-segments'
+import type { Photo } from '@/lib/photo'
+import { normalizePathSegment } from '@/lib/url-segments'
 
 const DATED_ALBUM_PATTERN = /^(\d{4})(\d{2})(\d{2})-(.+)$/
 

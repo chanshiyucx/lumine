@@ -1,4 +1,4 @@
-import type { AlbumMapItem } from '@/lib/album-map'
+import type { AlbumMapItem } from '@/lib/album/map'
 import { AlbumCoverLink } from './album-cover-link'
 import { CLUSTER_PREVIEW_CAPACITY } from './lib/map-config'
 

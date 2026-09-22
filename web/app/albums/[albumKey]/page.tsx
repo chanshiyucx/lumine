@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { PhotoGallery } from '@/components/gallery'
-import { getAlbumCatalog } from '@/lib/album-catalog'
+import { getAlbumCatalog } from '@/lib/album/catalog'
 import { formatReadableDate } from '@/lib/date'
 import { createPageMetadata } from '@/lib/page-metadata'
 import { loadAlbumRouteData } from './_data'

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { AlbumMapLoader } from '@/components/map'
-import { getAlbumMapItems } from '@/lib/album-map'
+import { getAlbumMapItems } from '@/lib/album/map'
 
 export const metadata: Metadata = {
   title: 'Map',

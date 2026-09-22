@@ -1,8 +1,8 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
+import { getAlbumKeyFromAssetPath } from '@/lib/album'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
-import { getAlbumKeyFromAssetPath } from '../albums'
 import { getPhotoAssetUrl, getPhotoManifestUrl } from '../media-url'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30

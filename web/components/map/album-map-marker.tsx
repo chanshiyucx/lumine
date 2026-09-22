@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
 import { ThumbnailImage } from '@/components/photo'
-import type { AlbumMapItem } from '@/lib/album-map'
+import type { AlbumMapItem } from '@/lib/album/map'
 import { cn } from '@/lib/style'
 import { AlbumPreviewCard } from './album-preview-card'
 import { ClusterPreviewCard } from './cluster-preview-card'

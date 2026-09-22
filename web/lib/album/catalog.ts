@@ -1,8 +1,8 @@
 import 'server-only'
 import { cache } from 'react'
-import { getAlbumDescriptor, type Album } from './albums'
-import { getPhotoCollection } from './photo/collection'
-import { normalizePathSegment } from './url-segments'
+import { getPhotoCollection } from '@/lib/photo/collection'
+import { normalizePathSegment } from '@/lib/url-segments'
+import { getAlbumDescriptor, type Album } from '.'
 
 function compareAlbums(left: Album, right: Album) {
   return right.date.localeCompare(left.date)

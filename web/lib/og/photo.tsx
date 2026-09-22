@@ -1,11 +1,11 @@
 import { ImageResponse } from 'next/og'
 import type { ReactNode } from 'react'
 import sharp from 'sharp'
-import { getAlbumDescriptor } from '@/lib/albums'
+import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
 import { siteConfig } from '@/lib/site-config'
+import { formatCameraLabel } from './camera-label'
 import { OG_CACHE_CONTROL, OG_IMAGE_SIZE } from './config'
-import { formatCameraLabel } from './metadata'
 
 interface LayoutConfig {
   arrangement: 'split' | 'stack' | 'wide'

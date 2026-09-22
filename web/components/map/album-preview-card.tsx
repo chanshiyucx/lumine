@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
-import type { AlbumMapItem } from '@/lib/album-map'
+import type { AlbumMapItem } from '@/lib/album/map'
 import { cn } from '@/lib/style'
 import { AlbumCoverLink } from './album-cover-link'
 

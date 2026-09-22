@@ -1,6 +1,6 @@
 import { formatReadableDate } from '@/lib/date'
+import { findCameraLabel } from '@/lib/og/camera-label'
 import { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from '@/lib/og/config'
-import { findCameraLabel } from '@/lib/og/metadata'
 import { renderMosaicOgImage, type StatItem } from '@/lib/og/mosaic'
 import { siteConfig } from '@/lib/site-config'
 import { loadAlbumRouteData } from './_data'

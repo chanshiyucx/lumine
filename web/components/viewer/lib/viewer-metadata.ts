@@ -1,4 +1,4 @@
-import { getAlbumDescriptor } from '@/lib/albums'
+import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
 import {
   formatApertureValue,

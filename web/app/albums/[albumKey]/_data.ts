@@ -1,6 +1,6 @@
 import 'server-only'
 import { notFound } from 'next/navigation'
-import { getAlbumCatalog } from '@/lib/album-catalog'
+import { getAlbumCatalog } from '@/lib/album/catalog'
 
 export async function loadAlbumRouteData(
   params: PageProps<'/albums/[albumKey]'>['params'],

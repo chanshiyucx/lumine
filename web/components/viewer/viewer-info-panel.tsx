@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/photo'
 import { ScrollArea } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
-import { getCaptureSettings } from '@/lib/photo/metadata'
+import { getCaptureSettings } from '@/lib/photo/capture-settings'
 import { cn } from '@/lib/style'
 import {
   getDeviceInfoRows,

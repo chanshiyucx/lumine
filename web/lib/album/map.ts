@@ -1,14 +1,10 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { getAlbumCatalog } from '@/lib/album-catalog'
-import {
-  formatAlbumDateCompact,
-  normalizeAlbumKey,
-  type Album,
-} from '@/lib/albums'
 import { getAlbumMapUrl } from '@/lib/media-url'
 import { getAlbumPath, getPhotoPath } from '@/lib/route-paths'
+import { formatAlbumDateCompact, normalizeAlbumKey, type Album } from '.'
+import { getAlbumCatalog } from './catalog'
 
 export interface AlbumMapCover {
   href: string

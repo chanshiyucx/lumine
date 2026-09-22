@@ -1,9 +1,9 @@
 import { memo } from 'react'
 import { CaptureSettingChip, ThumbnailImage } from '@/components/photo'
-import { getAlbumDescriptor } from '@/lib/albums'
+import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
+import { getAvailableCaptureSettings } from '@/lib/photo/capture-settings'
 import { formatBytes, formatMimeLabel } from '@/lib/photo/formatters'
-import { getAvailableCaptureSettings } from '@/lib/photo/metadata'
 
 interface PhotoMasonryItemProps {
   photo: Photo

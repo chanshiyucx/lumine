@@ -1,4 +1,4 @@
-import { getAlbumCatalog } from '@/lib/album-catalog'
+import { getAlbumCatalog } from '@/lib/album/catalog'
 import { AlbumCard } from './album-card'
 
 const EAGER_COVER_COUNT = 4
