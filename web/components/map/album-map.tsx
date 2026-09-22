@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/maplibre'
 import Supercluster from 'supercluster'
+import type { AlbumMapItem } from '@/lib/album-map'
 import { AlbumMarker, ClusterMarker } from './album-map-marker'
-import type { AlbumMapItem } from './lib/album-map-data'
 import { getInitialFocusItems } from './lib/initial-map-focus'
 import {
   CLUSTER_PREVIEW_CAPACITY,

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist } from 'next/font/google'
+import { socialMetadata } from '@/lib/page-metadata'
 import { siteConfig } from '@/lib/site-config'
 import '@/styles/globals.css'
 import { Header } from '@/components/header'
@@ -19,6 +20,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  ...socialMetadata,
   metadataBase: new URL(siteConfig.host),
   title: {
     default: siteConfig.title,

@@ -1,5 +1,5 @@
+import type { AlbumMapItem } from '@/lib/album-map'
 import { AlbumCoverLink } from './album-cover-link'
-import type { AlbumMapItem } from './lib/album-map-data'
 import { CLUSTER_PREVIEW_CAPACITY } from './lib/map-config'
 
 export function ClusterPreviewCard({

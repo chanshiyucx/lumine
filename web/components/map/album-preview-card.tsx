@@ -1,8 +1,8 @@
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
+import type { AlbumMapItem } from '@/lib/album-map'
 import { cn } from '@/lib/style'
 import { AlbumCoverLink } from './album-cover-link'
-import type { AlbumMapItem } from './lib/album-map-data'
 
 export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
   const photoCountLabel = `${item.photoCount} ${item.photoCount === 1 ? 'photo' : 'photos'}`

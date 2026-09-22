@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { PhotoGallery } from '@/components/gallery'
 import { getAlbumCatalog } from '@/lib/album-catalog'
 import { formatReadableDate } from '@/lib/date'
-import { siteConfig } from '@/lib/site-config'
+import { createPageMetadata } from '@/lib/page-metadata'
 import { loadAlbumRouteData } from './_data'
 
 type AlbumPageProps = PageProps<'/albums/[albumKey]'>
@@ -20,18 +20,7 @@ export async function generateMetadata({
 }: AlbumPageProps): Promise<Metadata> {
   const album = await loadAlbumRouteData(params)
 
-  return {
-    title: album.title,
-    openGraph: {
-      title: album.title,
-      description: siteConfig.description,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: album.title,
-      description: siteConfig.description,
-    },
-  }
+  return createPageMetadata(album.title)
 }
 
 export default async function AlbumPage({ params }: AlbumPageProps) {
