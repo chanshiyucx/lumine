@@ -3,7 +3,7 @@ import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useScrollElement } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
 import {
-  getFirstVisibleMasonryIndex,
+  getDominantMasonryPhoto,
   getMasonryImageLoading,
   getMasonryLayout,
   getPhotoMasonryHeight,
@@ -75,21 +75,6 @@ function useMasonryLayout(scrollElement: HTMLElement | null) {
   return { containerRef, layout }
 }
 
-function getFirstVisiblePhoto(
-  photos: Photo[],
-  virtualizer: Virtualizer<HTMLElement, HTMLLIElement>,
-  scrollElement: HTMLElement,
-) {
-  const scrollOffset = virtualizer.scrollOffset ?? scrollElement.scrollTop
-  const index = getFirstVisibleMasonryIndex(
-    virtualizer.getVirtualItems(),
-    scrollOffset + HEADER_HEIGHT,
-    scrollOffset + scrollElement.clientHeight,
-  )
-
-  return index === undefined ? undefined : photos[index]
-}
-
 export const PhotoMasonry = memo(function PhotoMasonry({
   photos,
   onPhotoOpen,
@@ -97,7 +82,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
 }: PhotoMasonryProps) {
   const scrollElement = useScrollElement()
   const { containerRef, layout } = useMasonryLayout(scrollElement)
-  const lastVisiblePhotoRef = useRef<Photo | undefined>(undefined)
+  const selectedPhotoRef = useRef<Photo | undefined>(undefined)
   const isLayoutReady = scrollElement !== null && layout !== null
   const columnCount = layout?.columnCount ?? 1
   const columnWidth = layout?.columnWidth ?? 1
@@ -105,25 +90,28 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const estimateSize = (index: number) =>
     getPhotoMasonryHeight(photos[index], columnWidth)
   const getItemKey = useCallback((index: number) => photos[index].id, [photos])
-  const handleVirtualizerChange = (
-    virtualizer: Virtualizer<HTMLElement, HTMLLIElement>,
-  ) => {
-    if (!scrollElement || !onVisiblePhotoChange) {
-      return
-    }
+  const handleVirtualizerChange = useCallback(
+    (virtualizer: Virtualizer<HTMLElement, HTMLLIElement>) => {
+      if (!scrollElement || !onVisiblePhotoChange) {
+        return
+      }
 
-    const visiblePhoto = getFirstVisiblePhoto(
-      photos,
-      virtualizer,
-      scrollElement,
-    )
-    if (lastVisiblePhotoRef.current === visiblePhoto) {
-      return
-    }
-
-    lastVisiblePhotoRef.current = visiblePhoto
-    onVisiblePhotoChange(visiblePhoto)
-  }
+      const scrollOffset = virtualizer.scrollOffset ?? scrollElement.scrollTop
+      const photo = getDominantMasonryPhoto(
+        photos,
+        virtualizer.getVirtualItems(),
+        scrollOffset + HEADER_HEIGHT,
+        scrollOffset + scrollElement.clientHeight,
+        columnCount,
+        selectedPhotoRef.current?.albumKey,
+      )
+      if (photo !== selectedPhotoRef.current) {
+        selectedPhotoRef.current = photo
+        onVisiblePhotoChange(photo)
+      }
+    },
+    [photos, scrollElement, columnCount, onVisiblePhotoChange],
+  )
 
   // TanStack Virtual owns its imperative state and cannot be memoized safely.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -147,6 +135,12 @@ export const PhotoMasonry = memo(function PhotoMasonry({
       virtualizer.measure()
     }
   }, [columnCount, columnWidth, isLayoutReady, virtualizer])
+
+  useLayoutEffect(() => {
+    if (isLayoutReady) {
+      handleVirtualizerChange(virtualizer)
+    }
+  }, [isLayoutReady, virtualizer, handleVirtualizerChange])
 
   const sizeContainerRef = virtualizer.containerRef
   const measureItem = virtualizer.measureElement

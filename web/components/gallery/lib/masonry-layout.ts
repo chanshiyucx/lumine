@@ -54,16 +54,59 @@ export function getMasonryLayout(containerWidth: number): MasonryLayout {
   }
 }
 
-export function getFirstVisibleMasonryIndex(
+export function getDominantMasonryPhoto(
+  photos: readonly Photo[],
   positions: readonly MasonryPosition[],
   viewportStart: number,
   viewportEnd: number,
-): number | undefined {
+  columnCount: number,
+  currentAlbumKey?: string,
+): Photo | undefined {
+  const albums = new Map<
+    string,
+    { height: number; photo: Photo; index: number }
+  >()
+
   for (const position of positions) {
-    if (isMasonryPositionVisible(position, viewportStart, viewportEnd)) {
-      return position.index
+    const height = Math.max(
+      0,
+      Math.min(position.end, viewportEnd) -
+        Math.max(position.start, viewportStart),
+    )
+    const photo = photos[position.index]
+    if (height === 0 || !photo) {
+      continue
+    }
+
+    const album = albums.get(photo.albumKey)
+    if (album) {
+      album.height += height
+      // The collection is ordered by capture time, newest first.
+      if (position.index < album.index) {
+        album.photo = photo
+        album.index = position.index
+      }
+    } else {
+      albums.set(photo.albumKey, { height, photo, index: position.index })
     }
   }
+
+  let dominant: { height: number; photo: Photo; index: number } | undefined
+  for (const album of albums.values()) {
+    if (!dominant || album.height > dominant.height) {
+      dominant = album
+    }
+  }
+
+  const current = currentAlbumKey ? albums.get(currentAlbumKey) : undefined
+  // Equal-width columns let us compare heights instead of pixel areas.
+  const switchMargin =
+    Math.max(0, viewportEnd - viewportStart) * columnCount * 0.1
+  if (current && dominant && dominant.height - current.height <= switchMargin) {
+    return current.photo
+  }
+
+  return dominant?.photo
 }
 
 export function getPhotoMasonryHeight(
