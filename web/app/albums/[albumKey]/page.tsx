@@ -5,9 +5,7 @@ import { getAlbumCatalog } from '@/lib/album-catalog'
 import { formatReadableDate } from '@/lib/date'
 import { siteConfig } from '@/lib/site-config'
 
-interface AlbumPageProps {
-  params: Promise<{ albumKey: string }>
-}
+type AlbumPageProps = PageProps<'/albums/[albumKey]'>
 
 async function getRequestedAlbum(params: AlbumPageProps['params']) {
   const [{ albumKey }, catalog] = await Promise.all([params, getAlbumCatalog()])

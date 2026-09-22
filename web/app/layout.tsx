@@ -29,11 +29,7 @@ export const metadata: Metadata = {
   keywords: 'Blog, Gallery, Photos, Lumine',
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={geist.variable}>
       <body>

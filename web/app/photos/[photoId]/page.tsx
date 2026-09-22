@@ -4,9 +4,7 @@ import { PhotoGallery } from '@/components/gallery'
 import { getPhotoCollection } from '@/lib/photo/collection'
 import { siteConfig } from '@/lib/site-config'
 
-interface PhotoPageProps {
-  params: Promise<{ photoId: string }>
-}
+type PhotoPageProps = PageProps<'/photos/[photoId]'>
 
 async function getRequestedPhoto(params: PhotoPageProps['params']) {
   const [{ photoId }, photoCollection] = await Promise.all([
