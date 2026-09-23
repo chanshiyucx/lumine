@@ -6,7 +6,7 @@ import {
   type GalleryHeaderState,
 } from '../lib/gallery-header-state'
 
-const HEADER_SCROLL_THRESHOLD = 500
+const HEADER_SCROLL_THRESHOLD = 160
 
 export function useGalleryHeader(
   scrollElement: HTMLElement | null,
