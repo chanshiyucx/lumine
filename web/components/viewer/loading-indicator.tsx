@@ -1,5 +1,5 @@
 import { AlertCircle, LoaderCircle } from 'lucide-react'
-import type { PhotoResourceState } from './lib/photo-resource-store'
+import type { PhotoResourceState } from './hooks/use-progressive-photo'
 
 const BYTES_PER_MEBIBYTE = 1024 * 1024
 
@@ -20,11 +20,7 @@ function getBytesLabel(loadedBytes: number, totalBytes: number) {
 }
 
 export function LoadingIndicator({ state }: LoadingIndicatorProps) {
-  if (
-    state.status === 'cached' ||
-    state.status === 'idle' ||
-    state.status === 'ready'
-  ) {
+  if (state.status === 'ready') {
     return null
   }
 

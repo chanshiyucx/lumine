@@ -21,32 +21,43 @@ function formatScaleLabel(scale: number) {
   return `${scale < 1 ? scale.toFixed(2) : scale.toFixed(1)}x`
 }
 
-export function ProgressivePhoto({
+function PhotoThumbnail({ photo }: { photo: Photo }) {
+  return (
+    <Image
+      src={photo.thumbnail.url}
+      alt=""
+      aria-hidden
+      width={photo.thumbnail.width}
+      height={photo.thumbnail.height}
+      className="absolute inset-0 size-full object-contain"
+      loading="eager"
+      unoptimized
+    />
+  )
+}
+
+function ActiveProgressivePhoto({
   photo,
-  isActive,
   loadDelayMs = 0,
   onZoomStateChange,
   shouldMountInteractiveImage = true,
-}: ProgressivePhotoProps) {
+}: Omit<ProgressivePhotoProps, 'isActive'>) {
   const reduceMotion = useReducedMotion()
   const [loadedSource, setLoadedSource] = useState<string | null>(null)
   const [settledSource, setSettledSource] = useState<string | null>(null)
   const [scaleLabel, setScaleLabel] = useState(() => formatScaleLabel(1))
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
   const scaleIndicatorTimeoutRef = useRef<number | null>(null)
-  const { markDecoded, markRenderFailed, state } = useProgressivePhoto(photo, {
-    isActive,
+  const { markDecoded, markRenderFailed, state } = useProgressivePhoto(
+    photo,
     loadDelayMs,
-  })
+  )
   const hasHighResolutionPhoto =
-    state.status === 'cached' ||
-    state.status === 'decoding' ||
-    state.status === 'ready'
+    state.status === 'decoding' || state.status === 'ready'
   const highResolutionSource = hasHighResolutionPhoto ? state.src : null
   const isOriginalReady = state.status === 'ready' && loadedSource === state.src
   const isOriginalSettled = isOriginalReady && settledSource === state.src
-  const isOriginalDisplayed =
-    isActive && shouldMountInteractiveImage && isOriginalSettled
+  const isOriginalDisplayed = shouldMountInteractiveImage && isOriginalSettled
 
   const handleOriginalLoad = () => {
     if (!highResolutionSource) {
@@ -94,21 +105,10 @@ export function ProgressivePhoto({
   )
 
   return (
-    <div className="relative size-full overflow-hidden">
-      {!isOriginalDisplayed && (
-        <Image
-          src={photo.thumbnail.url}
-          alt=""
-          aria-hidden
-          width={photo.thumbnail.width}
-          height={photo.thumbnail.height}
-          className="absolute inset-0 size-full object-contain"
-          loading="eager"
-          unoptimized
-        />
-      )}
+    <>
+      {!isOriginalDisplayed && <PhotoThumbnail photo={photo} />}
 
-      {hasHighResolutionPhoto && isActive && shouldMountInteractiveImage && (
+      {hasHighResolutionPhoto && shouldMountInteractiveImage && (
         <m.div
           key={`${photo.id}:${state.src}`}
           initial={{ opacity: 0 }}
@@ -146,6 +146,30 @@ export function ProgressivePhoto({
       >
         {scaleLabel}
       </div>
+    </>
+  )
+}
+
+export function ProgressivePhoto({
+  photo,
+  isActive,
+  loadDelayMs = 0,
+  onZoomStateChange,
+  shouldMountInteractiveImage = true,
+}: ProgressivePhotoProps) {
+  return (
+    <div className="relative size-full overflow-hidden">
+      {isActive ? (
+        <ActiveProgressivePhoto
+          key={photo.original.url}
+          photo={photo}
+          loadDelayMs={loadDelayMs}
+          onZoomStateChange={onZoomStateChange}
+          shouldMountInteractiveImage={shouldMountInteractiveImage}
+        />
+      ) : (
+        <PhotoThumbnail photo={photo} />
+      )}
     </div>
   )
 }
