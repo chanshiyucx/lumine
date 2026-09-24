@@ -1,4 +1,10 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import type { Photo } from '@/lib/photo'
 import {
   getPhotoPath,
@@ -21,6 +27,7 @@ interface ViewerHistoryMarker {
 }
 
 interface UseViewerControllerOptions {
+  galleryRef: RefObject<HTMLElement | null>
   initialPhotoSlug?: string
   photos: Photo[]
 }
@@ -84,6 +91,7 @@ function createSessionId() {
 }
 
 export function useViewerController({
+  galleryRef,
   photos,
   initialPhotoSlug,
 }: UseViewerControllerOptions) {
@@ -100,6 +108,7 @@ export function useViewerController({
   const sessionIdRef = useRef<string | null>(null)
   const baseUrlRef = useRef('/')
   const restoreFocusElementRef = useRef<HTMLElement | null>(null)
+  const isPresentRef = useRef(false)
 
   const applyAction = (action: ViewerAction) => {
     const nextState = reduceViewerState(stateRef.current, action)
@@ -190,6 +199,13 @@ export function useViewerController({
       triggerElement,
     })
 
+    if (!isPresentRef.current) {
+      applyAction({
+        type: 'exit-complete',
+        operationId: stateRef.current.operationId,
+      })
+    }
+
     return true
   }
 
@@ -225,7 +241,11 @@ export function useViewerController({
       return preferred
     }
 
-    return document.querySelector<HTMLElement>('[data-gallery-root]')
+    return galleryRef.current
+  }
+
+  const setPresence = (present: boolean) => {
+    isPresentRef.current = present
   }
 
   const syncFromLocation = useEffectEvent(() => {
@@ -275,6 +295,7 @@ export function useViewerController({
     getRestoreFocusElement,
     open,
     select,
+    setPresence,
     setZoomed,
     state,
   }

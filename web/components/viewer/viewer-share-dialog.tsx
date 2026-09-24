@@ -129,7 +129,7 @@ export function ViewerShareDialog({
   const canUseNativeShare =
     typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
-  useDialogFocus(dialogRef, () => returnFocusRef.current)
+  useDialogFocus(dialogRef, () => returnFocusRef.current, true)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

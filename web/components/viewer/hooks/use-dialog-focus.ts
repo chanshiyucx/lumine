@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, type RefObject } from 'react'
+import { useEffect, useEffectEvent, useRef, type RefObject } from 'react'
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -22,71 +22,75 @@ function getFocusableElements(container: HTMLElement) {
 
 export function useDialogFocus(
   dialogRef: RefObject<HTMLElement | null>,
-  getRestoreFocusElement?: () => HTMLElement | null,
+  getRestoreFocusElement: () => HTMLElement | null,
+  trapFocus: boolean,
 ) {
-  const getLatestRestoreFocusElement = useEffectEvent(
-    () => getRestoreFocusElement?.() ?? null,
-  )
+  const restoreFrameRef = useRef<number | null>(null)
+  const getLatestRestoreFocusElement = useEffectEvent(getRestoreFocusElement)
 
-  useEffect(() => {
-    const previouslyFocused =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null
-    const frame = window.requestAnimationFrame(() => {
-      dialogRef.current?.focus({ preventScroll: true })
-    })
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab' || event.defaultPrevented) {
-        return
-      }
-
-      const dialog = dialogRef.current
-      if (!dialog) {
-        return
-      }
-
-      const focusableElements = getFocusableElements(dialog)
-      const firstElement = focusableElements[0]
-      const lastElement = focusableElements.at(-1)
-      if (!firstElement || !lastElement) {
-        event.preventDefault()
-        dialog.focus({ preventScroll: true })
-        return
-      }
-
-      const activeElement = document.activeElement
-      if (
-        event.shiftKey &&
-        (activeElement === firstElement || !dialog.contains(activeElement))
-      ) {
-        event.preventDefault()
-        lastElement.focus()
-        return
-      }
-
-      if (
-        !event.shiftKey &&
-        (activeElement === lastElement || !dialog.contains(activeElement))
-      ) {
-        event.preventDefault()
-        firstElement.focus()
-      }
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (!trapFocus || event.key !== 'Tab' || event.defaultPrevented) {
+      return
     }
 
-    document.addEventListener('keydown', handleKeyDown)
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+
+    const focusableElements = getFocusableElements(dialog)
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements.at(-1)
+    if (!firstElement || !lastElement) {
+      event.preventDefault()
+      dialog.focus({ preventScroll: true })
+      return
+    }
+
+    const activeElement = document.activeElement
+    if (
+      event.shiftKey &&
+      (activeElement === firstElement ||
+        activeElement === dialog ||
+        !dialog.contains(activeElement))
+    ) {
+      event.preventDefault()
+      lastElement.focus()
+      return
+    }
+
+    if (
+      !event.shiftKey &&
+      (activeElement === lastElement || !dialog.contains(activeElement))
+    ) {
+      event.preventDefault()
+      firstElement.focus()
+    }
+  })
+
+  useEffect(() => {
+    if (restoreFrameRef.current !== null) {
+      window.cancelAnimationFrame(restoreFrameRef.current)
+      restoreFrameRef.current = null
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      dialogRef.current?.focus({ preventScroll: true })
+    })
+    const listener = (event: KeyboardEvent) => handleKeyDown(event)
+
+    document.addEventListener('keydown', listener)
 
     return () => {
-      window.cancelAnimationFrame(frame)
-      document.removeEventListener('keydown', handleKeyDown)
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener('keydown', listener)
 
-      const restoreTarget =
-        getLatestRestoreFocusElement() ??
-        (previouslyFocused?.isConnected ? previouslyFocused : null)
-
-      window.requestAnimationFrame(() => {
-        restoreTarget?.focus({ preventScroll: true })
+      restoreFrameRef.current = window.requestAnimationFrame(() => {
+        restoreFrameRef.current = null
+        const target = getLatestRestoreFocusElement()
+        if (target?.isConnected && !target.closest('[inert]')) {
+          target.focus({ preventScroll: true })
+        }
       })
     }
   }, [dialogRef])

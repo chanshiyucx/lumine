@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useScrollElement } from '@/components/scroll-area'
 import { useViewerController } from '@/components/viewer/hooks/use-viewer-controller'
 import type { Photo } from '@/lib/photo'
@@ -29,10 +29,12 @@ export function PhotoGallery({
   initialPhotoSlug,
   fixedHeaderDetail,
 }: PhotoGalleryProps) {
+  const galleryRef = useRef<HTMLDivElement>(null)
   const scrollElement = useScrollElement()
   const viewer = useViewerController({
     photos,
     initialPhotoSlug,
+    galleryRef,
   })
   const viewerState = viewer.state
   const isViewerMounted = viewerState.phase !== 'closed'
@@ -67,8 +69,8 @@ export function PhotoGallery({
   return (
     <>
       <div
+        ref={galleryRef}
         className="pt-12"
-        data-gallery-root
         inert={isViewerMounted}
         tabIndex={-1}
       >
@@ -90,6 +92,7 @@ export function PhotoGallery({
           onClose={viewer.close}
           onEntryComplete={viewer.completeEntry}
           onExitComplete={viewer.completeExit}
+          onPresenceChange={viewer.setPresence}
           onZoomStateChange={viewer.setZoomed}
         />
       )}

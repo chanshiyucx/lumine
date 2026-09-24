@@ -7,7 +7,7 @@ import {
   m,
   MotionConfig,
 } from 'motion/react'
-import { useRef, useState } from 'react'
+import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
@@ -50,6 +50,7 @@ interface ViewerProps {
   onActiveIndexChange: (index: number) => void
   onEntryComplete: (operationId: number) => void
   onExitComplete: (operationId: number) => void
+  onPresenceChange: (present: boolean) => void
   onZoomStateChange: (isZoomed: boolean) => void
 }
 
@@ -61,6 +62,7 @@ export function Viewer({
   onActiveIndexChange,
   onEntryComplete,
   onExitComplete,
+  onPresenceChange,
   onZoomStateChange,
 }: ViewerProps) {
   const isMobile = useMobile()
@@ -77,6 +79,13 @@ export function Viewer({
   )
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const mediaStageRef = useRef<HTMLElement | null>(null)
+  const reportPresence = useEffectEvent(onPresenceChange)
+
+  useLayoutEffect(() => {
+    reportPresence(true)
+    return () => reportPresence(false)
+  }, [])
+
   const activeIndex = state.activeIndex
   const currentPhoto = photos[activeIndex]
   const isInteractionEnabled = state.phase === 'open'
@@ -157,7 +166,7 @@ export function Viewer({
     setIsShareDialogOpen(false)
   }
 
-  useDialogFocus(dialogRef, getRestoreFocusElement)
+  useDialogFocus(dialogRef, getRestoreFocusElement, !isShareDialogPresent)
 
   const goToPhoto = (index: number) => {
     if (!isInteractionEnabled || index < 0 || index >= photos.length) {
@@ -203,9 +212,8 @@ export function Viewer({
   return (
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
-        <RemoveScroll enabled allowPinchZoom>
+        <RemoveScroll ref={dialogRef} forwardProps allowPinchZoom>
           <m.div
-            ref={dialogRef}
             className="fixed inset-0 z-100 overflow-hidden"
             role="dialog"
             aria-modal="true"
