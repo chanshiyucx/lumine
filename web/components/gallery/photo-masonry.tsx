@@ -86,6 +86,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const isLayoutReady = scrollElement !== null && layout !== null
   const columnCount = layout?.columnCount ?? 1
   const columnWidth = layout?.columnWidth ?? 1
+  const scrollMargin = layout?.scrollMargin ?? 0
 
   const estimateSize = (index: number) =>
     getPhotoMasonryHeight(photos[index], columnWidth)
@@ -120,13 +121,12 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     enabled: isLayoutReady,
     lanes: columnCount,
     gap: MASONRY_GAP,
-    scrollMargin: layout?.scrollMargin ?? 0,
+    scrollMargin,
     overscan: columnCount * OVERSCAN_ROWS,
     estimateSize,
     getScrollElement: () => scrollElement,
     getItemKey,
     onChange: onVisiblePhotoChange ? handleVirtualizerChange : undefined,
-    directDomUpdates: true,
     useFlushSync: false,
   })
 
@@ -142,8 +142,6 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     }
   }, [isLayoutReady, virtualizer, handleVirtualizerChange])
 
-  const sizeContainerRef = virtualizer.containerRef
-  const measureItem = virtualizer.measureElement
   const virtualItems = virtualizer.getVirtualItems()
   const scrollOffset = virtualizer.scrollOffset ?? scrollElement?.scrollTop ?? 0
   const viewportStart = scrollOffset + HEADER_HEIGHT
@@ -156,17 +154,21 @@ export const PhotoMasonry = memo(function PhotoMasonry({
           No photos available.
         </p>
       ) : (
-        <ul ref={sizeContainerRef} className="relative" aria-label="Photos">
+        <ul
+          className="relative"
+          style={{ height: virtualizer.getTotalSize() }}
+          aria-label="Photos"
+        >
           {virtualItems.map((virtualItem) => {
             const photo = photos[virtualItem.index]
 
             return (
               <li
                 key={virtualItem.key}
-                ref={measureItem}
                 data-index={virtualItem.index}
-                className="absolute top-0"
+                className="absolute"
                 style={{
+                  top: virtualItem.start - scrollMargin,
                   left: virtualItem.lane * (columnWidth + MASONRY_GAP),
                   width: columnWidth,
                 }}
