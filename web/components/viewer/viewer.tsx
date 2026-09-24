@@ -99,8 +99,6 @@ export function Viewer({
     isViewerSurfaceVisible &&
     (canRevealWithoutSharedTransition ||
       hasViewerRevealStage(revealState, state.operationId, 'controls'))
-  const backdropEntryKey =
-    state.phase === 'entering' ? state.operationId : revealState.operationId
   const sharedTransition = resolveSharedPhotoTransition(state)
   const advanceReveal = (operationId: number, stage: ViewerRevealStage) => {
     setRevealState((current) =>
@@ -231,32 +229,12 @@ export function Viewer({
             }
             onAnimationComplete={handleViewerAnimationComplete}
           >
-            <m.div
-              data-viewer-layer="backdrop"
-              className="absolute inset-0"
-              style={{ opacity: isMobile ? mobile.backdropOpacity : 1 }}
-              animate={{ opacity: state.phase === 'exiting' ? 0 : 1 }}
-              transition={
-                state.phase === 'exiting'
-                  ? VIEWER_MOTION.backdropExit
-                  : VIEWER_MOTION.backdropEnter
-              }
-            >
-              <m.div
-                key={backdropEntryKey}
-                data-viewer-layer="backdrop-content"
-                className="bg-base pointer-events-none absolute inset-0 overflow-hidden"
-                initial={
-                  state.phase === 'entering' && state.entryMode === 'shared'
-                    ? { opacity: 0 }
-                    : false
-                }
-                animate={{ opacity: 1 }}
-                transition={VIEWER_MOTION.backdropEnter}
-              >
-                <ViewerBackdrop photo={currentPhoto} />
-              </m.div>
-            </m.div>
+            <ViewerBackdrop
+              photo={currentPhoto}
+              state={state}
+              revealOperationId={revealState.operationId}
+              gestureOpacity={isMobile ? mobile.backdropOpacity : 1}
+            />
 
             <div
               data-viewer-layer="content"
