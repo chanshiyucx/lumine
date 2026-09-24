@@ -157,19 +157,15 @@ export function ProgressivePhoto({
   onZoomStateChange,
   shouldMountInteractiveImage = true,
 }: ProgressivePhotoProps) {
-  return (
-    <div className="relative size-full overflow-hidden">
-      {isActive ? (
-        <ActiveProgressivePhoto
-          key={photo.original.url}
-          photo={photo}
-          loadDelayMs={loadDelayMs}
-          onZoomStateChange={onZoomStateChange}
-          shouldMountInteractiveImage={shouldMountInteractiveImage}
-        />
-      ) : (
-        <PhotoThumbnail photo={photo} />
-      )}
-    </div>
+  return isActive ? (
+    <ActiveProgressivePhoto
+      key={photo.original.url}
+      photo={photo}
+      loadDelayMs={loadDelayMs}
+      onZoomStateChange={onZoomStateChange}
+      shouldMountInteractiveImage={shouldMountInteractiveImage}
+    />
+  ) : (
+    <PhotoThumbnail photo={photo} />
   )
 }

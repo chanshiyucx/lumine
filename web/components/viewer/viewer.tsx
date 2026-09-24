@@ -245,7 +245,7 @@ export function Viewer({
               <m.div
                 key={backdropEntryKey}
                 data-viewer-layer="backdrop-content"
-                className="bg-base absolute inset-0"
+                className="bg-base pointer-events-none absolute inset-0 overflow-hidden"
                 initial={
                   state.phase === 'entering' && state.entryMode === 'shared'
                     ? { opacity: 0 }
@@ -298,21 +298,17 @@ export function Viewer({
                     phase={state.phase}
                   />
 
-                  <div
-                    className="absolute inset-0"
-                    style={{ opacity: sharedTransition ? 0 : 1 }}
-                  >
-                    <PhotoCarousel
-                      photos={photos}
-                      activeIndex={activeIndex}
-                      isMobile={isMobile}
-                      isZoomed={state.isZoomed}
-                      isSwipeDisabled={mobile.infoOpen}
-                      isInteractionEnabled={isInteractionEnabled}
-                      onActiveIndexChange={goToPhoto}
-                      onZoomStateChange={onZoomStateChange}
-                    />
-                  </div>
+                  <PhotoCarousel
+                    photos={photos}
+                    activeIndex={activeIndex}
+                    concealedForSharedTransition={sharedTransition !== null}
+                    isMobile={isMobile}
+                    isZoomed={state.isZoomed}
+                    isSwipeDisabled={mobile.infoOpen}
+                    isInteractionEnabled={isInteractionEnabled}
+                    onActiveIndexChange={goToPhoto}
+                    onZoomStateChange={onZoomStateChange}
+                  />
 
                   <ViewerNavigation
                     activeIndex={activeIndex}

@@ -5,12 +5,14 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/virtual'
 import type { Photo } from '@/lib/photo'
+import { cn } from '@/lib/style'
 import { useSwiperResize } from './hooks/use-swiper-resize'
 import { ProgressivePhoto } from './progressive-photo'
 
 interface PhotoCarouselProps {
   photos: Photo[]
   activeIndex: number
+  concealedForSharedTransition: boolean
   isMobile: boolean
   isZoomed: boolean
   isSwipeDisabled: boolean
@@ -22,6 +24,7 @@ interface PhotoCarouselProps {
 export function PhotoCarousel({
   photos,
   activeIndex,
+  concealedForSharedTransition,
   isMobile,
   isZoomed,
   isSwipeDisabled,
@@ -52,7 +55,10 @@ export function PhotoCarousel({
   return (
     <Swiper
       modules={[A11y, Virtual]}
-      className="size-full"
+      className={cn(
+        'absolute! inset-0 size-full',
+        concealedForSharedTransition ? 'opacity-0' : 'opacity-100',
+      )}
       initialSlide={activeIndex}
       slidesPerView={1}
       speed={300}
@@ -85,6 +91,7 @@ export function PhotoCarousel({
         return (
           <SwiperSlide
             key={photo.id}
+            className="relative h-full overflow-hidden"
             virtualIndex={index}
             aria-label={`${index + 1} / ${photos.length}: ${photo.title}`}
           >

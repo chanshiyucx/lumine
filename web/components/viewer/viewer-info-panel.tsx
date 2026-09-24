@@ -156,7 +156,7 @@ export function ViewerInfoPanel({
       >
         <m.div
           className={cn(
-            'relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
+            'relative flex h-[min(max(68svh,22.5rem),calc(100svh-4.5rem))] min-h-0 flex-col overflow-hidden rounded-t-[28px] border-t border-white/5 shadow-[0_-8px_24px_rgb(0_0_0/0.08),inset_0_1px_0_rgb(255_255_255/0.03)] backdrop-blur-2xl lg:h-full lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-8px_0_24px_rgb(0_0_0/0.08),inset_1px_0_0_rgb(255_255_255/0.03)]',
             DESKTOP_PANEL_WIDTH_CLASS,
           )}
           style={{
@@ -164,29 +164,27 @@ export function ViewerInfoPanel({
             ...panelMotionStyle,
           }}
         >
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className="relative flex h-6 shrink-0 items-start justify-center px-3 pt-2.5 lg:hidden">
-              <button
-                type="button"
-                className="absolute inset-x-0 top-0 flex h-6 items-start justify-center pt-2.5"
-                onClick={onClose}
-                aria-label="Close information panel"
-              >
-                <span
-                  aria-hidden="true"
-                  className="bg-muted/60 h-1.5 w-11 rounded-full"
-                />
-              </button>
-            </div>
-            <ScrollArea
-              ariaLabel="Photo information"
-              className="min-h-0 flex-1"
-              scrollbarClassName="my-2"
-              viewportClassName="viewer-info-scroll-mask overscroll-contain"
+          <div className="relative flex h-6 shrink-0 items-start justify-center px-3 pt-2.5 lg:hidden">
+            <button
+              type="button"
+              className="absolute inset-x-0 top-0 flex h-6 items-start justify-center pt-2.5"
+              onClick={onClose}
+              aria-label="Close information panel"
             >
-              <ViewerInfoPanelContent photo={photo} isActive={isInteractive} />
-            </ScrollArea>
+              <span
+                aria-hidden="true"
+                className="bg-muted/60 h-1.5 w-11 rounded-full"
+              />
+            </button>
           </div>
+          <ScrollArea
+            ariaLabel="Photo information"
+            className="min-h-0 flex-1"
+            scrollbarClassName="my-2"
+            viewportClassName="viewer-info-scroll-mask overscroll-contain"
+          >
+            <ViewerInfoPanelContent photo={photo} isActive={isInteractive} />
+          </ScrollArea>
         </m.div>
       </m.div>
     </aside>

@@ -14,20 +14,18 @@ export function ViewerBackdrop({ photo }: ViewerBackdropProps) {
     : VIEWER_MOTION.photoSwitch
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <AnimatePresence initial={false} mode="sync">
-        <m.div
-          key={`${photo.id}:${photo.thumbHash}`}
-          data-viewer-backdrop-photo={photo.id}
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={transition}
-        >
-          <ThumbHashImage thumbHash={photo.thumbHash} className="scale-110" />
-        </m.div>
-      </AnimatePresence>
-    </div>
+    <AnimatePresence initial={false} mode="sync">
+      <m.div
+        key={`${photo.id}:${photo.thumbHash}`}
+        data-viewer-backdrop-photo={photo.id}
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={transition}
+      >
+        <ThumbHashImage thumbHash={photo.thumbHash} className="scale-110" />
+      </m.div>
+    </AnimatePresence>
   )
 }
