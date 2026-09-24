@@ -83,7 +83,7 @@ export function ThumbnailImage({
               'transition-opacity duration-300 ease-out motion-reduce:transition-none',
             isLoaded ? 'opacity-100' : 'opacity-0',
           )}
-          decoding="async"
+          decoding="auto"
           fetchPriority={fetchPriority}
           loading={loading}
           onError={onError}

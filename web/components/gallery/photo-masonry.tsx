@@ -149,45 +149,38 @@ export const PhotoMasonry = memo(function PhotoMasonry({
 
   return (
     <div ref={containerRef}>
-      {photos.length === 0 ? (
-        <p className="text-subtle px-6 py-16 text-center" role="status">
-          No photos available.
-        </p>
-      ) : (
-        <ul
-          className="relative"
-          style={{ height: virtualizer.getTotalSize() }}
-          aria-label="Photos"
-        >
-          {virtualItems.map((virtualItem) => {
-            const photo = photos[virtualItem.index]
-
-            return (
-              <li
-                key={virtualItem.key}
-                data-index={virtualItem.index}
-                className="absolute"
-                style={{
-                  top: virtualItem.start - scrollMargin,
-                  left: virtualItem.lane * (columnWidth + MASONRY_GAP),
-                  width: columnWidth,
-                }}
-              >
-                <PhotoMasonryItem
-                  photo={photo}
-                  index={virtualItem.index}
-                  imageLoading={getMasonryImageLoading(
-                    virtualItem,
-                    viewportStart,
-                    viewportEnd,
-                  )}
-                  onOpen={onPhotoOpen}
-                />
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      <ul
+        className="relative"
+        style={{ height: virtualizer.getTotalSize() }}
+        aria-label="Photos"
+      >
+        {virtualItems.map((virtualItem) => {
+          const photo = photos[virtualItem.index]
+          return (
+            <li
+              key={virtualItem.key}
+              data-index={virtualItem.index}
+              className="absolute"
+              style={{
+                top: virtualItem.start - scrollMargin,
+                left: virtualItem.lane * (columnWidth + MASONRY_GAP),
+                width: columnWidth,
+              }}
+            >
+              <PhotoMasonryItem
+                photo={photo}
+                index={virtualItem.index}
+                imageLoading={getMasonryImageLoading(
+                  virtualItem,
+                  viewportStart,
+                  viewportEnd,
+                )}
+                onOpen={onPhotoOpen}
+              />
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 })
