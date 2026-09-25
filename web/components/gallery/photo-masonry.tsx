@@ -1,4 +1,8 @@
-import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual'
+import {
+  observeElementRect,
+  useVirtualizer,
+  type Virtualizer,
+} from '@tanstack/react-virtual'
 import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useScrollElement } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
@@ -30,6 +34,21 @@ function getScrollMargin(container: HTMLElement, scrollElement: HTMLElement) {
   const scrollRect = scrollElement.getBoundingClientRect()
 
   return containerRect.top - scrollRect.top + scrollElement.scrollTop
+}
+
+const observeScrollRect: typeof observeElementRect = (
+  virtualizer,
+  onChange,
+) => {
+  return observeElementRect(virtualizer, (rect) => {
+    // Virtualization needs visible height; the scroll area can briefly report full content height.
+    const viewportHeight =
+      virtualizer.scrollElement?.ownerDocument.documentElement.clientHeight
+    onChange({
+      ...rect,
+      height: Math.min(rect.height, viewportHeight ?? rect.height),
+    })
+  })
 }
 
 function useMasonryLayout(scrollElement: HTMLElement | null) {
@@ -125,6 +144,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     overscan: columnCount * OVERSCAN_ROWS,
     estimateSize,
     getScrollElement: () => scrollElement,
+    observeElementRect: observeScrollRect,
     getItemKey,
     onChange: onVisiblePhotoChange ? handleVirtualizerChange : undefined,
     useFlushSync: false,
