@@ -74,6 +74,10 @@
   body {
     @apply bg-base text-text h-full overflow-x-hidden overflow-y-auto font-medium tabular-nums antialiased;
   }
+
+  :focus-visible {
+    @apply outline-iris outline-2 outline-offset-1;
+  }
 }
 
 @utility circle-button {
@@ -81,10 +85,6 @@
 
   @variant hover {
     @apply bg-overlay/90;
-  }
-
-  @variant focus-visible {
-    @apply outline-iris outline-2 outline-offset-2;
   }
 
   @variant disabled {

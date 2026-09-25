@@ -23,7 +23,7 @@ export function AlbumCoverLink({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        'group bg-overlay focus-visible:outline-iris relative block overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2',
+        'group bg-overlay relative block overflow-hidden',
         className,
       )}
       aria-label={`Open a photo from ${item.label} in a new tab`}

@@ -38,7 +38,7 @@ export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="group/link hover:text-iris focus-visible:outline-iris flex min-w-0 flex-1 items-center gap-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="group/link hover:text-iris flex min-w-0 flex-1 items-center gap-1.5 transition-colors"
           aria-label={`Open ${item.label} album in a new tab`}
         >
           <h2 className="truncate text-sm font-semibold">{item.label}</h2>

@@ -206,6 +206,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
         ref={railViewportRef}
         className="scrollbar-hide h-full overflow-x-auto overflow-y-hidden"
         aria-label="Preview thumbnails"
+        tabIndex={-1}
         onScroll={clearHoverPreview}
       >
         <div
@@ -227,8 +228,9 @@ export const ThumbnailRail = memo(function ThumbnailRail({
               <button
                 key={photo.id}
                 type="button"
+                tabIndex={-1}
                 className={cn(
-                  'transition-filter focus-visible:ring-iris absolute top-0 cursor-pointer appearance-none overflow-hidden duration-300 ease-out focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none',
+                  'transition-filter absolute top-0 cursor-pointer appearance-none overflow-hidden duration-300 ease-out motion-reduce:transition-none',
                   !isActive && !isHover && 'grayscale',
                 )}
                 style={{

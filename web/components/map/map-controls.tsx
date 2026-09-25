@@ -33,7 +33,7 @@ export function MapControls({
         <button
           key={label}
           type="button"
-          className="hover:bg-overlay focus-visible:outline-iris grid size-10 cursor-pointer place-items-center transition-colors focus-visible:z-10 focus-visible:outline-2"
+          className="hover:bg-overlay grid size-10 cursor-pointer place-items-center transition-colors"
           aria-label={label}
           onClick={action}
         >

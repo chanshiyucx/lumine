@@ -48,7 +48,7 @@ export function AlbumMarker({
   const trigger = (
     <button
       type="button"
-      className="group focus-visible:outline-iris relative block size-11 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3"
+      className="group relative block size-11 cursor-pointer rounded-full"
       aria-label={`${item.label} album location`}
     >
       <span
@@ -98,7 +98,7 @@ export function ClusterMarker({
   const trigger = (
     <button
       type="button"
-      className="group focus-visible:outline-iris relative block cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-3"
+      className="group relative block cursor-pointer rounded-full"
       style={{ width: size, height: size }}
       aria-label={`Zoom into ${count} albums`}
       onClick={(event) => {

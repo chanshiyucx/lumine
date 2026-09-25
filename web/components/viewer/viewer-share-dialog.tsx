@@ -49,7 +49,7 @@ function ShareActionButton({
   return (
     <button
       type="button"
-      className="border-overlay bg-overlay/45 text-subtle hover:border-muted/60 hover:bg-overlay/65 hover:text-text focus-visible:outline-iris flex min-w-0 flex-col items-center gap-1.5 rounded border px-2 py-2.5 text-xs transition-[color,background-color,border-color,opacity] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      className="border-overlay bg-overlay/45 text-subtle hover:border-muted/60 hover:bg-overlay/65 hover:text-text flex min-w-0 flex-col items-center gap-1.5 rounded border px-2 py-2.5 text-xs transition-[color,background-color,border-color,opacity] duration-200 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={disabled}
       onClick={onClick}
     >
@@ -250,7 +250,7 @@ export function ViewerShareDialog({
 
         <button
           type="button"
-          className="text-subtle hover:text-text focus-visible:outline-iris absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="text-subtle hover:text-text absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-transparent transition-colors"
           onClick={onClose}
           aria-label="Close share dialog"
         >
@@ -263,7 +263,7 @@ export function ViewerShareDialog({
             <span className="min-w-0 flex-1 truncate text-xs">{shareUrl}</span>
             <button
               type="button"
-              className="border-overlay text-subtle hover:text-text focus-visible:outline-iris shrink-0 rounded-lg border p-1.5 transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="border-overlay text-subtle hover:text-text shrink-0 rounded-lg border p-1.5 transition-colors duration-300"
               onClick={handleCopyLink}
               aria-label={copyStatus === 'copied' ? 'Link copied' : 'Copy link'}
               disabled={copyStatus === 'copied'}

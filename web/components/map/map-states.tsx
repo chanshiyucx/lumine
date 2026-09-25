@@ -34,7 +34,7 @@ export function MapErrorState({
         </p>
         <button
           type="button"
-          className="border-overlay bg-surface hover:bg-overlay focus-visible:outline-iris mt-4 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="border-overlay bg-surface hover:bg-overlay mt-4 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors"
           onClick={onRetry}
         >
           Try again

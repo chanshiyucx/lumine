@@ -14,6 +14,7 @@ function getFocusableElements(container: HTMLElement) {
     container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
   ).filter(
     (element) =>
+      element.tabIndex >= 0 &&
       !element.closest('[aria-hidden="true"]') &&
       !element.closest('[inert]') &&
       element.getClientRects().length > 0,

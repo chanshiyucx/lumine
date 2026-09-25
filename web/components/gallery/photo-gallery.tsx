@@ -13,10 +13,7 @@ const Viewer = dynamic(() =>
   import('@/components/viewer/viewer').then((module) => module.Viewer),
 )
 
-const preloadViewer = () =>
-  import('@/components/viewer/viewer').catch(() => {
-    // Optional preload; opening the viewer still uses next/dynamic.
-  })
+const preloadViewer = () => import('@/components/viewer/viewer').catch(() => {})
 
 interface PhotoGalleryProps {
   photos: Photo[]
