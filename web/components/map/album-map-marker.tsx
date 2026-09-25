@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
-import { ThumbnailImage } from '@/components/photo'
+import { ThumbnailImage } from '@/components/image'
 import type { AlbumMapItem } from '@/lib/album/map'
 import { cn } from '@/lib/style'
 import { AlbumPreviewCard } from './album-preview-card'

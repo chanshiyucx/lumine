@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
-import { ThumbnailImage } from '@/components/photo'
+import { ThumbnailImage } from '@/components/image'
 import type { AlbumMapCover, AlbumMapItem } from '@/lib/album/map'
 import { cn } from '@/lib/style'
 
@@ -9,13 +9,11 @@ export function AlbumCoverLink({
   cover,
   caption,
   className,
-  loading = 'lazy',
 }: {
   item: AlbumMapItem
   cover: AlbumMapCover
   caption?: string
   className?: string
-  loading?: 'eager' | 'lazy'
 }) {
   return (
     <Link
@@ -28,7 +26,9 @@ export function AlbumCoverLink({
       )}
       aria-label={`Open a photo from ${item.label} in a new tab`}
     >
-      <ThumbnailImage photo={cover} loading={loading} scaleOnHover />
+      <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+        <ThumbnailImage photo={cover} loading="eager" />
+      </span>
       <span className="group-hover:bg-base/25 group-focus-visible:bg-base/25 pointer-events-none absolute inset-0 transition-colors duration-300" />
       {caption && (
         <>

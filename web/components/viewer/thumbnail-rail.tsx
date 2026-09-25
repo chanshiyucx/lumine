@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { ThumbnailImage } from '@/components/photo'
+import { ThumbnailImage } from '@/components/image'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'

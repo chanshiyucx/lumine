@@ -1,5 +1,4 @@
 import { m, useIsPresent, useReducedMotion } from 'motion/react'
-import Image from 'next/image'
 import {
   useEffect,
   useLayoutEffect,
@@ -7,6 +6,7 @@ import {
   useState,
   type RefObject,
 } from 'react'
+import { ThumbnailImage } from '@/components/image'
 import type { Photo } from '@/lib/photo'
 import { VIEWER_MOTION } from '../lib/viewer-motion'
 import type { ViewerPhase } from '../lib/viewer-state'
@@ -254,16 +254,7 @@ export function SharedPhotoTransitionPreview({
         }
       }}
     >
-      <Image
-        src={photo.thumbnail.url}
-        alt=""
-        aria-hidden
-        width={photo.thumbnail.width}
-        height={photo.thumbnail.height}
-        className="size-full object-cover"
-        draggable={false}
-        unoptimized
-      />
+      <ThumbnailImage photo={photo} loading="eager" showPlaceholder={false} />
     </m.div>
   )
 }

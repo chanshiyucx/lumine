@@ -76,7 +76,7 @@
   }
 
   :focus-visible {
-    @apply outline-iris outline-2 outline-offset-1;
+    @apply outline-iris outline-2 outline-offset-0;
   }
 }
 

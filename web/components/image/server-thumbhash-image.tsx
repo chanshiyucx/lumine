@@ -1,7 +1,7 @@
 import 'server-only'
 import sharp from 'sharp'
 import { thumbHashToRGBA } from 'thumbhash'
-import { ThumbHashImage } from '@/components/thumbhash'
+import { ThumbHashImage } from './thumbhash-image'
 
 interface ServerThumbHashImageProps {
   thumbHash: string

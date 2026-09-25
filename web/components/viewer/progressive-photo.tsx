@@ -1,6 +1,6 @@
 import { m, useReducedMotion } from 'motion/react'
-import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
+import { ThumbnailImage } from '@/components/image'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
@@ -19,21 +19,6 @@ const SCALE_INDICATOR_DURATION = 1000
 
 function formatScaleLabel(scale: number) {
   return `${scale < 1 ? scale.toFixed(2) : scale.toFixed(1)}x`
-}
-
-function PhotoThumbnail({ photo }: { photo: Photo }) {
-  return (
-    <Image
-      src={photo.thumbnail.url}
-      alt=""
-      aria-hidden
-      width={photo.thumbnail.width}
-      height={photo.thumbnail.height}
-      className="absolute inset-0 size-full object-contain"
-      loading="eager"
-      unoptimized
-    />
-  )
 }
 
 function ActiveProgressivePhoto({
@@ -106,7 +91,14 @@ function ActiveProgressivePhoto({
 
   return (
     <>
-      {!isOriginalDisplayed && <PhotoThumbnail photo={photo} />}
+      {!isOriginalDisplayed && (
+        <ThumbnailImage
+          photo={photo}
+          fit="contain"
+          loading="eager"
+          showPlaceholder={false}
+        />
+      )}
 
       {hasHighResolutionPhoto && shouldMountInteractiveImage && (
         <m.div
@@ -166,6 +158,11 @@ export function ProgressivePhoto({
       shouldMountInteractiveImage={shouldMountInteractiveImage}
     />
   ) : (
-    <PhotoThumbnail photo={photo} />
+    <ThumbnailImage
+      photo={photo}
+      fit="contain"
+      loading="eager"
+      showPlaceholder={false}
+    />
   )
 }

@@ -315,6 +315,7 @@ export function ViewerShareDialog({
                   src={ogPreviewUrl}
                   alt={photo.title}
                   fill
+                  loading="eager"
                   sizes="(max-width: 768px) calc(100vw - 3.5rem), 45rem"
                   className={cn(
                     'object-cover transition-opacity duration-300',

@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { CaptureSettingChip, ThumbnailImage } from '@/components/photo'
+import { ThumbnailImage } from '@/components/image'
+import { CaptureSettingChip } from '@/components/photo'
 import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
 import { getAvailableCaptureSettings } from '@/lib/photo/capture-settings'
@@ -43,7 +44,9 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
     >
-      <ThumbnailImage photo={photo} loading={imageLoading} scaleOnHover />
+      <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+        <ThumbnailImage photo={photo} loading={imageLoading} />
+      </span>
 
       <span className="pointer-events-none">
         <span

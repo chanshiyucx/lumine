@@ -1,7 +1,7 @@
 import Image from 'next/image'
-import { ThumbHashImage } from '@/components/thumbhash'
 import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
+import { ThumbHashImage } from './thumbhash-image'
 
 export interface ThumbnailImagePhoto {
   thumbHash: string
@@ -12,14 +12,14 @@ interface ThumbnailImageProps {
   photo: ThumbnailImagePhoto
   fit?: 'contain' | 'cover'
   loading?: 'eager' | 'lazy'
-  scaleOnHover?: boolean
+  showPlaceholder?: boolean
 }
 
 export function ThumbnailImage({
   photo,
   fit = 'cover',
   loading = 'lazy',
-  scaleOnHover = false,
+  showPlaceholder = true,
 }: ThumbnailImageProps) {
   const placeholderFitClassName =
     fit === 'contain' ? 'object-fill' : 'object-cover'
@@ -27,24 +27,22 @@ export function ThumbnailImage({
     fit === 'contain' ? 'object-contain' : 'object-cover'
 
   return (
-    <span
-      className={cn(
-        'pointer-events-none absolute inset-0 block select-none',
-        scaleOnHover &&
-          'transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100',
+    <span className="pointer-events-none absolute inset-0 block select-none">
+      {showPlaceholder && (
+        <ThumbHashImage
+          thumbHash={photo.thumbHash}
+          className={placeholderFitClassName}
+        />
       )}
-    >
-      <ThumbHashImage
-        thumbHash={photo.thumbHash}
-        className={placeholderFitClassName}
-      />
       <Image
         src={photo.thumbnail.url}
         alt=""
+        aria-hidden
         width={photo.thumbnail.width}
         height={photo.thumbnail.height}
         className={cn('absolute inset-0 size-full', imageFitClassName)}
         decoding="auto"
+        draggable={false}
         loading={loading}
         unoptimized
       />

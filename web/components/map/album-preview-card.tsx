@@ -25,7 +25,6 @@ export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
             key={cover.thumbnail.url}
             item={item}
             cover={cover}
-            loading="eager"
             className={
               item.covers.length > 2 && index === 0 ? 'row-span-2' : undefined
             }

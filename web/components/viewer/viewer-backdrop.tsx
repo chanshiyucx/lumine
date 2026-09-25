@@ -4,7 +4,7 @@ import {
   useReducedMotion,
   type MotionValue,
 } from 'motion/react'
-import { ThumbHashImage } from '@/components/thumbhash'
+import { ThumbHashImage } from '@/components/image'
 import type { Photo } from '@/lib/photo'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 import type { MountedViewerState } from './lib/viewer-state'
