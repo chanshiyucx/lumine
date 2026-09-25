@@ -20,17 +20,17 @@ export function HeaderCenter() {
     <div
       aria-hidden={!isVisible}
       className={cn(
-        'absolute left-1/2 flex -translate-x-1/2 flex-col items-center transition-[opacity,filter,transform] duration-300 ease-out motion-reduce:transition-none',
+        'flex min-w-0 flex-1 flex-col items-center transition-[opacity,filter,transform] duration-300 ease-out motion-reduce:transition-none sm:absolute sm:left-1/2 sm:max-w-[calc(100vw-28rem)] sm:flex-none sm:-translate-x-1/2',
         isVisible
           ? 'blur-0 translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-5 opacity-0 blur-sm',
       )}
     >
-      <span className="text-text text-xs font-semibold lg:text-sm">
+      <span className="text-text max-w-full truncate text-xs font-semibold lg:text-sm">
         {detail.date}
       </span>
       {detail.location && (
-        <span className="text-text/80 text-[10px] lg:text-xs">
+        <span className="text-text/80 max-w-full truncate text-[10px] lg:text-xs">
           {detail.location}
         </span>
       )}

@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowRightUpLine } from '@mingcute/react/arrow-right-up'
 import Link from 'next/link'
 import type { AlbumMapItem } from '@/lib/album/map'
 import { cn } from '@/lib/style'
@@ -41,7 +41,10 @@ export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
           aria-label={`Open ${item.label} album in a new tab`}
         >
           <h2 className="truncate text-sm font-semibold">{item.label}</h2>
-          <ArrowUpRight className="text-subtle size-4 shrink-0 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+          <ArrowRightUpLine
+            className="text-subtle size-4 shrink-0 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+            aria-hidden="true"
+          />
         </Link>
 
         <p className="text-subtle shrink-0 text-xs">{detailLabel}</p>

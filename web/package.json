@@ -15,12 +15,12 @@
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@mingcute/react": "1.4.1",
     "@radix-ui/react-hover-card": "1.1.23",
     "@radix-ui/react-scroll-area": "^1.2.18",
     "@tanstack/react-virtual": "^3.14.12",
     "@use-gesture/react": "^10.3.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.45.0",
     "maplibre-gl": "5.24.0",
     "motion": "^12.43.0",
     "next": "16.3.4",

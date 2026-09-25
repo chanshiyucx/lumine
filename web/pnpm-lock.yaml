@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@mingcute/react':
+        specifier: 1.4.1
+        version: 1.4.1(react@19.2.8)
       '@radix-ui/react-hover-card':
         specifier: 1.1.23
         version: 1.1.23(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -23,9 +26,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      lucide-react:
-        specifier: ^1.45.0
-        version: 1.45.0(react@19.2.8)
       maplibre-gl:
         specifier: 5.24.0
         version: 5.24.0
@@ -657,6 +657,11 @@ packages:
 
   '@maplibre/vt-pbf@4.3.2':
     resolution: {integrity: sha512-j6p0AdjvAR19Z3XaCysle7A4ZSo08tYOzxD0Y9NQylwPAkwJJeYub5b2eVucdeDh7erhv69DahoLOevDRERRUw==}
+
+  '@mingcute/react@1.4.1':
+    resolution: {integrity: sha512-efVOsE6P2+w75tUudBYNAcB7LhXUVeKoGrAAaxOUgs+wLHKZxzLLq4swes7uf9qnMdtACGt10TKusFVxj4hC8A==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -2161,11 +2166,6 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react@1.45.0:
-    resolution: {integrity: sha512-yH1ubCAduho9UR7oJhRXIQXogksRILBiTuZC4/bQIGeB9JOkxMlSuEHyyZpo1Z3S0yWJO2KTSUZbjiNvVxeOUw==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -3309,6 +3309,10 @@ snapshots:
       '@mapbox/point-geometry': 1.1.0
       '@types/geojson': 7946.0.16
       pbf: 5.1.2
+
+  '@mingcute/react@1.4.1(react@19.2.8)':
+    dependencies:
+      react: 19.2.8
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
@@ -4858,10 +4862,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-react@1.45.0(react@19.2.8):
-    dependencies:
-      react: 19.2.8
 
   magic-string@0.30.21:
     dependencies:

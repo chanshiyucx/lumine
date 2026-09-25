@@ -1,6 +1,6 @@
-import { Logo } from '@/components/logo'
 import { HeaderCenter } from './header-center'
-import { HeaderNav } from './header-nav'
+import { HeaderLeft } from './header-left'
+import { HeaderRight } from './header-right'
 import { LinearBlur } from './linear-blur'
 
 export function Header() {
@@ -13,9 +13,9 @@ export function Header() {
       />
 
       <div className="flex h-12 items-center justify-between gap-2 px-3 lg:gap-3 lg:px-4">
-        <Logo />
+        <HeaderLeft />
         <HeaderCenter />
-        <HeaderNav />
+        <HeaderRight />
       </div>
     </header>
   )

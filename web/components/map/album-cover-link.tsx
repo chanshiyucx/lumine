@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLinkLine } from '@mingcute/react/external-link'
 import Link from 'next/link'
 import { ThumbnailImage } from '@/components/image'
 import type { AlbumMapCover, AlbumMapItem } from '@/lib/album/map'
@@ -40,7 +40,7 @@ export function AlbumCoverLink({
       )}
       <span className="pointer-events-none absolute inset-0 grid place-items-center opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
         <span className="bg-base/80 grid size-8 scale-90 place-items-center rounded-full shadow-lg transition-transform duration-250 ease-out group-hover:scale-100 group-focus-visible:scale-100">
-          <ExternalLink className="size-4" />
+          <ExternalLinkLine className="size-4" aria-hidden="true" />
         </span>
       </span>
     </Link>

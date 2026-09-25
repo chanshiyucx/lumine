@@ -1,12 +1,11 @@
-import {
-  Check,
-  CloudDownload,
-  Copy,
-  ImageDown,
-  Send,
-  Share2,
-  X,
-} from 'lucide-react'
+import { CheckLine } from '@mingcute/react/check'
+import { CloseLine } from '@mingcute/react/close'
+import { CopyLine } from '@mingcute/react/copy'
+import { Download2Line } from '@mingcute/react/download-2'
+import { PicLine } from '@mingcute/react/pic'
+import { Share2Line } from '@mingcute/react/share-2'
+import { TelegramFill } from '@mingcute/react/telegram'
+import { TwitterFill } from '@mingcute/react/twitter'
 import { m } from 'motion/react'
 import Image from 'next/image'
 import {
@@ -17,7 +16,6 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import { TwitterIcon } from '@/components/icons'
 import type { Photo } from '@/lib/photo'
 import { getPhotoShareUrl } from '@/lib/photo/share'
 import { getPhotoOgPath } from '@/lib/route-paths'
@@ -255,7 +253,7 @@ export function ViewerShareDialog({
           onClick={onClose}
           aria-label="Close share dialog"
         >
-          <X className="size-4" />
+          <CloseLine className="size-4" aria-hidden="true" />
         </button>
 
         <div className="mb-4 space-y-2">
@@ -270,21 +268,23 @@ export function ViewerShareDialog({
               disabled={copyStatus === 'copied'}
             >
               <span className="relative block size-4">
-                <Copy
+                <CopyLine
                   className={cn(
                     'absolute inset-0 size-4 transition-[opacity,transform] duration-300',
                     copyStatus === 'copied'
                       ? 'scale-0 opacity-0'
                       : 'scale-100 opacity-100',
                   )}
+                  aria-hidden="true"
                 />
-                <Check
+                <CheckLine
                   className={cn(
                     'text-foam absolute inset-0 size-4 transition-[opacity,transform] duration-300',
                     copyStatus === 'copied'
                       ? 'scale-100 opacity-100'
                       : 'scale-0 opacity-0',
                   )}
+                  aria-hidden="true"
                 />
               </span>
             </button>
@@ -346,13 +346,13 @@ export function ViewerShareDialog({
         >
           {canUseNativeShare && (
             <ShareActionButton
-              icon={<Share2 className="size-4.5" />}
+              icon={<Share2Line className="size-4.5" aria-hidden="true" />}
               label="System"
               onClick={handleNativeShare}
             />
           )}
           <ShareActionButton
-            icon={<TwitterIcon className="size-4.5" />}
+            icon={<TwitterFill className="size-4.5" aria-hidden="true" />}
             label="Twitter"
             onClick={() =>
               handleSocialShare(
@@ -361,7 +361,7 @@ export function ViewerShareDialog({
             }
           />
           <ShareActionButton
-            icon={<Send className="size-4.5" />}
+            icon={<TelegramFill className="size-4.5" aria-hidden="true" />}
             label="Telegram"
             onClick={() =>
               handleSocialShare(
@@ -370,7 +370,7 @@ export function ViewerShareDialog({
             }
           />
           <ShareActionButton
-            icon={<CloudDownload className="size-4.5" />}
+            icon={<Download2Line className="size-4.5" aria-hidden="true" />}
             label={downloadTarget === 'original' ? '…' : 'Original'}
             disabled={downloadTarget === 'original'}
             onClick={() =>
@@ -382,7 +382,7 @@ export function ViewerShareDialog({
             }
           />
           <ShareActionButton
-            icon={<ImageDown className="size-4.5" />}
+            icon={<PicLine className="size-4.5" aria-hidden="true" />}
             label={downloadTarget === 'preview' ? '…' : 'Preview'}
             disabled={downloadTarget === 'preview'}
             onClick={() =>

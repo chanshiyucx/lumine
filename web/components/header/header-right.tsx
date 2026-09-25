@@ -1,6 +1,8 @@
 'use client'
 
-import { LayoutGrid, LibraryBig, Map as MapIcon } from 'lucide-react'
+import { Album2Line } from '@mingcute/react/album-2'
+import { GridLine } from '@mingcute/react/grid'
+import { MapLine } from '@mingcute/react/map'
 import Link from 'next/link'
 import { useSelectedLayoutSegment } from 'next/navigation'
 import { cn } from '@/lib/style'
@@ -10,25 +12,25 @@ const navItems = [
   {
     href: '/',
     label: 'Home',
-    icon: LayoutGrid,
+    icon: GridLine,
   },
   {
     href: '/albums',
     label: 'Albums',
-    icon: LibraryBig,
+    icon: Album2Line,
   },
   {
     href: '/map',
     label: 'Map',
-    icon: MapIcon,
+    icon: MapLine,
   },
 ]
 
-export function HeaderNav() {
+export function HeaderRight() {
   const segment = useSelectedLayoutSegment()
 
   return (
-    <nav aria-label="Primary" className="flex items-center gap-1">
+    <nav aria-label="Primary" className="flex shrink-0 items-center gap-1">
       {navItems.map((item) => {
         const isActive = isHeaderNavItemActive(segment, item.href)
         const Icon = item.icon
@@ -44,7 +46,7 @@ export function HeaderNav() {
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
           >
-            <Icon className="size-4" />
+            <Icon className="size-4" aria-hidden="true" />
           </Link>
         )
       })}

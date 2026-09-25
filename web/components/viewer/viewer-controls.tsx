@@ -1,12 +1,10 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  PanelRightClose,
-  PanelRightOpen,
-  Share2,
-  X,
-} from 'lucide-react'
+import { CloseLine } from '@mingcute/react/close'
+import { InformationLine } from '@mingcute/react/information'
+import { LayoutRightbarCloseLine } from '@mingcute/react/layout-rightbar-close'
+import { LayoutRightbarOpenLine } from '@mingcute/react/layout-rightbar-open'
+import { LeftLine } from '@mingcute/react/left'
+import { RightLine } from '@mingcute/react/right'
+import { ShareForwardLine } from '@mingcute/react/share-forward'
 import { m, type MotionValue } from 'motion/react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
@@ -67,11 +65,17 @@ export function ViewerToolbar({
               : 'Expand information panel'
           }
         >
-          <Info className="size-4 lg:hidden" />
+          <InformationLine className="size-4 lg:hidden" aria-hidden="true" />
           {isInfoPanelOpen ? (
-            <PanelRightClose className="hidden size-4 lg:block" />
+            <LayoutRightbarCloseLine
+              className="hidden size-4 lg:block"
+              aria-hidden="true"
+            />
           ) : (
-            <PanelRightOpen className="hidden size-4 lg:block" />
+            <LayoutRightbarOpenLine
+              className="hidden size-4 lg:block"
+              aria-hidden="true"
+            />
           )}
         </button>
 
@@ -83,7 +87,7 @@ export function ViewerToolbar({
           aria-expanded={isShareDialogOpen}
           aria-label="Share photo"
         >
-          <Share2 className="size-4" />
+          <ShareForwardLine className="size-4" aria-hidden="true" />
         </button>
 
         <button
@@ -92,7 +96,7 @@ export function ViewerToolbar({
           onClick={onClose}
           aria-label="Close preview"
         >
-          <X className="size-4" />
+          <CloseLine className="size-4" aria-hidden="true" />
         </button>
       </m.div>
     </m.div>
@@ -140,7 +144,7 @@ export function ViewerNavigation({
           onClick={() => onSelect(activeIndex - 1)}
           aria-label="Previous photo"
         >
-          <ChevronLeft className="size-5" />
+          <LeftLine className="size-5" aria-hidden="true" />
         </button>
       )}
 
@@ -152,7 +156,7 @@ export function ViewerNavigation({
           onClick={() => onSelect(activeIndex + 1)}
           aria-label="Next photo"
         >
-          <ChevronRight className="size-5" />
+          <RightLine className="size-5" aria-hidden="true" />
         </button>
       )}
     </m.div>

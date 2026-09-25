@@ -1,4 +1,5 @@
-import { AlertCircle, LoaderCircle } from 'lucide-react'
+import { AlertLine } from '@mingcute/react/alert'
+import { Loading3Line } from '@mingcute/react/loading-3'
 import type { PhotoResourceState } from './hooks/use-progressive-photo'
 
 const BYTES_PER_MEBIBYTE = 1024 * 1024
@@ -32,9 +33,9 @@ export function LoadingIndicator({ state }: LoadingIndicatorProps) {
   return (
     <div className="bg-overlay/80 pointer-events-none absolute right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
       {isError ? (
-        <AlertCircle className="size-4" />
+        <AlertLine className="size-4" aria-hidden="true" />
       ) : (
-        <LoaderCircle className="size-4 animate-spin" />
+        <Loading3Line className="size-4 animate-spin" aria-hidden="true" />
       )}
 
       <div className="w-28 text-xs">

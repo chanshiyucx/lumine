@@ -1,4 +1,7 @@
-import { Maximize2, Minimize2, Minus, Plus } from 'lucide-react'
+import { AddLine } from '@mingcute/react/add'
+import { FullscreenLine } from '@mingcute/react/fullscreen'
+import { FullscreenExitLine } from '@mingcute/react/fullscreen-exit'
+import { MinimizeLine } from '@mingcute/react/minimize'
 
 export function MapControls({
   onZoomIn,
@@ -12,17 +15,17 @@ export function MapControls({
   showingAll: boolean
 }) {
   const controls = [
-    { label: 'Zoom in', icon: Plus, action: onZoomIn },
-    { label: 'Zoom out', icon: Minus, action: onZoomOut },
+    { label: 'Zoom in', icon: AddLine, action: onZoomIn },
+    { label: 'Zoom out', icon: MinimizeLine, action: onZoomOut },
     showingAll
       ? {
           label: 'Return to default view',
-          icon: Minimize2,
+          icon: FullscreenExitLine,
           action: onToggleExtent,
         }
       : {
           label: 'Show all places',
-          icon: Maximize2,
+          icon: FullscreenLine,
           action: onToggleExtent,
         },
   ]
@@ -37,7 +40,7 @@ export function MapControls({
           aria-label={label}
           onClick={action}
         >
-          <Icon className="size-4" />
+          <Icon className="size-4" aria-hidden="true" />
         </button>
       ))}
     </div>
