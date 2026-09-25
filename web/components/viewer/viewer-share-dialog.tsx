@@ -22,6 +22,7 @@ import type { Photo } from '@/lib/photo'
 import { getPhotoShareUrl } from '@/lib/photo/share'
 import { getPhotoOgPath } from '@/lib/route-paths'
 import { siteConfig } from '@/lib/site-config'
+import { cn } from '@/lib/style'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 
 interface ViewerShareDialogProps {
@@ -270,10 +271,20 @@ export function ViewerShareDialog({
             >
               <span className="relative block size-4">
                 <Copy
-                  className={`absolute inset-0 size-4 transition-[opacity,transform] duration-300 ${copyStatus === 'copied' ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+                  className={cn(
+                    'absolute inset-0 size-4 transition-[opacity,transform] duration-300',
+                    copyStatus === 'copied'
+                      ? 'scale-0 opacity-0'
+                      : 'scale-100 opacity-100',
+                  )}
                 />
                 <Check
-                  className={`text-foam absolute inset-0 size-4 transition-[opacity,transform] duration-300 ${copyStatus === 'copied' ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                  className={cn(
+                    'text-foam absolute inset-0 size-4 transition-[opacity,transform] duration-300',
+                    copyStatus === 'copied'
+                      ? 'scale-100 opacity-100'
+                      : 'scale-0 opacity-0',
+                  )}
                 />
               </span>
             </button>
@@ -305,7 +316,10 @@ export function ViewerShareDialog({
                   alt={photo.title}
                   fill
                   sizes="(max-width: 768px) calc(100vw - 3.5rem), 45rem"
-                  className={`object-cover transition-opacity duration-300 ${isPreviewLoading ? 'opacity-0' : 'opacity-100'}`}
+                  className={cn(
+                    'object-cover transition-opacity duration-300',
+                    isPreviewLoading ? 'opacity-0' : 'opacity-100',
+                  )}
                   onLoad={() => setIsPreviewLoading(false)}
                   onError={() => {
                     setIsPreviewLoading(false)
@@ -324,11 +338,10 @@ export function ViewerShareDialog({
         </div>
 
         <div
-          className={
-            canUseNativeShare
-              ? 'grid grid-cols-5 gap-2'
-              : 'grid grid-cols-4 gap-2'
-          }
+          className={cn(
+            'grid gap-2',
+            canUseNativeShare ? 'grid-cols-5' : 'grid-cols-4',
+          )}
         >
           {canUseNativeShare && (
             <ShareActionButton

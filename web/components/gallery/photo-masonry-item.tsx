@@ -4,8 +4,11 @@ import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
 import { getAvailableCaptureSettings } from '@/lib/photo/capture-settings'
 import { formatBytes, formatMimeLabel } from '@/lib/photo/formatters'
+import { cn } from '@/lib/style'
 
 const EXPANDED_INFO_MIN_HEIGHT = 140
+const HOVER_REVEAL_CLASS_NAME =
+  'opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none'
 
 interface PhotoMasonryItemProps {
   photo: Photo
@@ -43,12 +46,22 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
       <ThumbnailImage photo={photo} loading={imageLoading} scaleOnHover />
 
       <span className="pointer-events-none">
-        <span className="from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none" />
+        <span
+          className={cn(
+            'from-base/80 via-base/60 absolute inset-0 bg-linear-to-t to-transparent',
+            HOVER_REVEAL_CLASS_NAME,
+          )}
+        />
         <span className="absolute inset-x-0 bottom-0 max-h-full overflow-hidden p-2">
-          <span className="block truncate opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+          <span className={cn('block truncate', HOVER_REVEAL_CLASS_NAME)}>
             {photo.title}
           </span>
-          <span className="flex flex-wrap gap-1.5 text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+          <span
+            className={cn(
+              'flex flex-wrap gap-1.5 text-xs',
+              HOVER_REVEAL_CLASS_NAME,
+            )}
+          >
             <span>{mimeLabel}</span>
             <span>•</span>
             <span>
@@ -59,7 +72,12 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
           </span>
           {showExpandedInfo ? (
             <span className="block">
-              <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+              <span
+                className={cn(
+                  'bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs backdrop-blur-md',
+                  HOVER_REVEAL_CLASS_NAME,
+                )}
+              >
                 {getAlbumDescriptor(photo.albumKey).title}
               </span>
               {captureSettings.length > 0 ? (
@@ -68,7 +86,10 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
                     <CaptureSettingChip
                       key={setting.key}
                       setting={setting}
-                      className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
+                      className={cn(
+                        'backdrop-blur-md',
+                        HOVER_REVEAL_CLASS_NAME,
+                      )}
                     />
                   ))}
                 </span>
