@@ -5,9 +5,12 @@ import type { Photo } from '@/lib/photo'
 import { getAvailableCaptureSettings } from '@/lib/photo/capture-settings'
 import { formatBytes, formatMimeLabel } from '@/lib/photo/formatters'
 
+const EXPANDED_INFO_MIN_HEIGHT = 140
+
 interface PhotoMasonryItemProps {
   photo: Photo
   index: number
+  cardHeight: number
   imageLoading: 'eager' | 'lazy'
   onOpen: (index: number, triggerElement: HTMLElement) => void
 }
@@ -15,12 +18,15 @@ interface PhotoMasonryItemProps {
 export const PhotoMasonryItem = memo(function PhotoMasonryItem({
   photo,
   index,
+  cardHeight,
   imageLoading,
   onOpen,
 }: PhotoMasonryItemProps) {
   const mimeLabel = formatMimeLabel(photo)
-  const albumTitle = getAlbumDescriptor(photo.albumKey).title
-  const captureSettings = getAvailableCaptureSettings(photo)
+  const showExpandedInfo = cardHeight > EXPANDED_INFO_MIN_HEIGHT
+  const captureSettings = showExpandedInfo
+    ? getAvailableCaptureSettings(photo)
+    : []
 
   return (
     <button
@@ -28,7 +34,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
       style={{
         aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
       }}
-      className="photo-masonry-card group bg-surface relative block w-full appearance-none overflow-hidden text-left"
+      className="group bg-surface relative block w-full appearance-none overflow-hidden text-left"
       data-viewer-trigger={photo.id}
       onClick={(event) => onOpen(index, event.currentTarget)}
       aria-label={`Open ${photo.title}`}
@@ -51,22 +57,24 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
             <span>•</span>
             <span>{formatBytes(photo.original.bytes)}</span>
           </span>
-          <span className="photo-masonry-expanded-info">
-            <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
-              {albumTitle}
-            </span>
-            {captureSettings.length > 0 && (
-              <span className="grid grid-cols-2 gap-2 text-xs">
-                {captureSettings.map((setting) => (
-                  <CaptureSettingChip
-                    key={setting.key}
-                    setting={setting}
-                    className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
-                  />
-                ))}
+          {showExpandedInfo ? (
+            <span className="block">
+              <span className="bg-text/10 mb-2 inline-block rounded-full px-2 py-0.5 text-xs opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+                {getAlbumDescriptor(photo.albumKey).title}
               </span>
-            )}
-          </span>
+              {captureSettings.length > 0 ? (
+                <span className="grid grid-cols-2 gap-2 text-xs">
+                  {captureSettings.map((setting) => (
+                    <CaptureSettingChip
+                      key={setting.key}
+                      setting={setting}
+                      className="opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
+                    />
+                  ))}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
         </span>
       </span>
     </button>

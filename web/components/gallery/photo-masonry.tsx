@@ -170,6 +170,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
               <PhotoMasonryItem
                 photo={photo}
                 index={virtualItem.index}
+                cardHeight={virtualItem.size}
                 imageLoading={getMasonryImageLoading(
                   virtualItem,
                   viewportStart,
