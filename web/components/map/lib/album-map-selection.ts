@@ -2,8 +2,12 @@ import Supercluster from 'supercluster'
 import type { AlbumMapItem } from '@/lib/album/map'
 import { CLUSTER_RADIUS, MAX_CLUSTER_ZOOM } from './map-config'
 
-export interface AlbumPointProperties {
+interface AlbumPointProperties {
   item: AlbumMapItem
+}
+
+interface AlbumClusterProperties {
+  minAlbumKey: string
 }
 
 export function prepareAlbumMapSelection(
@@ -26,9 +30,18 @@ export function prepareAlbumMapSelection(
 
   return {
     selectedItem,
-    clusterIndex: new Supercluster<AlbumPointProperties>({
+    clusterIndex: new Supercluster<
+      AlbumPointProperties,
+      AlbumClusterProperties
+    >({
       radius: CLUSTER_RADIUS,
       maxZoom: MAX_CLUSTER_ZOOM,
+      map: ({ item }) => ({ minAlbumKey: item.key }),
+      reduce: (accumulated, next) => {
+        if (next.minAlbumKey < accumulated.minAlbumKey) {
+          accumulated.minAlbumKey = next.minAlbumKey
+        }
+      },
     }).load(points),
   }
 }

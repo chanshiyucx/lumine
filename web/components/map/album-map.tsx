@@ -185,10 +185,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
               viewport.bounds,
             )
 
-            if (
-              'cluster' in feature.properties &&
-              feature.properties.cluster === true
-            ) {
+            if (!('item' in feature.properties)) {
               const { cluster_id: clusterId, point_count: pointCount } =
                 feature.properties
               const clusterItems = clusterIndex
@@ -197,7 +194,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
 
               return (
                 <ClusterMarker
-                  key={`cluster-${clusterId}`}
+                  key={`cluster-${viewport.zoom}-${feature.properties.minAlbumKey}`}
                   longitude={longitude}
                   latitude={latitude}
                   count={pointCount}

@@ -3,6 +3,11 @@
   outline-offset: -2px;
 }
 
+.album-map-marker-visual {
+  transform-origin: center;
+  animation: album-map-marker-in 340ms ease-out both;
+}
+
 .album-map-hover-preview {
   transform-origin: var(--radix-hover-card-content-transform-origin);
 
@@ -13,6 +18,24 @@
   &[data-state='closed'] {
     pointer-events: none;
     animation: album-map-preview-out 120ms ease-in forwards;
+  }
+}
+
+@keyframes album-map-marker-in {
+  0% {
+    transform: scale(0);
+  }
+
+  68% {
+    transform: scale(1.05);
+  }
+
+  84% {
+    transform: scale(0.985);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
 
@@ -41,6 +64,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .album-map-marker-visual {
+    animation: none;
+  }
+
   .album-map-hover-preview {
     animation: none;
   }
