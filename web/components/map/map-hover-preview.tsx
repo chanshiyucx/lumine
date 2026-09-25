@@ -49,6 +49,8 @@ export function MapHoverPreview({
           align="center"
           sideOffset={10}
           collisionPadding={16}
+          updatePositionStrategy={pinned ? 'always' : 'optimized'}
+          hideWhenDetached={pinned}
           className="album-map-hover-preview z-50 w-[min(20rem,calc(100vw-2rem))] outline-none"
         >
           {children}
