@@ -1,12 +1,7 @@
-'use client'
-
 import Image, { type ImageProps } from 'next/image'
-import { useState } from 'react'
 import { ThumbHashImage } from '@/components/thumbhash'
 import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
-
-const loadedThumbnailUrls = new Set<string>()
 
 export interface ThumbnailImagePhoto {
   thumbHash: string
@@ -16,7 +11,6 @@ export interface ThumbnailImagePhoto {
 interface ThumbnailImageProps {
   photo: ThumbnailImagePhoto
   alt?: string
-  fadeIn?: boolean
   fetchPriority?: ImageProps['fetchPriority']
   fit?: 'contain' | 'cover'
   loadImage?: boolean
@@ -29,7 +23,6 @@ interface ThumbnailImageProps {
 export function ThumbnailImage({
   photo,
   alt = '',
-  fadeIn = true,
   fetchPriority,
   fit = 'cover',
   loadImage = true,
@@ -38,24 +31,10 @@ export function ThumbnailImage({
   onLoad,
   scaleOnHover = false,
 }: ThumbnailImageProps) {
-  const thumbnailUrl = photo.thumbnail.url
-  const [loadedUrl, setLoadedUrl] = useState<string | null>(() =>
-    loadedThumbnailUrls.has(thumbnailUrl) ? thumbnailUrl : null,
-  )
-  const isLoaded =
-    !fadeIn ||
-    loadedUrl === thumbnailUrl ||
-    loadedThumbnailUrls.has(thumbnailUrl)
   const placeholderFitClassName =
     fit === 'contain' ? 'object-fill' : 'object-cover'
   const imageFitClassName =
     fit === 'contain' ? 'object-contain' : 'object-cover'
-
-  const handleLoad: NonNullable<ImageProps['onLoad']> = (event) => {
-    loadedThumbnailUrls.add(thumbnailUrl)
-    setLoadedUrl(thumbnailUrl)
-    onLoad?.(event)
-  }
 
   return (
     <span
@@ -71,23 +50,16 @@ export function ThumbnailImage({
       />
       {loadImage ? (
         <Image
-          key={thumbnailUrl}
-          src={thumbnailUrl}
+          src={photo.thumbnail.url}
           alt={alt}
           width={photo.thumbnail.width}
           height={photo.thumbnail.height}
-          className={cn(
-            'absolute inset-0 size-full',
-            imageFitClassName,
-            fadeIn &&
-              'transition-opacity duration-300 ease-out motion-reduce:transition-none',
-            isLoaded ? 'opacity-100' : 'opacity-0',
-          )}
+          className={cn('absolute inset-0 size-full', imageFitClassName)}
           decoding="auto"
           fetchPriority={fetchPriority}
           loading={loading}
           onError={onError}
-          onLoad={handleLoad}
+          onLoad={onLoad}
           unoptimized
         />
       ) : null}
