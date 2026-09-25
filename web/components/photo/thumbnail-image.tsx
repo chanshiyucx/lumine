@@ -1,4 +1,4 @@
-import Image, { type ImageProps } from 'next/image'
+import Image from 'next/image'
 import { ThumbHashImage } from '@/components/thumbhash'
 import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
@@ -10,25 +10,15 @@ export interface ThumbnailImagePhoto {
 
 interface ThumbnailImageProps {
   photo: ThumbnailImagePhoto
-  alt?: string
-  fetchPriority?: ImageProps['fetchPriority']
   fit?: 'contain' | 'cover'
-  loadImage?: boolean
   loading?: 'eager' | 'lazy'
-  onError?: ImageProps['onError']
-  onLoad?: ImageProps['onLoad']
   scaleOnHover?: boolean
 }
 
 export function ThumbnailImage({
   photo,
-  alt = '',
-  fetchPriority,
   fit = 'cover',
-  loadImage = true,
   loading = 'lazy',
-  onError,
-  onLoad,
   scaleOnHover = false,
 }: ThumbnailImageProps) {
   const placeholderFitClassName =
@@ -48,21 +38,16 @@ export function ThumbnailImage({
         thumbHash={photo.thumbHash}
         className={placeholderFitClassName}
       />
-      {loadImage ? (
-        <Image
-          src={photo.thumbnail.url}
-          alt={alt}
-          width={photo.thumbnail.width}
-          height={photo.thumbnail.height}
-          className={cn('absolute inset-0 size-full', imageFitClassName)}
-          decoding="auto"
-          fetchPriority={fetchPriority}
-          loading={loading}
-          onError={onError}
-          onLoad={onLoad}
-          unoptimized
-        />
-      ) : null}
+      <Image
+        src={photo.thumbnail.url}
+        alt=""
+        width={photo.thumbnail.width}
+        height={photo.thumbnail.height}
+        className={cn('absolute inset-0 size-full', imageFitClassName)}
+        decoding="auto"
+        loading={loading}
+        unoptimized
+      />
     </span>
   )
 }

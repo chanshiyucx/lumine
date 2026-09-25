@@ -22,26 +22,6 @@ interface MasonryPosition {
   end: number
 }
 
-type MasonryImagePosition = Pick<MasonryPosition, 'start' | 'end'>
-
-function isMasonryPositionVisible(
-  position: MasonryImagePosition,
-  viewportStart: number,
-  viewportEnd: number,
-) {
-  return position.end > viewportStart && position.start < viewportEnd
-}
-
-export function getMasonryImageLoading(
-  position: MasonryImagePosition,
-  viewportStart: number,
-  viewportEnd: number,
-): 'eager' | 'lazy' {
-  return isMasonryPositionVisible(position, viewportStart, viewportEnd)
-    ? 'eager'
-    : 'lazy'
-}
-
 export function getMasonryLayout(containerWidth: number): MasonryLayout {
   const columnCount =
     COLUMN_COUNT_BREAKPOINTS.find(({ minWidth }) => containerWidth >= minWidth)

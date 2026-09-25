@@ -1,18 +1,8 @@
-import { thumbHashToAverageRGBA, thumbHashToDataURL } from 'thumbhash'
+import { thumbHashToDataURL } from 'thumbhash'
 
 const CACHE_LIMIT = 128
 
-export interface ThumbHashAsset {
-  dataUrl: string
-  averageColor: {
-    r: number
-    g: number
-    b: number
-    a: number
-  }
-}
-
-const assetCache = new Map<string, ThumbHashAsset>()
+const dataUrlCache = new Map<string, string>()
 
 function decodeBase64(value: string) {
   const binary = atob(value)
@@ -25,36 +15,27 @@ function decodeBase64(value: string) {
   return bytes
 }
 
-function decodeThumbHash(thumbHash: string): ThumbHashAsset {
-  const bytes = decodeBase64(thumbHash)
-
-  return {
-    dataUrl: thumbHashToDataURL(bytes),
-    averageColor: thumbHashToAverageRGBA(bytes),
-  }
-}
-
-export function getThumbHashAsset(thumbHash: string) {
-  const cached = assetCache.get(thumbHash)
+export function getThumbHashDataUrl(thumbHash: string) {
+  const cached = dataUrlCache.get(thumbHash)
 
   if (cached) {
-    assetCache.delete(thumbHash)
-    assetCache.set(thumbHash, cached)
+    dataUrlCache.delete(thumbHash)
+    dataUrlCache.set(thumbHash, cached)
 
     return cached
   }
 
-  const asset = decodeThumbHash(thumbHash)
+  const dataUrl = thumbHashToDataURL(decodeBase64(thumbHash))
 
-  if (assetCache.size >= CACHE_LIMIT) {
-    const oldest = assetCache.keys().next()
+  if (dataUrlCache.size >= CACHE_LIMIT) {
+    const oldest = dataUrlCache.keys().next()
 
     if (!oldest.done) {
-      assetCache.delete(oldest.value)
+      dataUrlCache.delete(oldest.value)
     }
   }
 
-  assetCache.set(thumbHash, asset)
+  dataUrlCache.set(thumbHash, dataUrl)
 
-  return asset
+  return dataUrl
 }

@@ -4,7 +4,6 @@ import { useScrollElement } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
 import {
   getDominantMasonryPhoto,
-  getMasonryImageLoading,
   getMasonryLayout,
   getPhotoMasonryHeight,
   MASONRY_GAP,
@@ -14,6 +13,7 @@ import { PhotoMasonryItem } from './photo-masonry-item'
 
 const HEADER_HEIGHT = 48
 const OVERSCAN_ROWS = 3
+const INITIAL_EAGER_ITEMS_PER_COLUMN = 3
 
 interface MeasuredMasonryLayout extends MasonryLayout {
   scrollMargin: number
@@ -143,9 +143,6 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   }, [isLayoutReady, virtualizer, handleVirtualizerChange])
 
   const virtualItems = virtualizer.getVirtualItems()
-  const scrollOffset = virtualizer.scrollOffset ?? scrollElement?.scrollTop ?? 0
-  const viewportStart = scrollOffset + HEADER_HEIGHT
-  const viewportEnd = scrollOffset + (scrollElement?.clientHeight ?? 0)
 
   return (
     <div ref={containerRef}>
@@ -171,11 +168,12 @@ export const PhotoMasonry = memo(function PhotoMasonry({
                 photo={photo}
                 index={virtualItem.index}
                 cardHeight={virtualItem.size}
-                imageLoading={getMasonryImageLoading(
-                  virtualItem,
-                  viewportStart,
-                  viewportEnd,
-                )}
+                imageLoading={
+                  virtualItem.index <
+                  columnCount * INITIAL_EAGER_ITEMS_PER_COLUMN
+                    ? 'eager'
+                    : 'lazy'
+                }
                 onOpen={onPhotoOpen}
               />
             </li>

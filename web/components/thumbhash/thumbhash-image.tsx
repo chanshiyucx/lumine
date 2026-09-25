@@ -1,27 +1,25 @@
-import Image, { type ImageProps } from 'next/image'
-import { getThumbHashAsset } from '@/lib/thumbhash'
+import Image from 'next/image'
+import { getThumbHashDataUrl } from '@/lib/thumbhash'
 
-interface ThumbHashImageProps extends Omit<
-  ImageProps,
-  'alt' | 'fill' | 'height' | 'src' | 'width'
-> {
+interface ThumbHashImageProps {
   thumbHash: string
   placeholderSrc?: string
+  className?: string
 }
 
 export function ThumbHashImage({
   thumbHash,
   placeholderSrc,
-  ...props
+  className,
 }: ThumbHashImageProps) {
-  const src = placeholderSrc ?? getThumbHashAsset(thumbHash).dataUrl
+  const src = placeholderSrc ?? getThumbHashDataUrl(thumbHash)
 
   return (
     <Image
-      {...props}
       src={src}
       alt=""
       aria-hidden
+      className={className}
       decoding="async"
       fill
       sizes="100vw"
