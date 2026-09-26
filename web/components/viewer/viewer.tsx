@@ -282,7 +282,7 @@ export function Viewer({
                     concealedForSharedTransition={sharedTransition !== null}
                     isMobile={isMobile}
                     isZoomed={state.isZoomed}
-                    isSwipeDisabled={mobile.infoOpen}
+                    isSwipeDisabled={isMobile && mobile.infoOpen}
                     isInteractionEnabled={isInteractionEnabled}
                     onActiveIndexChange={goToPhoto}
                     onZoomStateChange={onZoomStateChange}

@@ -13,7 +13,7 @@ import type { ViewerPhase } from './lib/viewer-state'
 import { ThumbnailRail } from './thumbnail-rail'
 
 const NAVIGATION_BUTTON_CLASS =
-  'circle-button pointer-events-auto absolute top-1/2 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 lg:inline-flex'
+  'circle-button pointer-events-auto absolute top-1/2 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 lg:inline-flex [@media(hover:none)]:hidden'
 
 interface ViewerToolbarProps {
   chromeOpacity: number | MotionValue<number>

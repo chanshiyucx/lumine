@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import type { CSSProperties } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
-import { useMobile } from '@/hooks/use-mobile'
 import { useZoomableImage } from './hooks/use-zoomable-image'
 import { INITIAL_SCALE, MIN_SCALE } from './lib/zoomable-image'
 
@@ -35,7 +34,6 @@ export function ZoomableImage({
   src,
   width,
 }: ZoomableImageProps) {
-  const isMobile = useMobile()
   const {
     containerRef,
     effectiveMaxScale,
@@ -79,7 +77,7 @@ export function ZoomableImage({
         pinch={{ step: 5, disabled: false, allowPanning: false }}
         doubleClick={{ disabled: true }}
         panning={{
-          disabled: isMobile && !isZoomed,
+          disabled: !isZoomed,
           velocityDisabled: true,
         }}
         limitToBounds

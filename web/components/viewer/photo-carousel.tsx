@@ -34,8 +34,7 @@ export function PhotoCarousel({
 }: PhotoCarouselProps) {
   const swiperRef = useRef<SwiperInstance | null>(null)
   const [initialPhotoId] = useState(photos[activeIndex]?.id ?? null)
-  const allowTouchMove =
-    isInteractionEnabled && isMobile && !isZoomed && !isSwipeDisabled
+  const allowTouchMove = isInteractionEnabled && !isZoomed && !isSwipeDisabled
 
   useSwiperResize(swiperRef)
 
