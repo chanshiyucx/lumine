@@ -72,7 +72,7 @@ pub(super) fn load_previous_state(path: &Path) -> Result<StateFile> {
         .with_context(|| format!("failed to open previous state {}", path.display()))?;
     let state: StateFile = serde_json::from_reader(file).with_context(|| {
         format!(
-            "invalid state {}; delete it to establish a new source baseline",
+            "invalid state {}; delete it to establish a new source baseline; also delete affected image outputs if sources may have changed",
             path.display()
         )
     })?;

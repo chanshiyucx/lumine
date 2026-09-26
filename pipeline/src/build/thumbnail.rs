@@ -106,7 +106,7 @@ fn read_thumbnail_asset(
             preview.image.height(),
             mime_from_format(format),
         )?,
-        thumb_hash: compute_thumb_hash(&preview)?,
+        thumb_hash: compute_thumb_hash(&preview, path)?,
     })
 }
 
@@ -248,33 +248,22 @@ fn write_thumbnail(
     write_bytes_atomic(path, &bytes)
 }
 
-fn compute_thumb_hash(preview: &PreviewImage) -> Result<String> {
+fn compute_thumb_hash(preview: &PreviewImage, path: &Path) -> Result<String> {
     let mut reduced = resize_to_fit(
         &preview.image,
         THUMBHASH_MAX_DIMENSION,
         THUMBHASH_MAX_DIMENSION,
     )?
     .to_rgba8();
-    // ThumbHash has no profile: its decoded placeholder must contain sRGB pixels.
+    // ThumbHash has no profile. Color conversion is best-effort for this placeholder only.
     if let Some(profile) = &preview.icc_profile {
-        let source =
-            ColorProfile::new_from_slice(profile).context("invalid thumbnail ICC profile")?;
-        let transform = source
-            .create_transform_8bit(
-                Layout::Rgba,
-                &ColorProfile::new_srgb(),
-                Layout::Rgba,
-                TransformOptions {
-                    rendering_intent: RenderingIntent::RelativeColorimetric,
-                    ..Default::default()
-                },
-            )
-            .context("failed to create thumbnail color transform")?;
-        let mut converted = vec![0; reduced.as_raw().len()];
-        transform
-            .transform(reduced.as_raw(), &mut converted)
-            .context("failed to convert ThumbHash pixels to sRGB")?;
-        reduced.as_mut().copy_from_slice(&converted);
+        match thumb_hash_srgb_pixels(reduced.as_raw(), profile) {
+            Ok(converted) => reduced.as_mut().copy_from_slice(&converted),
+            Err(error) => warn!(
+                "cannot color-convert ThumbHash for {}: {error:#}; using thumbnail pixel values",
+                path.display()
+            ),
+        }
     }
     let hash = rgba_to_thumb_hash(
         reduced.width() as usize,
@@ -283,6 +272,26 @@ fn compute_thumb_hash(preview: &PreviewImage) -> Result<String> {
     );
 
     Ok(BASE64.encode(hash))
+}
+
+fn thumb_hash_srgb_pixels(pixels: &[u8], profile: &[u8]) -> Result<Vec<u8>> {
+    let source = ColorProfile::new_from_slice(profile).context("invalid thumbnail ICC profile")?;
+    let transform = source
+        .create_transform_8bit(
+            Layout::Rgba,
+            &ColorProfile::new_srgb(),
+            Layout::Rgba,
+            TransformOptions {
+                rendering_intent: RenderingIntent::RelativeColorimetric,
+                ..Default::default()
+            },
+        )
+        .context("failed to create thumbnail color transform")?;
+    let mut converted = vec![0; pixels.len()];
+    transform
+        .transform(pixels, &mut converted)
+        .context("failed to convert ThumbHash pixels to sRGB")?;
+    Ok(converted)
 }
 
 fn build_preview_image(
