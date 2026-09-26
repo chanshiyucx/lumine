@@ -14,11 +14,11 @@ use std::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         mpsc,
     },
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use anyhow::{Context, Result, anyhow, bail};
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use tracing::warn;
 
 use crate::config::Config;
@@ -110,20 +110,23 @@ pub(crate) fn run() -> Result<BuildExit> {
     }
     progress.finish_and_clear();
 
+    let elapsed = format_elapsed(started_at.elapsed());
     if summary.processed == 0 && summary.failed == 0 {
-        println!(
-            "Up to date · {} reused · {:.2?}",
-            summary.reused,
-            started_at.elapsed()
-        );
+        println!("Up to date · {elapsed} · {} reused", summary.reused);
     } else {
-        println!(
-            "Completed in {:.2?} · {} processed · {} reused · {} failed",
-            started_at.elapsed(),
-            summary.processed,
-            summary.reused,
-            summary.failed
+        let status = if summary.failed == 0 {
+            "Completed"
+        } else {
+            "Completed with errors"
+        };
+        print!(
+            "{status} · {elapsed} · {} processed · {} reused",
+            summary.processed, summary.reused
         );
+        if summary.failed > 0 {
+            print!(" · {} failed", summary.failed);
+        }
+        println!();
     }
 
     Ok(summary.exit_status())
@@ -222,23 +225,21 @@ fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
 }
 
 fn print_build_start(config: &Config, plan: &BuildPlan) {
-    println!("Build plan");
-    println!("  Source        {}", config.source_path().display());
-    println!("  Output        {}", plan.root_dir.display());
+    println!("Build");
+    println!("  Source   {}", config.source_path().display());
+    println!("  Output   {}", plan.root_dir.display());
     if !config.source_tags().is_empty() {
-        println!("  Tags          {}", config.source_tags().join(", "));
+        println!("  Tags     {}", config.source_tags().join(", "));
     }
-    println!("  Originals     {}", plan.originals_dir.display());
-    println!("  Thumbnails    {}", plan.thumbnails_dir.display());
     println!(
-        "  Photos        {} total · {} to process · {} reused",
+        "  Photos   {} total · {} to process · {} reused",
         plan.total,
         plan.pending.len(),
         plan.reused
     );
     if !plan.pending.is_empty() {
         println!(
-            "  Concurrency   up to {} workers · up to {} full-resolution jobs · {} AVIF {thread_label}/worker",
+            "  Limits   {} workers · {} full-res jobs · {} AVIF {thread_label}/job",
             plan.workers,
             plan.full_res_parallelism,
             plan.avif_threads,
@@ -340,7 +341,12 @@ fn execute_build(
                     }
                 }
                 BuildOutcome::Failure { source_key, error } => {
-                    progress.println(format!("Failed {source_key}: {error}"));
+                    let message = format!("Failed {source_key}: {error}");
+                    if progress.is_hidden() {
+                        eprintln!("{message}");
+                    } else {
+                        progress.println(message);
+                    }
                     failed_count += 1;
                 }
             }
@@ -445,11 +451,39 @@ fn recommended_full_res_parallelism(worker_count: usize) -> usize {
     }
 }
 
-fn progress_style() -> Result<ProgressStyle> {
-    ProgressStyle::with_template(
-        "{spinner:.green} Building [{wide_bar:.cyan/blue}] {pos}/{len} · {msg}",
-    )
-    .map(|style| style.progress_chars("=>-"))
+fn format_elapsed(elapsed: Duration) -> String {
+    let seconds = elapsed.as_secs();
+    let hours = seconds / 3600;
+    let minutes = (seconds / 60) % 60;
+    let seconds = seconds % 60;
+    if hours > 0 {
+        format!("{hours}h {minutes}m {seconds}s")
+    } else if minutes > 0 {
+        format!("{minutes}m {seconds}s")
+    } else {
+        format!("{seconds}s")
+    }
+}
+
+fn progress_style(pending_count: usize) -> Result<ProgressStyle> {
+    let fixed_width = console::measure_text_width(&format!(
+        "⠹ Processing [] {pending_count}/{pending_count} · 00h 00m 00s"
+    ));
+    let terminal_width = usize::from(console::Term::stderr().size().1);
+    let bar_width = terminal_width.saturating_sub(fixed_width).clamp(1, 30);
+    ProgressStyle::with_template(&format!(
+        "{{spinner:.green}} Processing [{{bar:{bar_width}.cyan/blue}}] {{pos}}/{{len}} · {{elapsed}}\n  {{msg}}"
+    ))
+    .map(|style| {
+        style.progress_chars("█░░").with_key(
+            "elapsed",
+            |state: &ProgressState, writer: &mut dyn std::fmt::Write| {
+                writer
+                    .write_str(&format_elapsed(state.elapsed()))
+                    .expect("failed to format progress elapsed time");
+            },
+        )
+    })
     .map_err(|error| anyhow!("failed to configure progress bar: {error}"))
 }
 
@@ -459,7 +493,7 @@ fn create_build_progress(pending_count: usize) -> Result<ProgressBar> {
     }
 
     let progress = ProgressBar::new(pending_count as u64);
-    progress.set_style(progress_style()?);
+    progress.set_style(progress_style(pending_count)?);
     progress.set_message("0 processing · 0 encoding AVIF");
     progress.enable_steady_tick(std::time::Duration::from_millis(120));
     Ok(progress)
@@ -717,8 +751,11 @@ fn build_photo(context: &PhotoBuildContext<'_>, item: &PhotoBuildItem) -> Result
                 (generate_original, &original_path),
                 (generate_thumbnail, &thumbnail_path),
             ] {
-                if generated {
-                    let _ = fs::remove_file(path);
+                if generated && let Err(error) = fs::remove_file(path) {
+                    warn!(
+                        "failed to remove generated output {} after source changed: {error}",
+                        path.display()
+                    );
                 }
             }
         }

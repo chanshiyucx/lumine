@@ -1,12 +1,14 @@
-use std::{io::Cursor, path::Path, process::Command};
+use std::{path::Path, process::Command};
 
 use anyhow::{Context, Result, anyhow, bail};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use fast_image_resize as fr;
 use image::{
-    ColorType, DynamicImage, ImageBuffer, ImageDecoder, ImageFormat, ImageReader, Rgb, Rgba,
-    codecs::jpeg::JpegEncoder,
+    ColorType, DynamicImage, ImageBuffer, ImageDecoder, ImageEncoder, ImageReader, Rgb, Rgba,
+    codecs::{jpeg::JpegEncoder, png::PngEncoder},
 };
+use img_parts::{ImageICC, webp::WebP};
+use moxcms::{ColorProfile, Layout, RenderingIntent, TransformOptions};
 use thumbhash::rgba_to_thumb_hash;
 use tracing::warn;
 
@@ -20,6 +22,11 @@ use crate::config::ThumbnailFormat;
 const SIPS_PATH: &str = "/usr/bin/sips";
 
 const THUMBHASH_MAX_DIMENSION: u32 = 100;
+
+struct PreviewImage {
+    image: DynamicImage,
+    icc_profile: Option<Vec<u8>>,
+}
 
 #[derive(Clone)]
 pub(super) struct BuiltThumbnail {
@@ -44,8 +51,8 @@ pub(super) fn build(
     {
         let preview_width = source_info.display_width.min(options.width).max(1);
         let swaps_dimensions = source_swaps_dimensions(source_path, source_info.orientation)?;
-        let image = build_preview_image(source_path, preview_width, swaps_dimensions)?;
-        write_thumbnail(&image, output, options.format, options.quality)
+        let preview = build_preview_image(source_path, preview_width, swaps_dimensions)?;
+        write_thumbnail(&preview, output, options.format, options.quality)
             .with_context(|| format!("failed to write {}", output.display()))?;
     }
     read_thumbnail_asset(root, output, options.format)
@@ -90,16 +97,16 @@ fn read_thumbnail_asset(
     path: &Path,
     format: ThumbnailFormat,
 ) -> Result<BuiltThumbnail> {
-    let image = decode_preview_image(path)?;
+    let preview = decode_preview_image(path)?;
     Ok(BuiltThumbnail {
         asset: read_asset(
             root,
             path,
-            image.width(),
-            image.height(),
+            preview.image.width(),
+            preview.image.height(),
             mime_from_format(format),
         )?,
-        thumb_hash: compute_thumb_hash(&image)?,
+        thumb_hash: compute_thumb_hash(&preview)?,
     })
 }
 
@@ -186,27 +193,35 @@ fn resize_to_dimensions(
 }
 
 fn write_thumbnail(
-    image: &DynamicImage,
+    preview: &PreviewImage,
     path: &Path,
     format: ThumbnailFormat,
     quality: u8,
 ) -> Result<()> {
+    let image = &preview.image;
     let bytes = match format {
         ThumbnailFormat::Jpeg => {
             let mut bytes = Vec::new();
             let rgb = image.to_rgb8();
             let mut encoder = JpegEncoder::new_with_quality(&mut bytes, quality);
+            if let Some(profile) = &preview.icc_profile {
+                encoder.set_icc_profile(profile.clone())?;
+            }
             encoder.encode(&rgb, rgb.width(), rgb.height(), ColorType::Rgb8.into())?;
             bytes
         }
         ThumbnailFormat::Png => {
-            let mut cursor = Cursor::new(Vec::new());
-            image.write_to(&mut cursor, ImageFormat::Png)?;
-            cursor.into_inner()
+            let mut bytes = Vec::new();
+            let mut encoder = PngEncoder::new(&mut bytes);
+            if let Some(profile) = &preview.icc_profile {
+                encoder.set_icc_profile(profile.clone())?;
+            }
+            image.write_with_encoder(encoder)?;
+            bytes
         }
         ThumbnailFormat::Webp => {
             let quality = f32::from(quality).clamp(1.0, 100.0);
-            if let Some(rgb) = image.as_rgb8() {
+            let bytes = if let Some(rgb) = image.as_rgb8() {
                 webp::Encoder::from_rgb(rgb.as_raw(), rgb.width(), rgb.height())
                     .encode(quality)
                     .to_vec()
@@ -219,6 +234,13 @@ fn write_thumbnail(
                 webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
                     .encode(quality)
                     .to_vec()
+            };
+            if let Some(profile) = &preview.icc_profile {
+                let mut encoded = WebP::from_bytes(bytes.into())?;
+                encoded.set_icc_profile(Some(profile.clone().into()));
+                encoded.encoder().bytes().to_vec()
+            } else {
+                bytes
             }
         }
     };
@@ -226,9 +248,34 @@ fn write_thumbnail(
     write_bytes_atomic(path, &bytes)
 }
 
-fn compute_thumb_hash(image: &DynamicImage) -> Result<String> {
-    let reduced =
-        resize_to_fit(image, THUMBHASH_MAX_DIMENSION, THUMBHASH_MAX_DIMENSION)?.to_rgba8();
+fn compute_thumb_hash(preview: &PreviewImage) -> Result<String> {
+    let mut reduced = resize_to_fit(
+        &preview.image,
+        THUMBHASH_MAX_DIMENSION,
+        THUMBHASH_MAX_DIMENSION,
+    )?
+    .to_rgba8();
+    // ThumbHash has no profile: its decoded placeholder must contain sRGB pixels.
+    if let Some(profile) = &preview.icc_profile {
+        let source =
+            ColorProfile::new_from_slice(profile).context("invalid thumbnail ICC profile")?;
+        let transform = source
+            .create_transform_8bit(
+                Layout::Rgba,
+                &ColorProfile::new_srgb(),
+                Layout::Rgba,
+                TransformOptions {
+                    rendering_intent: RenderingIntent::RelativeColorimetric,
+                    ..Default::default()
+                },
+            )
+            .context("failed to create thumbnail color transform")?;
+        let mut converted = vec![0; reduced.as_raw().len()];
+        transform
+            .transform(reduced.as_raw(), &mut converted)
+            .context("failed to convert ThumbHash pixels to sRGB")?;
+        reduced.as_mut().copy_from_slice(&converted);
+    }
     let hash = rgba_to_thumb_hash(
         reduced.width() as usize,
         reduced.height() as usize,
@@ -242,7 +289,7 @@ fn build_preview_image(
     source_path: &Path,
     target_width: u32,
     swaps_dimensions: bool,
-) -> Result<DynamicImage> {
+) -> Result<PreviewImage> {
     build_sips_preview(source_path, target_width.max(1), swaps_dimensions)
 }
 
@@ -250,7 +297,7 @@ fn build_sips_preview(
     source_path: &Path,
     target_width: u32,
     swaps_dimensions: bool,
-) -> Result<DynamicImage> {
+) -> Result<PreviewImage> {
     let should_optimize_color = !is_heif_family(source_path);
     let temp_dir = tempfile::Builder::new()
         .prefix("lumine-pipeline-preview-")
@@ -291,21 +338,21 @@ fn build_sips_preview(
         ensure_sips_succeeded(&optimize_output, source_path, "color optimization")?;
     }
 
-    let image = decode_preview_image(&preview_path)?;
+    let preview = decode_preview_image(&preview_path)?;
 
-    if image.width() != target_width {
+    if preview.image.width() != target_width {
         bail!(
             "sips returned unexpected preview width for {}: expected {target_width}, got {}x{}",
             source_path.display(),
-            image.width(),
-            image.height()
+            preview.image.width(),
+            preview.image.height()
         );
     }
 
-    Ok(image)
+    Ok(preview)
 }
 
-fn decode_preview_image(path: &Path) -> Result<DynamicImage> {
+fn decode_preview_image(path: &Path) -> Result<PreviewImage> {
     let reader = ImageReader::open(path)
         .with_context(|| format!("failed to open preview {}", path.display()))?
         .with_guessed_format()
@@ -316,10 +363,11 @@ fn decode_preview_image(path: &Path) -> Result<DynamicImage> {
     let orientation = decoder
         .orientation()
         .with_context(|| format!("failed to read preview orientation for {}", path.display()))?;
+    let icc_profile = decoder.icc_profile()?;
     let mut image = DynamicImage::from_decoder(decoder)
         .with_context(|| format!("failed to decode preview {}", path.display()))?;
     image.apply_orientation(orientation);
-    Ok(image)
+    Ok(PreviewImage { image, icc_profile })
 }
 
 fn ensure_sips_succeeded(

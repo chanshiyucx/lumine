@@ -2,10 +2,13 @@ use std::{fs, io::Cursor, path::Path};
 
 use anyhow::{Context, Result, anyhow};
 use image::{
-    ColorType, DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgb, Rgba,
+    ColorType, DynamicImage, GenericImageView, ImageBuffer, ImageDecoder, ImageReader, Rgb, Rgba,
     metadata::Orientation,
 };
-use libheif_rs::{ColorSpace, HeifContext, LibHeif, RgbChroma};
+use libheif_rs::{
+    Channel, ColorProfileRaw, ColorSpace, CompressionFormat, EncoderParameterValue, EncoderQuality,
+    HeifContext, Image, LibHeif, RgbChroma, color_profile_types,
+};
 use ravif::{BitDepth as AvifBitDepth, ColorModel as AvifColorModel, Encoder as RavifEncoder, Img};
 use rgb::FromSlice;
 use tracing::warn;
@@ -24,6 +27,7 @@ pub(super) struct LoadedImage {
     image: DynamicImage,
     bit_depth: u8,
     has_alpha: bool,
+    icc_profile: Option<Vec<u8>>,
 }
 
 pub(super) struct EncodingOptions {
@@ -84,15 +88,18 @@ fn decode_source_image(path: &Path, bytes: &[u8]) -> Result<LoadedImage> {
         return decode_heif_image(path, bytes);
     }
 
-    let image = ImageReader::new(Cursor::new(bytes))
+    let mut decoder = ImageReader::new(Cursor::new(bytes))
         .with_guessed_format()
         .with_context(|| format!("failed to guess image format for {}", path.display()))?
-        .decode()
+        .into_decoder()?;
+    let icc_profile = decoder.icc_profile()?;
+    let image = DynamicImage::from_decoder(decoder)
         .with_context(|| format!("failed to decode {}", path.display()))?;
 
     Ok(LoadedImage {
         bit_depth: inferred_bit_depth(&image),
         has_alpha: image.has_alpha(),
+        icc_profile,
         image,
     })
 }
@@ -107,9 +114,10 @@ fn decode_heif_image(path: &Path, bytes: &[u8]) -> Result<LoadedImage> {
         .luma_bits_per_pixel()
         .max(handle.chroma_bits_per_pixel());
     let has_alpha = handle.has_alpha_channel();
-    let hdr = bit_depth > 8;
+    let icc_profile = handle.color_profile_raw().map(|profile| profile.data);
+    let high_bit_depth = bit_depth > 8;
     let little_endian = cfg!(target_endian = "little");
-    let color_space = match (hdr, has_alpha, little_endian) {
+    let color_space = match (high_bit_depth, has_alpha, little_endian) {
         (false, false, _) => ColorSpace::Rgb(RgbChroma::Rgb),
         (false, true, _) => ColorSpace::Rgb(RgbChroma::Rgba),
         (true, false, true) => ColorSpace::Rgb(RgbChroma::HdrRgbLe),
@@ -125,7 +133,7 @@ fn decode_heif_image(path: &Path, bytes: &[u8]) -> Result<LoadedImage> {
         .interleaved
         .ok_or_else(|| anyhow!("HEIF image is not interleaved: {}", path.display()))?;
 
-    if hdr {
+    if high_bit_depth {
         let channels = if has_alpha { 4usize } else { 3usize };
         let row_size = plane.width as usize * channels * 2;
         let mut pixels =
@@ -150,14 +158,20 @@ fn decode_heif_image(path: &Path, bytes: &[u8]) -> Result<LoadedImage> {
             let rgba =
                 ImageBuffer::<Rgba<u16>, Vec<u16>>::from_raw(plane.width, plane.height, pixels)
                     .ok_or_else(|| {
-                        anyhow!("failed to construct HDR RGBA image {}", path.display())
+                        anyhow!(
+                            "failed to construct high-bit-depth RGBA image {}",
+                            path.display()
+                        )
                     })?;
             DynamicImage::ImageRgba16(rgba)
         } else {
             let rgb =
                 ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw(plane.width, plane.height, pixels)
                     .ok_or_else(|| {
-                        anyhow!("failed to construct HDR RGB image {}", path.display())
+                        anyhow!(
+                            "failed to construct high-bit-depth RGB image {}",
+                            path.display()
+                        )
                     })?;
             DynamicImage::ImageRgb16(rgb)
         };
@@ -166,6 +180,7 @@ fn decode_heif_image(path: &Path, bytes: &[u8]) -> Result<LoadedImage> {
             image,
             bit_depth,
             has_alpha,
+            icc_profile,
         });
     }
 
@@ -195,6 +210,7 @@ fn decode_heif_image(path: &Path, bytes: &[u8]) -> Result<LoadedImage> {
         image,
         bit_depth: 8,
         has_alpha,
+        icc_profile,
     })
 }
 
@@ -205,13 +221,89 @@ fn write_original_avif(
     avif_speed: u8,
     avif_threads: usize,
 ) -> Result<()> {
-    let avif_file = if loaded.bit_depth > 8 {
+    let avif_file = if let Some(profile) = &loaded.icc_profile {
+        encode_avif_with_icc(loaded, profile, avif_quality, avif_speed, avif_threads)?
+    } else if loaded.bit_depth > 8 {
         encode_avif_from_high_bit_depth_source(loaded, avif_quality, avif_speed, avif_threads)?
     } else {
         encode_avif_from_8_bit_source(loaded, avif_quality, avif_speed, avif_threads)?
     };
 
     write_bytes_atomic(path, &avif_file)
+}
+
+// libheif preserves ICC and performs the RGB-to-YCbCr conversion for AOM.
+fn encode_avif_with_icc(
+    loaded: &LoadedImage,
+    profile: &[u8],
+    quality: u8,
+    speed: u8,
+    threads: usize,
+) -> Result<Vec<u8>> {
+    let heif = LibHeif::new_checked()?;
+    let (width, height) = loaded.image.dimensions();
+    let chroma = match (loaded.has_alpha, cfg!(target_endian = "little")) {
+        (false, true) => RgbChroma::HdrRgbLe,
+        (false, false) => RgbChroma::HdrRgbBe,
+        (true, true) => RgbChroma::HdrRgbaLe,
+        (true, false) => RgbChroma::HdrRgbaBe,
+    };
+    let mut image = Image::new(width, height, ColorSpace::Rgb(chroma))?;
+    image.create_plane(Channel::Interleaved, width, height, 10)?;
+    {
+        let mut planes = image.planes_mut();
+        let plane = planes
+            .interleaved
+            .as_mut()
+            .context("missing RGB encoding plane")?;
+        let channels = if loaded.has_alpha { 4 } else { 3 };
+        let pixels = if loaded.has_alpha {
+            loaded.image.to_rgba16().into_raw()
+        } else {
+            loaded.image.to_rgb16().into_raw()
+        };
+        // DynamicImage expands 8-bit samples to the full u16 range.
+        let sample_depth = if loaded.bit_depth <= 8 {
+            16
+        } else {
+            loaded.bit_depth
+        };
+        for (source, destination) in pixels
+            .chunks_exact(width as usize * channels)
+            .zip(plane.data.chunks_exact_mut(plane.stride))
+        {
+            for (sample, bytes) in source.iter().zip(destination.chunks_exact_mut(2)) {
+                bytes.copy_from_slice(&scale_sample_to_10_bit(*sample, sample_depth).to_ne_bytes());
+            }
+        }
+    }
+    image.set_color_profile_raw(&ColorProfileRaw::new(
+        color_profile_types::PROF,
+        profile.to_vec(),
+    ))?;
+    // libheif-rs 2.7 does not retain its CString for the name filter. Select by ID instead.
+    let descriptor = heif
+        .encoder_descriptors(16, Some(CompressionFormat::Av1), None)
+        .into_iter()
+        .find(|descriptor| descriptor.id() == "aom")
+        .context("ICC AVIF encoding requires the libheif AOM encoder")?;
+    let mut encoder = heif.encoder(descriptor)?;
+    encoder.set_quality(EncoderQuality::Lossy(quality))?;
+    encoder.set_parameter_value("speed", EncoderParameterValue::Int(i32::from(speed.min(9))))?;
+    encoder.set_parameter_value(
+        "threads",
+        EncoderParameterValue::Int(i32::try_from(threads)?),
+    )?;
+    encoder.set_parameter_value("chroma", EncoderParameterValue::String("444".into()))?;
+    if loaded.has_alpha {
+        encoder.set_parameter_value(
+            "alpha-quality",
+            EncoderParameterValue::Int(i32::from(quality)),
+        )?;
+    }
+    let mut context = HeifContext::new()?;
+    context.encode_image(&image, &mut encoder, None)?;
+    Ok(context.write_to_bytes()?)
 }
 
 fn encode_avif_from_high_bit_depth_source(
