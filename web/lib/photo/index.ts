@@ -1,3 +1,4 @@
+import type { AlbumDescriptor } from '@/lib/album'
 import { normalizePathSegment } from '../url-segments'
 
 export interface PhotoAsset {
@@ -62,7 +63,9 @@ export interface Photo extends PhotoManifestEntry {
   id: string
   slug: string
   fileName: string
-  albumKey: string
+  album: AlbumDescriptor
+  format: string
+  cameraName: string | null
   captureTime: PhotoCaptureTime
   aspectRatio: number
 }

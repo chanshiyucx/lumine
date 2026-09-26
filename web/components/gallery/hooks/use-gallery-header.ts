@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { publishGalleryHeaderDetail } from '@/components/header/lib/gallery-header-store'
 import type { Photo } from '@/lib/photo'
-import {
-  getGalleryHeaderState,
-  type GalleryHeaderState,
-} from '../lib/gallery-header-state'
+
+export interface GalleryHeaderState {
+  date?: string
+  location?: string
+}
 
 const HEADER_SCROLL_THRESHOLD = 160
 
@@ -43,7 +44,12 @@ export function useGalleryHeader(
 
   return useCallback(
     (photo: Photo | undefined) => {
-      visibleHeaderRef.current = getGalleryHeaderState(photo)
+      visibleHeaderRef.current = photo
+        ? {
+            date: photo.captureTime.date,
+            location: photo.album.title,
+          }
+        : {}
       publishHeader()
     },
     [publishHeader],

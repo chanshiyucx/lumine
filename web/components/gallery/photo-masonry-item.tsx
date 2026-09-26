@@ -1,10 +1,9 @@
 import { memo } from 'react'
 import { ThumbnailImage } from '@/components/image'
 import { CaptureSettingChip } from '@/components/photo'
-import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
 import { getAvailableCaptureSettings } from '@/lib/photo/capture-settings'
-import { formatBytes, formatMimeLabel } from '@/lib/photo/formatters'
+import { formatBytes } from '@/lib/photo/formatters'
 import { cn } from '@/lib/style'
 
 const EXPANDED_INFO_MIN_HEIGHT = 140
@@ -26,7 +25,6 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
   imageLoading,
   onOpen,
 }: PhotoMasonryItemProps) {
-  const mimeLabel = formatMimeLabel(photo)
   const showExpandedInfo = cardHeight > EXPANDED_INFO_MIN_HEIGHT
   const captureSettings = showExpandedInfo
     ? getAvailableCaptureSettings(photo)
@@ -65,7 +63,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
               HOVER_REVEAL_CLASS_NAME,
             )}
           >
-            <span>{mimeLabel}</span>
+            <span>{photo.format}</span>
             <span>•</span>
             <span>
               {photo.original.width} × {photo.original.height}
@@ -81,7 +79,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
                   HOVER_REVEAL_CLASS_NAME,
                 )}
               >
-                {getAlbumDescriptor(photo.albumKey).title}
+                {photo.album.title}
               </span>
               {captureSettings.length > 0 ? (
                 <span className="grid grid-cols-2 gap-2 text-xs">

@@ -5,8 +5,10 @@ import { useEffect, useRef } from 'react'
 import { useScrollElement } from '@/components/scroll-area'
 import { useViewerController } from '@/components/viewer/hooks/use-viewer-controller'
 import type { Photo } from '@/lib/photo'
-import { useGalleryHeader } from './hooks/use-gallery-header'
-import type { GalleryHeaderState } from './lib/gallery-header-state'
+import {
+  useGalleryHeader,
+  type GalleryHeaderState,
+} from './hooks/use-gallery-header'
 import { PhotoMasonry } from './photo-masonry'
 
 const Viewer = dynamic(() =>

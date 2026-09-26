@@ -1,5 +1,3 @@
-import type { Photo } from '.'
-
 export const NOT_AVAILABLE_LABEL = 'Unknown'
 
 function formatDecimal(value: number, maximumFractionDigits: number) {
@@ -16,16 +14,6 @@ export function formatBytes(bytes: number) {
   }
 
   return `${bytes} B`
-}
-
-export function formatMimeLabel(photo: Photo) {
-  const extension = photo.original.url.split('.').pop()?.toUpperCase()
-
-  if (extension) {
-    return extension
-  }
-
-  return photo.original.mime.replace('image/', '').toUpperCase()
 }
 
 export function formatSentenceCase(value?: string) {

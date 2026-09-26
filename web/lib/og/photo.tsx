@@ -1,10 +1,8 @@
 import { ImageResponse } from 'next/og'
 import type { ReactNode } from 'react'
 import sharp from 'sharp'
-import { getAlbumDescriptor } from '@/lib/album'
 import type { Photo } from '@/lib/photo'
 import { siteConfig } from '@/lib/site-config'
-import { formatCameraLabel } from './camera-label'
 import { OG_CACHE_CONTROL, OG_IMAGE_SIZE } from './config'
 
 interface LayoutConfig {
@@ -438,7 +436,6 @@ function WideLayout({ gap, photo, info, photoWidth }: LayoutPieces) {
 }
 
 export async function renderPhotoOgImage(photo: Photo) {
-  const album = getAlbumDescriptor(photo.albumKey)
   const layout = determineLayout(photo.aspectRatio)
   const photoSize = fitWithinBox(photo.aspectRatio, layout.photoBox)
   const renderablePhotoUrl = await getRenderablePhotoUrl(photo)
@@ -453,9 +450,9 @@ export async function renderPhotoOgImage(photo: Photo) {
   const infoPanel = (
     <InfoPanel
       title={photo.title}
-      tags={[album.title]}
+      tags={[photo.album.title]}
       exifItems={getExifItems(photo)}
-      camera={formatCameraLabel(photo)}
+      camera={photo.cameraName}
       formattedDate={photo.captureTime.date}
       compact={layout.infoCompact}
     />

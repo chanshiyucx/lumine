@@ -58,7 +58,7 @@ export function getDominantMasonryPhoto(
       continue
     }
 
-    const album = albums.get(photo.albumKey)
+    const album = albums.get(photo.album.key)
     if (album) {
       album.height += height
       // The collection is ordered by capture time, newest first.
@@ -67,7 +67,7 @@ export function getDominantMasonryPhoto(
         album.index = position.index
       }
     } else {
-      albums.set(photo.albumKey, { height, photo, index: position.index })
+      albums.set(photo.album.key, { height, photo, index: position.index })
     }
   }
 

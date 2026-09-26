@@ -18,23 +18,23 @@ export function getCaptureSettings(photo: Photo): CaptureSetting[] {
       key: 'focal',
       label: 'Focal',
       value: formatFocalLength(
-        photo.camera?.focalLengthIn35mm ?? photo.camera?.focalLengthMm,
+        photo.camera.focalLengthIn35mm ?? photo.camera.focalLengthMm,
       ),
     },
     {
       key: 'aperture',
       label: 'Aperture',
-      value: formatApertureValue(photo.camera?.aperture),
+      value: formatApertureValue(photo.camera.aperture),
     },
     {
       key: 'shutter',
       label: 'Shutter',
-      value: photo.camera?.shutter ?? NOT_AVAILABLE_LABEL,
+      value: photo.camera.shutter ?? NOT_AVAILABLE_LABEL,
     },
     {
       key: 'iso',
       label: 'ISO',
-      value: formatIsoValue(photo.camera?.iso),
+      value: formatIsoValue(photo.camera.iso),
     },
   ]
 }

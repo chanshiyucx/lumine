@@ -123,7 +123,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
         scrollOffset + HEADER_HEIGHT,
         scrollOffset + scrollElement.clientHeight,
         columnCount,
-        selectedPhotoRef.current?.albumKey,
+        selectedPhotoRef.current?.album.key,
       )
       if (photo !== selectedPhotoRef.current) {
         selectedPhotoRef.current = photo

@@ -1,7 +1,11 @@
 import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
-import { getAlbumKeyFromAssetPath } from '@/lib/album'
+import {
+  getAlbumKeyFromAssetPath,
+  parseAlbumDescriptor,
+  type AlbumDescriptor,
+} from '@/lib/album'
 import { getAlbumMapLocations } from '@/lib/album/locations'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
 import { getPhotoAssetUrl, getPhotoManifestUrl } from '../media-url'
@@ -80,6 +84,12 @@ function getFileNameFromAssetPath(pathname: string) {
   return rawFileName.replace(/\.[^/.]+$/, '')
 }
 
+function getPhotoFormat(asset: PhotoAsset) {
+  const extension = /\.([a-z\d]+)$/i.exec(asset.url)?.[1]
+
+  return (extension ?? asset.mime.replace('image/', '')).toUpperCase()
+}
+
 async function fetchManifestJson() {
   const manifestUrl = getPhotoManifestUrl()
   const response = await fetch(manifestUrl, {
@@ -113,6 +123,7 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
   const photos = manifest.photos.toSorted(
     (left, right) => Date.parse(right.takenAt) - Date.parse(left.takenAt),
   )
+  const albumsByKey = new Map<string, AlbumDescriptor>()
 
   return {
     updatedAt: manifest.updatedAt,
@@ -120,13 +131,23 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
       const albumKey = getAlbumKeyFromAssetPath(photo.original.url)
+      let album = albumsByKey.get(albumKey)
+
+      if (!album) {
+        album = parseAlbumDescriptor(albumKey)
+        albumsByKey.set(albumKey, album)
+      }
 
       return {
         ...photo,
         id: photo.original.url,
         slug: createPhotoSlug(photo.title),
         fileName: getFileNameFromAssetPath(photo.original.url),
-        albumKey,
+        album,
+        format: getPhotoFormat(photo.original),
+        cameraName:
+          [photo.camera.make, photo.camera.model].filter(Boolean).join(' ') ||
+          null,
         captureTime: formatCaptureTime(
           photo.takenAt,
           locations.get(albumKey)?.timeZone,
