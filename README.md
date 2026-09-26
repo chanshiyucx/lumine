@@ -74,10 +74,16 @@ lumine-output/
   gallery/       # Full-size AVIF images
   thumbnails/    # Smaller preview images
   manifest.json  # Photo data used by the frontend
-  state.json     # Local incremental-build cache
+  state.json     # Source file sizes and modification times
 ```
 
 The pipeline keeps the album folder structure and extracts useful EXIF data when available, such as the capture time, camera settings, and GPS location. Later runs reuse unchanged files. If a source photo is changed, removed, or no longer has a selected Finder tag, the generated output is updated automatically.
+
+AVIF images and thumbnails are generated independently from the source photos. To refresh AVIF encoding, delete the relevant files under `gallery/`; to refresh thumbnails, delete the relevant files under `thumbnails/`. To refresh metadata extraction or the ThumbHash algorithm, delete `manifest.json`. Run `./build.sh` afterward; existing images are reused when rebuilding the manifest. Encoding settings apply to newly generated images.
+
+`state.json` stores only source file sizes and modification times. If it is missing, the pipeline keeps usable images and establishes a new source baseline. When adopting this state format, delete the old `state.json` once before building. For a complete rebuild, delete both image directories, `manifest.json`, and `state.json`.
+
+See [the build design](docs/pipeline/009-增量构建与手动重建方案.md) for the update and recovery rules.
 
 > Keep `sourcePath` and `targetPath` separate. Neither directory may be inside the other.
 

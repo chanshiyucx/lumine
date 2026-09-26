@@ -8,7 +8,7 @@ manifest 是供 Web 使用的精简、归一化照片数据契约。直接提取
 
 不同概念分开存储，同一概念的替代来源在 pipeline 中归一化。缺失字段省略，不写 `null`、空字符串或用于页面占位的 `Unknown`。不保存完整原始 EXIF、不重复存储 ISO 的多个候选值、不添加逐字段来源信息。将来若需要原始元数据审计，另行设计归档文件。
 
-本次版本为 **3**。用户明确要求重新生成数据，因此不实现旧字段别名、v2 schema、迁移转换或兼容分支。Web 严格读取 v3；pipeline 原有版本检查遇到旧 manifest 会放弃缓存并重新构建。
+本次版本为 **3**。用户明确要求重新生成数据，因此不实现旧字段别名、v2 schema、迁移转换或兼容分支。Web 严格读取 v3；pipeline 遇到旧 manifest 时重建照片条目，图片按独立产物规则复用。
 
 ## camera 字段契约
 
@@ -93,7 +93,7 @@ MaxApertureValue 是 APEX Av，不能将原始值直接显示成 f-number。pipe
 - `location.lat/lng/alt`：经纬度为带正负号的十进制度数；高度为带正负号的米。它们是转换后的 GPS 坐标，不是原始度分秒数组。
 - `image.orientation`：输出图方向，当前归一为 1。
 - `image.colorSpace`：源 EXIF 色彩空间描述，缺失时沿用 Unspecified；不代表额外检测过输出文件的 ICC 配置。
-- `image.bitDepth`：源图解码探测得到的色深，不保证与转码 AVIF 的位深一致。
+- `image.bitDepth`：源图探测得到的色深，不保证与转码 AVIF 的位深一致。
 - `image.isLivePhoto`：保留现有布尔字段，当前固定 false，不作为已实现 Live Photo 检测的承诺。
 
 这些都是应用字段或归一化字段，没有必要为了对齐 EXIF 改成长标签名。本次只新增可能存在的镜头制造商，不新增一整套原始标签、来源副本或可从尺寸计算的 megapixels。
@@ -130,7 +130,7 @@ lensMake 和 sensingMethod 在源图缺失时不出现，不根据相机品牌�
 
 ## 重新生成与验证
 
-在 pipeline 目录运行现有 `./build.sh`，生成 version 3 的 manifest。由于没有兼容层，发布顺序应保证新 Web 读取的是新 manifest；重新生成可能同时重建图片缓存。
+在 pipeline 目录运行现有 `./build.sh`，生成 version 3 的 manifest。由于没有兼容层，发布顺序应保证新 Web 读取的是新 manifest；重建 manifest 会复用现有可用图片；构建控制见 [增量构建与手动重建方案](../pipeline/009-增量构建与手动重建方案.md)。
 
 使用隔离目录中的 Sony HIF 和 iPhone JPEG 样本验证 pipeline 输出可以被 Web v3 schema 直接读取。
 
