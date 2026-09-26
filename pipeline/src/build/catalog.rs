@@ -225,8 +225,8 @@ pub(super) struct Camera {
 #[derive(Clone, Deserialize, Serialize)]
 pub(super) struct ImageMetadata {
     pub(super) orientation: u8,
-    #[serde(rename = "colorSpace")]
-    pub(super) color_space: String,
+    #[serde(rename = "colorSpace", skip_serializing_if = "Option::is_none")]
+    pub(super) color_space: Option<String>,
     #[serde(rename = "isLivePhoto")]
     pub(super) is_live_photo: bool,
     #[serde(rename = "bitDepth", skip_serializing_if = "Option::is_none")]

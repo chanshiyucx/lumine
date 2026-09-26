@@ -2,6 +2,7 @@ use std::{fmt::Write as _, fs::File, path::Path};
 
 use anyhow::Result;
 use exif::{DateTime as ExifDateTime, Exif, In, Reader as ExifReader, Tag, Value};
+use moxcms::{ColorProfile, ProfileText};
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tracing::warn;
 
@@ -10,12 +11,13 @@ use super::catalog::{Camera, ImageMetadata, Location};
 pub(super) fn extract_source_metadata(
     exif: Option<&Exif>,
     bit_depth: Option<u8>,
+    icc_profile: Option<&[u8]>,
 ) -> ExtractedMetadata {
     ExtractedMetadata {
         taken_at: exif.and_then(extract_taken_at),
         location: exif.and_then(extract_location),
         camera: exif.and_then(extract_camera),
-        image: extract_image_metadata(exif, bit_depth),
+        image: extract_image_metadata(exif, bit_depth, icc_profile),
     }
 }
 
@@ -127,11 +129,15 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
     (!camera.is_empty()).then_some(camera)
 }
 
-fn extract_image_metadata(exif: Option<&Exif>, bit_depth: Option<u8>) -> ImageMetadata {
-    let color_space = exif
-        .and_then(|exif| exif_display(exif, Tag::ColorSpace))
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "Unspecified".to_string());
+fn extract_image_metadata(
+    exif: Option<&Exif>,
+    bit_depth: Option<u8>,
+    icc_profile: Option<&[u8]>,
+) -> ImageMetadata {
+    let color_space = icc_profile.and_then(icc_profile_name).or_else(|| {
+        exif.and_then(|exif| exif_display(exif, Tag::ColorSpace))
+            .filter(|value| !value.eq_ignore_ascii_case("uncalibrated"))
+    });
 
     ImageMetadata {
         orientation: 1,
@@ -139,6 +145,34 @@ fn extract_image_metadata(exif: Option<&Exif>, bit_depth: Option<u8>) -> ImageMe
         is_live_photo: false,
         bit_depth,
     }
+}
+
+fn icc_profile_name(data: &[u8]) -> Option<String> {
+    let profile = ColorProfile::new_from_slice(data).ok()?;
+    let description = profile.description?;
+    let name = match &description {
+        ProfileText::PlainString(value) => value.as_str(),
+        ProfileText::Description(value) => {
+            if value.ascii_string.trim_matches('\0').trim().is_empty() {
+                &value.unicode_string
+            } else {
+                &value.ascii_string
+            }
+        }
+        ProfileText::Localizable(values) => {
+            let nonempty = |value: &&moxcms::LocalizableString| {
+                !value.value.trim_matches('\0').trim().is_empty()
+            };
+            &values
+                .iter()
+                .filter(nonempty)
+                .find(|value| value.language.eq_ignore_ascii_case("en"))
+                .or_else(|| values.iter().find(nonempty))?
+                .value
+        }
+    };
+    let name = name.trim_matches('\0').trim();
+    (!name.is_empty()).then(|| name.to_string())
 }
 
 fn exif_ascii(exif: &Exif, tag: Tag) -> Option<&[u8]> {

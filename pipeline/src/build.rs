@@ -715,6 +715,9 @@ fn build_photo(context: &PhotoBuildContext<'_>, item: &PhotoBuildItem) -> Result
         let extracted = extract_source_metadata(
             exif.as_ref(),
             source_info.as_ref().and_then(|info| info.bit_depth),
+            source_info
+                .as_ref()
+                .and_then(|info| info.icc_profile.as_deref()),
         );
         let title = source
             .path

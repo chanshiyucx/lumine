@@ -14,8 +14,30 @@ interface InfoRowData {
   value: string
 }
 
+export function getLocationInfoRows(photo: Photo): InfoRowData[] {
+  const location = photo.location
+  if (!location) return []
+
+  const rows = [
+    {
+      label: 'Latitude',
+      value: `${Math.abs(location.lat).toFixed(6)}° ${location.lat < 0 ? 'S' : 'N'}`,
+    },
+    {
+      label: 'Longitude',
+      value: `${Math.abs(location.lng).toFixed(6)}° ${location.lng < 0 ? 'W' : 'E'}`,
+    },
+  ]
+
+  if (location.alt !== undefined) {
+    rows.push({ label: 'Altitude', value: `${Math.round(location.alt)}m` })
+  }
+
+  return rows
+}
+
 export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
-  return [
+  const rows: InfoRowData[] = [
     { label: 'Filename', value: photo.fileName },
     { label: 'Format', value: photo.format },
     {
@@ -27,10 +49,16 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
       label: 'Megapixels',
       value: formatMegapixels(photo.original.width, photo.original.height),
     },
-    {
+  ]
+
+  if (photo.image.colorSpace) {
+    rows.push({
       label: 'Color Space',
-      value: photo.image.colorSpace ?? NOT_AVAILABLE_LABEL,
-    },
+      value: photo.image.colorSpace,
+    })
+  }
+
+  rows.push(
     {
       label: 'Location',
       value: photo.album.title,
@@ -43,7 +71,9 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
       label: 'Time Zone',
       value: photo.captureTime.timeZone,
     },
-  ]
+  )
+
+  return rows
 }
 
 export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
@@ -79,7 +109,9 @@ export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
   if (photo.camera.sensingMethod) {
     rows.push({
       label: 'Sensing Method',
-      value: formatSentenceCase(photo.camera.sensingMethod),
+      value: formatSentenceCase(
+        photo.camera.sensingMethod.replace(/\s+sensor$/i, ''),
+      ),
     })
   }
   return rows

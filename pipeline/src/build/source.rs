@@ -9,6 +9,7 @@ use image::{ImageDecoder, ImageReader};
 use libheif_rs::HeifContext;
 use plist::Value as PlistValue;
 use rayon::prelude::*;
+use tracing::warn;
 use walkdir::WalkDir;
 
 use super::storage::path_to_manifest_key;
@@ -114,7 +115,7 @@ fn normalize_finder_tag(tag: String) -> String {
 }
 
 pub(super) fn read_source_info(path: &Path, orientation: u8) -> Result<SourceInfo> {
-    let (width, height, bit_depth) = if is_heif_family(path) {
+    let (width, height, bit_depth, icc_profile) = if is_heif_family(path) {
         let context = HeifContext::read_from_file(
             path.to_str()
                 .ok_or_else(|| anyhow!("invalid source path"))?,
@@ -128,17 +129,26 @@ pub(super) fn read_source_info(path: &Path, orientation: u8) -> Result<SourceInf
                     .luma_bits_per_pixel()
                     .max(handle.chroma_bits_per_pixel()),
             ),
+            handle.color_profile_raw().map(|profile| profile.data),
         )
     } else {
-        let decoder = ImageReader::open(path)?
+        let mut decoder = ImageReader::open(path)?
             .with_guessed_format()?
             .into_decoder()?;
         let (width, height) = decoder.dimensions();
         let color = decoder.color_type();
+        let icc_profile = decoder.icc_profile().unwrap_or_else(|error| {
+            warn!(
+                "could not read source ICC profile {}: {error}",
+                path.display()
+            );
+            None
+        });
         (
             width,
             height,
             u8::try_from(color.bits_per_pixel() / u16::from(color.channel_count())).ok(),
+            icc_profile,
         )
     };
     let display_width = if matches!(orientation, 5..=8) {
@@ -153,6 +163,7 @@ pub(super) fn read_source_info(path: &Path, orientation: u8) -> Result<SourceInf
         display_width,
         orientation,
         bit_depth,
+        icc_profile,
     })
 }
 
@@ -238,4 +249,5 @@ pub(super) struct SourceInfo {
     pub(super) display_width: u32,
     pub(super) orientation: u8,
     pub(super) bit_depth: Option<u8>,
+    pub(super) icc_profile: Option<Vec<u8>>,
 }

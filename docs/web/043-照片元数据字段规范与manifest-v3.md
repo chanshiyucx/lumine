@@ -14,26 +14,26 @@ manifest 是供 Web 使用的精简、归一化照片数据契约。直接提取
 
 以下字段均可缺省。
 
-| 字段 | 类型与单位 | 来源与语义 |
-| --- | --- | --- |
-| `make` | string | 相机制造商，EXIF Make |
-| `model` | string | 相机型号，EXIF Model |
-| `lensMake` | string | 镜头制造商，EXIF LensMake；不从相机制造商猜测 |
-| `lensModel` | string | 镜头型号，EXIF LensModel；不再回退到 LensMake |
-| `focalLength` | number，mm | EXIF FocalLength，实际焦距 |
-| `focalLengthIn35mmFilm` | 正整数，mm | EXIF FocalLengthIn35mmFilm，35 mm 等效焦距；0 表示未知，省略 |
-| `fNumber` | 正数 | EXIF FNumber，例如 5.6；不是 APEX ApertureValue |
-| `exposureTime` | 正数，秒 | EXIF ExposureTime，例如 0.005；不是 ShutterSpeedValue，也不是页面字符串 |
-| `iso` | 正整数 | 归一化的有效拍摄感光度，详见下节 |
-| `maxApertureFNumber` | 正数 | 最大光圈的 F-number；由 MaxApertureValue 换算，或在可靠情况下从 LensSpecification 得到 |
-| `brightnessValue` | number，APEX Bv | EXIF BrightnessValue；允许负值，不是曝光补偿 ExposureBiasValue |
-| `exposureProgram` | string | EXIF ExposureProgram 的读取库文本表示 |
-| `exposureMode` | string | 归一化为 auto、manual、bracket |
-| `meteringMode` | string | EXIF MeteringMode 的读取库文本表示 |
-| `whiteBalance` | string | 归一化为 auto、manual |
-| `flash` | string | 原有简化闪光灯状态，不是原始 EXIF 位掩码 |
-| `sceneCaptureType` | string | EXIF SceneCaptureType 的读取库文本表示 |
-| `sensingMethod` | string | EXIF SensingMethod 的有效传感器类型；缺失、未定义和保留值省略 |
+| 字段                    | 类型与单位      | 来源与语义                                                                             |
+| ----------------------- | --------------- | -------------------------------------------------------------------------------------- |
+| `make`                  | string          | 相机制造商，EXIF Make                                                                  |
+| `model`                 | string          | 相机型号，EXIF Model                                                                   |
+| `lensMake`              | string          | 镜头制造商，EXIF LensMake；不从相机制造商猜测                                          |
+| `lensModel`             | string          | 镜头型号，EXIF LensModel；不再回退到 LensMake                                          |
+| `focalLength`           | number，mm      | EXIF FocalLength，实际焦距                                                             |
+| `focalLengthIn35mmFilm` | 正整数，mm      | EXIF FocalLengthIn35mmFilm，35 mm 等效焦距；0 表示未知，省略                           |
+| `fNumber`               | 正数            | EXIF FNumber，例如 5.6；不是 APEX ApertureValue                                        |
+| `exposureTime`          | 正数，秒        | EXIF ExposureTime，例如 0.005；不是 ShutterSpeedValue，也不是页面字符串                |
+| `iso`                   | 正整数          | 归一化的有效拍摄感光度，详见下节                                                       |
+| `maxApertureFNumber`    | 正数            | 最大光圈的 F-number；由 MaxApertureValue 换算，或在可靠情况下从 LensSpecification 得到 |
+| `brightnessValue`       | number，APEX Bv | EXIF BrightnessValue；允许负值，不是曝光补偿 ExposureBiasValue                         |
+| `exposureProgram`       | string          | EXIF ExposureProgram 的读取库文本表示                                                  |
+| `exposureMode`          | string          | 归一化为 auto、manual、bracket                                                         |
+| `meteringMode`          | string          | EXIF MeteringMode 的读取库文本表示                                                     |
+| `whiteBalance`          | string          | 归一化为 auto、manual                                                                  |
+| `flash`                 | string          | 原有简化闪光灯状态，不是原始 EXIF 位掩码                                               |
+| `sceneCaptureType`      | string          | EXIF SceneCaptureType 的读取库文本表示                                                 |
+| `sensingMethod`         | string          | EXIF SensingMethod 的有效传感器类型；缺失、未定义和保留值省略                          |
 
 保留现有曝光模式、白平衡、闪光灯和枚举字符串策略，不额外保存枚举编号或原始位掩码。`flash` 的简化值包括 off、on、auto、auto-fired、red-eye、unsupported；它不是用于无损还原 EXIF 的字段。
 
@@ -48,15 +48,15 @@ manifest 是供 Web 使用的精简、归一化照片数据契约。直接提取
 3. 对于缺失、未知或不支持的 SensitivityType，仅尝试有效 ISOSpeed，不猜测 SOS/REI。
 4. 无有效结果时省略 `iso`。不把 0 或短字段的饱和值当作有效拍摄感光度。
 
-| SensitivityType | 候选顺序，跳过缺失或非正值 |
-| --- | --- |
-| 1：SOS | StandardOutputSensitivity |
-| 2：REI | RecommendedExposureIndex |
-| 3：ISO Speed | ISOSpeed |
-| 4：SOS + REI | StandardOutputSensitivity → RecommendedExposureIndex |
-| 5：SOS + ISO Speed | StandardOutputSensitivity → ISOSpeed |
-| 6：REI + ISO Speed | RecommendedExposureIndex → ISOSpeed |
-| 7：三者都有 | StandardOutputSensitivity → RecommendedExposureIndex → ISOSpeed |
+| SensitivityType    | 候选顺序，跳过缺失或非正值                                      |
+| ------------------ | --------------------------------------------------------------- |
+| 1：SOS             | StandardOutputSensitivity                                       |
+| 2：REI             | RecommendedExposureIndex                                        |
+| 3：ISO Speed       | ISOSpeed                                                        |
+| 4：SOS + REI       | StandardOutputSensitivity → RecommendedExposureIndex            |
+| 5：SOS + ISO Speed | StandardOutputSensitivity → ISOSpeed                            |
+| 6：REI + ISO Speed | RecommendedExposureIndex → ISOSpeed                             |
+| 7：三者都有        | StandardOutputSensitivity → RecommendedExposureIndex → ISOSpeed |
 
 组合类型优先选择短字段所代表的参数；替代候选仍必须属于已声明的感光度类型。Web 只读取 `iso`，不再选择 EXIF 来源。
 
@@ -68,16 +68,16 @@ MaxApertureValue 是 APEX Av，不能将原始值直接显示成 f-number。pipe
 
 ## 旧名称与新名称
 
-| v2 名称 | v3 名称或处理 |
-| --- | --- |
-| `lens` | 分开读取 `lensMake`、`lensModel` |
-| `focalLengthMm` | `focalLength` |
-| `focalLengthIn35mm` | `focalLengthIn35mmFilm` |
-| `aperture` | `fNumber` |
-| `shutter`（字符串） | `exposureTime`（秒数） |
-| `maxAperture` | `maxApertureFNumber` |
-| `brightnessEv` | `brightnessValue` |
-| `iso` | 名称保留，完善归一化 |
+| v2 名称             | v3 名称或处理                    |
+| ------------------- | -------------------------------- |
+| `lens`              | 分开读取 `lensMake`、`lensModel` |
+| `focalLengthMm`     | `focalLength`                    |
+| `focalLengthIn35mm` | `focalLengthIn35mmFilm`          |
+| `aperture`          | `fNumber`                        |
+| `shutter`（字符串） | `exposureTime`（秒数）           |
+| `maxAperture`       | `maxApertureFNumber`             |
+| `brightnessEv`      | `brightnessValue`                |
+| `iso`               | 名称保留，完善归一化             |
 
 上述表格用于说明重新生成前后的契约变化，不用于运行时迁移。
 
@@ -92,11 +92,13 @@ MaxApertureValue 是 APEX Av，不能将原始值直接显示成 f-number。pipe
 - `takenAt`：归一化时间。沿用 DateTimeOriginal → DateTimeDigitized → DateTime 的选择和相应 SubSecTime/OffsetTime 配对；没有可用 EXIF 时间时回退到文件修改时间。因此不改名为 dateTimeOriginal。页面仍按已有的拍摄地时区策略格式化。
 - `location.lat/lng/alt`：经纬度为带正负号的十进制度数；高度为带正负号的米。它们是转换后的 GPS 坐标，不是原始度分秒数组。
 - `image.orientation`：输出图方向，当前归一为 1。
-- `image.colorSpace`：源 EXIF 色彩空间描述，缺失时沿用 Unspecified；不代表额外检测过输出文件的 ICC 配置。
+- `image.colorSpace`：源图色彩配置名称，优先读取内嵌 ICC 的 profile description（例如 Display P3），多语言描述优先英文；没有可用 ICC 名称时回退到 EXIF ColorSpace。EXIF 的 uncalibrated 不作为有效名称，无法确定时省略字段。此字段描述源图，不代表额外检测过输出文件的 ICC 配置。
 - `image.bitDepth`：源图探测得到的色深，不保证与转码 AVIF 的位深一致。
 - `image.isLivePhoto`：保留现有布尔字段，当前固定 false，不作为已实现 Live Photo 检测的承诺。
 
 这些都是应用字段或归一化字段，没有必要为了对齐 EXIF 改成长标签名。本次只新增可能存在的镜头制造商，不新增一整套原始标签、来源副本或可从尺寸计算的 megapixels。
+
+色彩名称提取更新后，删除输出目录中的 manifest.json 并重新运行 pipeline，现有图片按独立产物规则复用，不必重新转码。Viewer 直接显示 manifest 中的 colorSpace 原值，不过滤、不改写、不兜底。
 
 ## Web 实现
 

@@ -8,6 +8,7 @@ import { cn } from '@/lib/style'
 import {
   getDeviceInfoRows,
   getExposureRows,
+  getLocationInfoRows,
   getPhotoInfoRows,
 } from './lib/viewer-metadata'
 import { VIEWER_MOTION } from './lib/viewer-motion'
@@ -20,9 +21,9 @@ interface InfoRowProps {
 
 function InfoRow({ label, value }: InfoRowProps) {
   return (
-    <div className="flex justify-between py-1 text-sm">
-      <dt className="text-text/50 pr-3">{label}</dt>
-      <dd className="break-all">{value}</dd>
+    <div className="flex justify-between gap-3 py-1 text-sm">
+      <dt className="text-text/50 shrink-0 whitespace-nowrap">{label}</dt>
+      <dd className="min-w-0 text-right wrap-anywhere">{value}</dd>
     </div>
   )
 }
@@ -65,6 +66,7 @@ function ViewerInfoPanelContent({
   const captureSettings = getCaptureSettings(photo)
   const deviceInfoRows = getDeviceInfoRows(photo)
   const exposureRows = getExposureRows(photo)
+  const locationInfoRows = getLocationInfoRows(photo)
 
   return (
     <div className="space-y-6 p-4">
@@ -75,7 +77,7 @@ function ViewerInfoPanelContent({
       </InfoSection>
 
       <section>
-        <h3 className="text-sm uppercase">Capture Settings</h3>
+        <h3 className="text-sm uppercase">Capture Parameters</h3>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           {captureSettings.map((setting) => (
             <CaptureSettingChip key={setting.key} setting={setting} />
@@ -92,11 +94,19 @@ function ViewerInfoPanelContent({
         ))}
       </InfoSection>
 
-      <InfoSection title="Shooting Mode">
+      <InfoSection title="Capture Mode">
         {exposureRows.map((row) => (
           <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
+
+      {locationInfoRows.length > 0 ? (
+        <InfoSection title="Location Information">
+          {locationInfoRows.map((row) => (
+            <InfoRow key={row.label} label={row.label} value={row.value} />
+          ))}
+        </InfoSection>
+      ) : null}
     </div>
   )
 }
