@@ -1,5 +1,4 @@
 import { getAlbumDescriptor } from '@/lib/album'
-import { formatReadableDate } from '@/lib/date'
 import type { Photo } from '@/lib/photo'
 
 export interface GalleryHeaderState {
@@ -8,13 +7,13 @@ export interface GalleryHeaderState {
 }
 
 export function getGalleryHeaderState(
-  photo: Pick<Photo, 'albumKey' | 'takenAt'> | undefined,
+  photo: Pick<Photo, 'albumKey' | 'captureTime'> | undefined,
 ): GalleryHeaderState {
   if (!photo) {
     return {}
   }
 
-  const date = formatReadableDate(photo.takenAt)
+  const date = photo.captureTime.date
   const location = getAlbumDescriptor(photo.albumKey).title
 
   return { date, location }

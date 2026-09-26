@@ -36,48 +36,6 @@ export function formatSentenceCase(value?: string) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
-export function formatDateTimeLabel(takenAt?: string) {
-  if (!takenAt) {
-    return NOT_AVAILABLE_LABEL
-  }
-
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/.exec(takenAt)
-
-  if (!match) {
-    return takenAt
-  }
-
-  const [, year, month, day, hour, minute, second] = match
-
-  return `${year}/${Number(month)}/${Number(day)} ${hour}:${minute}:${second}`
-}
-
-export function formatTimeZoneLabel(takenAt?: string) {
-  if (!takenAt) {
-    return NOT_AVAILABLE_LABEL
-  }
-
-  const match = /(Z|[+-]\d{2}:\d{2})$/.exec(takenAt)
-
-  if (!match) {
-    return NOT_AVAILABLE_LABEL
-  }
-
-  if (match[1] === 'Z') {
-    return 'UTC'
-  }
-
-  const [hours, minutes] = match[1].slice(1).split(':')
-  const sign = match[1][0]
-  const normalizedHours = String(Number(hours))
-
-  if (minutes === '00') {
-    return `UTC${sign}${normalizedHours}`
-  }
-
-  return `UTC${sign}${normalizedHours}:${minutes}`
-}
-
 export function formatMegapixels(width: number, height: number) {
   const megapixels = (width * height) / 1_000_000
 

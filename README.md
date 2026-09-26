@@ -129,13 +129,23 @@ The map page also reads `map.json` from `MEDIA_ORIGIN`. Create it next to `manif
 {
   "version": 1,
   "locations": {
-    "20260820-Berlin": { "lat": 52.52, "lng": 13.405 },
-    "20260901-Paris": { "lat": 48.8566, "lng": 2.3522 }
+    "20260820-Berlin": {
+      "lat": 52.52,
+      "lng": 13.405,
+      "timeZone": "Europe/Berlin"
+    },
+    "20260901-Paris": {
+      "lat": 48.8566,
+      "lng": 2.3522,
+      "timeZone": "Europe/Paris"
+    }
   }
 }
 ```
 
 Album keys must exactly match the album folder names.
+
+The optional `timeZone` uses an IANA name for the shooting location. Photo details, gallery dates, and photo share images display `takenAt` in this zone, including daylight saving time. Without it, they preserve the recorded date and offset. Keep the original `takenAt` offset accurate; the display conversion does not correct camera clock errors. An absent `map.json` (HTTP 404) leaves the gallery usable and the map empty.
 
 ## Everyday workflow
 

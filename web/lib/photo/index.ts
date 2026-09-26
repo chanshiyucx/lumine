@@ -52,11 +52,18 @@ export interface PhotoManifestEntry {
   location?: PhotoLocation
 }
 
+export interface PhotoCaptureTime {
+  date: string
+  dateTime: string
+  timeZone: string
+}
+
 export interface Photo extends PhotoManifestEntry {
   id: string
   slug: string
   fileName: string
   albumKey: string
+  captureTime: PhotoCaptureTime
   aspectRatio: number
 }
 

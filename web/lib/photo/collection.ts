@@ -2,8 +2,10 @@ import 'server-only'
 import { cache } from 'react'
 import { z } from 'zod'
 import { getAlbumKeyFromAssetPath } from '@/lib/album'
+import { getAlbumMapLocations } from '@/lib/album/locations'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
 import { getPhotoAssetUrl, getPhotoManifestUrl } from '../media-url'
+import { formatCaptureTime } from './capture-time'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 
@@ -104,7 +106,10 @@ async function fetchManifestJson() {
 }
 
 export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
-  const manifest = await fetchManifestJson()
+  const [manifest, locations] = await Promise.all([
+    fetchManifestJson(),
+    getAlbumMapLocations(),
+  ])
   const photos = manifest.photos.toSorted(
     (left, right) => Date.parse(right.takenAt) - Date.parse(left.takenAt),
   )
@@ -114,13 +119,18 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
     photos: photos.map((photo) => {
       const original = normalizeAsset(photo.original)
       const thumbnail = normalizeAsset(photo.thumbnail)
+      const albumKey = getAlbumKeyFromAssetPath(photo.original.url)
 
       return {
         ...photo,
         id: photo.original.url,
         slug: createPhotoSlug(photo.title),
         fileName: getFileNameFromAssetPath(photo.original.url),
-        albumKey: getAlbumKeyFromAssetPath(photo.original.url),
+        albumKey,
+        captureTime: formatCaptureTime(
+          photo.takenAt,
+          locations.get(albumKey)?.timeZone,
+        ),
         aspectRatio: thumbnail.width / thumbnail.height,
         original,
         thumbnail,

@@ -41,17 +41,6 @@ const THEME = {
   overlay: '#2a273f',
   text: '#e0def4',
 }
-const PHOTO_DATE_FORMATTER = new Intl.DateTimeFormat(siteConfig.locale, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-})
-
-function formatPhotoDate(takenAt: string) {
-  return PHOTO_DATE_FORMATTER.format(new Date(takenAt))
-}
-
 function getExifItems(photo: Photo) {
   const items: Array<{ label: string; text: string }> = []
 
@@ -467,7 +456,7 @@ export async function renderPhotoOgImage(photo: Photo) {
       tags={[album.title]}
       exifItems={getExifItems(photo)}
       camera={formatCameraLabel(photo)}
-      formattedDate={formatPhotoDate(photo.takenAt)}
+      formattedDate={photo.captureTime.date}
       compact={layout.infoCompact}
     />
   )

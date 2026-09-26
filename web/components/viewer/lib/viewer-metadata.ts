@@ -4,12 +4,10 @@ import {
   formatApertureValue,
   formatBrightnessValue,
   formatBytes,
-  formatDateTimeLabel,
   formatFocalLength,
   formatMegapixels,
   formatMimeLabel,
   formatSentenceCase,
-  formatTimeZoneLabel,
   NOT_AVAILABLE_LABEL,
 } from '@/lib/photo/formatters'
 
@@ -41,8 +39,14 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
       label: 'Location',
       value: album.title,
     },
-    { label: 'Taken At', value: formatDateTimeLabel(photo.takenAt) },
-    { label: 'Time Zone', value: formatTimeZoneLabel(photo.takenAt) },
+    {
+      label: 'Taken At',
+      value: photo.captureTime.dateTime,
+    },
+    {
+      label: 'Time Zone',
+      value: photo.captureTime.timeZone,
+    },
   ]
 }
 
