@@ -1,57 +1,14 @@
 import type { AlbumDescriptor } from '@/lib/album'
 import { normalizePathSegment } from '../url-segments'
+import type { PhotoManifestEntry } from './manifest'
 
-export interface PhotoAsset {
-  url: string
-  width: number
-  height: number
-  bytes: number
-  mime: string
-}
-
-export interface PhotoCamera {
-  make?: string
-  model?: string
-  lens?: string
-  focalLengthMm?: number
-  focalLengthIn35mm?: number
-  aperture?: number
-  shutter?: string
-  iso?: number
-  exposureProgram?: string
-  exposureMode?: string
-  meteringMode?: string
-  whiteBalance?: string
-  flash?: string
-  sceneCaptureType?: string
-  brightnessEv?: number
-  maxAperture?: number
-  sensingMethod?: string
-}
-
-export interface PhotoImage {
-  orientation?: number
-  colorSpace?: string
-  isLivePhoto?: boolean
-  bitDepth?: number
-}
-
-export interface PhotoLocation {
-  lat: number
-  lng: number
-  alt?: number
-}
-
-export interface PhotoManifestEntry {
-  original: PhotoAsset
-  thumbnail: PhotoAsset
-  thumbHash: string
-  title: string
-  takenAt: string
-  camera: PhotoCamera
-  image: PhotoImage
-  location?: PhotoLocation
-}
+export type {
+  PhotoAsset,
+  PhotoCamera,
+  PhotoImage,
+  PhotoLocation,
+  PhotoManifestEntry,
+} from './manifest'
 
 export interface PhotoCaptureTime {
   date: string

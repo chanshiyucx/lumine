@@ -1,6 +1,7 @@
 import type { Photo } from '.'
 import {
-  formatApertureValue,
+  formatExposureTime,
+  formatFNumber,
   formatFocalLength,
   formatIsoValue,
   NOT_AVAILABLE_LABEL,
@@ -18,18 +19,18 @@ export function getCaptureSettings(photo: Photo): CaptureSetting[] {
       key: 'focal',
       label: 'Focal',
       value: formatFocalLength(
-        photo.camera.focalLengthIn35mm ?? photo.camera.focalLengthMm,
+        photo.camera.focalLengthIn35mmFilm ?? photo.camera.focalLength,
       ),
     },
     {
       key: 'aperture',
       label: 'Aperture',
-      value: formatApertureValue(photo.camera.aperture),
+      value: formatFNumber(photo.camera.fNumber),
     },
     {
       key: 'shutter',
       label: 'Shutter',
-      value: photo.camera.shutter ?? NOT_AVAILABLE_LABEL,
+      value: formatExposureTime(photo.camera.exposureTime),
     },
     {
       key: 'iso',

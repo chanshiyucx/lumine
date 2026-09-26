@@ -42,12 +42,30 @@ export function formatFocalLength(value?: number) {
   return `${formatDecimal(value, 1)} mm`
 }
 
-export function formatApertureValue(value?: number) {
+export function formatFNumber(value?: number) {
   if (!value) {
     return NOT_AVAILABLE_LABEL
   }
 
   return `f/${formatDecimal(value, 1)}`
+}
+
+export function formatExposureTimeValue(seconds?: number) {
+  if (seconds === undefined || !Number.isFinite(seconds) || seconds <= 0) {
+    return NOT_AVAILABLE_LABEL
+  }
+
+  const reciprocal = 1 / seconds
+  if (seconds < 1 && Math.abs(reciprocal - Math.round(reciprocal)) < 0.000001) {
+    return `1/${Math.round(reciprocal)}`
+  }
+
+  return `${Number(seconds.toPrecision(6))}`
+}
+
+export function formatExposureTime(seconds?: number) {
+  const value = formatExposureTimeValue(seconds)
+  return value === NOT_AVAILABLE_LABEL ? value : `${value} s`
 }
 
 export function formatIsoValue(value?: number) {

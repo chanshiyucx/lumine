@@ -68,7 +68,7 @@ function ViewerInfoPanelContent({
 
   return (
     <div className="space-y-6 p-4">
-      <InfoSection title="Basic Info">
+      <InfoSection title="Basic Information">
         {photoInfoRows.map((row) => (
           <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
@@ -86,7 +86,7 @@ function ViewerInfoPanelContent({
         </div>
       </section>
 
-      <InfoSection title="Device Info">
+      <InfoSection title="Device Information">
         {deviceInfoRows.map((row) => (
           <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}

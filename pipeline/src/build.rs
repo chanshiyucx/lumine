@@ -42,7 +42,7 @@ const AVIF_EXTENSION: &str = "avif";
 const AVIF_MIME: &str = "image/avif";
 const SIPS_PATH: &str = "/usr/bin/sips";
 const BT709: [f32; 3] = [0.2126, 0.7152, 0.0722];
-const MANIFEST_VERSION: u8 = 2;
+const MANIFEST_VERSION: u8 = 3;
 const THUMBHASH_MAX_DIMENSION: u32 = 100;
 const CHECKPOINT_BATCH_MIN: usize = 8;
 
@@ -998,22 +998,25 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
     let camera = Camera {
         make: exif_text(exif, Tag::Make),
         model: exif_text(exif, Tag::Model),
-        lens: exif_text(exif, Tag::LensModel).or_else(|| exif_text(exif, Tag::LensMake)),
-        focal_length_mm: rational_value(exif, Tag::FocalLength).map(round_to_hundredths_f32),
-        focal_length_in_35mm: exif_uint(exif, Tag::FocalLengthIn35mmFilm),
-        aperture: rational_value(exif, Tag::FNumber).map(round_to_hundredths_f32),
-        max_aperture: extract_max_aperture(exif),
-        shutter: exif_display(exif, Tag::ExposureTime),
-        iso: exif_uint(exif, Tag::PhotographicSensitivity)
-            .or_else(|| exif_uint(exif, Tag::ISOSpeed)),
+        lens_make: exif_text(exif, Tag::LensMake),
+        lens_model: exif_text(exif, Tag::LensModel),
+        focal_length: positive_rational_value(exif, Tag::FocalLength).map(round_to_hundredths_f32),
+        focal_length_in_35mm_film: exif_uint(exif, Tag::FocalLengthIn35mmFilm)
+            .filter(|value| *value > 0),
+        f_number: positive_rational_value(exif, Tag::FNumber).map(round_to_hundredths_f32),
+        max_aperture_f_number: extract_max_aperture(exif),
+        exposure_time: positive_rational_value(exif, Tag::ExposureTime),
+        iso: extract_iso(exif),
         exposure_program: exif_display(exif, Tag::ExposureProgram),
         exposure_mode: compact_exposure_mode(exif),
         metering_mode: exif_display(exif, Tag::MeteringMode),
         white_balance: compact_white_balance(exif),
         flash: compact_flash(exif),
         scene_capture_type: exif_display(exif, Tag::SceneCaptureType),
-        brightness_ev: rational_value(exif, Tag::BrightnessValue).map(round_to_hundredths_f32),
-        sensing_method: exif_display(exif, Tag::SensingMethod),
+        brightness_value: rational_value(exif, Tag::BrightnessValue).map(round_to_hundredths_f32),
+        sensing_method: exif_uint(exif, Tag::SensingMethod)
+            .filter(|value| matches!(value, 2..=5 | 7 | 8))
+            .and_then(|_| exif_display(exif, Tag::SensingMethod)),
     };
 
     (!camera.is_empty()).then_some(camera)
@@ -1061,6 +1064,48 @@ fn exif_display(exif: &Exif, tag: Tag) -> Option<String> {
 
 fn exif_uint(exif: &Exif, tag: Tag) -> Option<u32> {
     exif.get_field(tag, In::PRIMARY)?.value.get_uint(0)
+}
+
+// `iso` is the effective capture sensitivity, not a copy of a single EXIF tag.
+fn extract_iso(exif: &Exif) -> Option<u32> {
+    normalize_iso(
+        exif_uint(exif, Tag::PhotographicSensitivity),
+        exif_uint(exif, Tag::SensitivityType),
+        exif_uint(exif, Tag::StandardOutputSensitivity),
+        exif_uint(exif, Tag::RecommendedExposureIndex),
+        exif_uint(exif, Tag::ISOSpeed),
+    )
+}
+
+fn normalize_iso(
+    short: Option<u32>,
+    kind: Option<u32>,
+    sos: Option<u32>,
+    rei: Option<u32>,
+    speed: Option<u32>,
+) -> Option<u32> {
+    if let Some(value) = short.filter(|value| *value > 0 && *value < 65535) {
+        return Some(value);
+    }
+    let positive = |value: Option<u32>| value.filter(|value| *value > 0);
+    // For combination types the SHORT field represents SOS (4/5/7) or REI (6).
+    // Prefer its corresponding LONG field, then another explicitly declared one.
+    match kind {
+        Some(1) => positive(sos),
+        Some(2) => positive(rei),
+        Some(3) => positive(speed),
+        Some(4) => positive(sos).or_else(|| positive(rei)),
+        Some(5) => positive(sos).or_else(|| positive(speed)),
+        Some(6) => positive(rei).or_else(|| positive(speed)),
+        Some(7) => positive(sos)
+            .or_else(|| positive(rei))
+            .or_else(|| positive(speed)),
+        _ => positive(speed),
+    }
+}
+
+fn positive_rational_value(exif: &Exif, tag: Tag) -> Option<f64> {
+    rational_value(exif, tag).filter(|value| *value > 0.0)
 }
 
 fn extract_max_aperture(exif: &Exif) -> Option<f32> {
@@ -1167,12 +1212,29 @@ fn exif_apex_aperture(exif: &Exif, tag: Tag) -> Option<f64> {
 }
 
 fn lens_specification_max_aperture(exif: &Exif) -> Option<f64> {
-    match &exif.get_field(Tag::LensSpecification, In::PRIMARY)?.value {
-        Value::Rational(values) if values.len() >= 4 => [values[2].to_f64(), values[3].to_f64()]
-            .into_iter()
-            .filter(|value| value.is_finite() && *value > 0.0)
-            .reduce(f64::min),
-        _ => None,
+    let Value::Rational(values) = &exif.get_field(Tag::LensSpecification, In::PRIMARY)?.value
+    else {
+        return None;
+    };
+    if values.len() < 4 {
+        return None;
+    }
+    let wide = values[2].to_f64();
+    let tele = values[3].to_f64();
+    if !wide.is_finite() || wide <= 0.0 || !tele.is_finite() || tele <= 0.0 {
+        return None;
+    }
+    if (wide - tele).abs() < f64::EPSILON {
+        return Some(wide);
+    }
+    // A variable-aperture zoom's endpoints do not describe an intermediate focal length.
+    let focal_length = positive_rational_value(exif, Tag::FocalLength)?;
+    if (focal_length - values[0].to_f64()).abs() < 0.01 {
+        Some(wide)
+    } else if (focal_length - values[1].to_f64()).abs() < 0.01 {
+        Some(tele)
+    } else {
+        None
     }
 }
 
@@ -2217,18 +2279,23 @@ struct Camera {
     make: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     model: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    lens: Option<String>,
-    #[serde(rename = "focalLengthMm", skip_serializing_if = "Option::is_none")]
-    focal_length_mm: Option<f32>,
-    #[serde(rename = "focalLengthIn35mm", skip_serializing_if = "Option::is_none")]
-    focal_length_in_35mm: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    aperture: Option<f32>,
-    #[serde(rename = "maxAperture", skip_serializing_if = "Option::is_none")]
-    max_aperture: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    shutter: Option<String>,
+    #[serde(rename = "lensMake", skip_serializing_if = "Option::is_none")]
+    lens_make: Option<String>,
+    #[serde(rename = "lensModel", skip_serializing_if = "Option::is_none")]
+    lens_model: Option<String>,
+    #[serde(rename = "focalLength", skip_serializing_if = "Option::is_none")]
+    focal_length: Option<f32>,
+    #[serde(
+        rename = "focalLengthIn35mmFilm",
+        skip_serializing_if = "Option::is_none"
+    )]
+    focal_length_in_35mm_film: Option<u32>,
+    #[serde(rename = "fNumber", skip_serializing_if = "Option::is_none")]
+    f_number: Option<f32>,
+    #[serde(rename = "maxApertureFNumber", skip_serializing_if = "Option::is_none")]
+    max_aperture_f_number: Option<f32>,
+    #[serde(rename = "exposureTime", skip_serializing_if = "Option::is_none")]
+    exposure_time: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     iso: Option<u32>,
     #[serde(rename = "exposureProgram", skip_serializing_if = "Option::is_none")]
@@ -2243,8 +2310,8 @@ struct Camera {
     flash: Option<String>,
     #[serde(rename = "sceneCaptureType", skip_serializing_if = "Option::is_none")]
     scene_capture_type: Option<String>,
-    #[serde(rename = "brightnessEv", skip_serializing_if = "Option::is_none")]
-    brightness_ev: Option<f32>,
+    #[serde(rename = "brightnessValue", skip_serializing_if = "Option::is_none")]
+    brightness_value: Option<f32>,
     #[serde(rename = "sensingMethod", skip_serializing_if = "Option::is_none")]
     sensing_method: Option<String>,
 }
@@ -2253,12 +2320,13 @@ impl Camera {
     fn is_empty(&self) -> bool {
         self.make.is_none()
             && self.model.is_none()
-            && self.lens.is_none()
-            && self.focal_length_mm.is_none()
-            && self.focal_length_in_35mm.is_none()
-            && self.aperture.is_none()
-            && self.max_aperture.is_none()
-            && self.shutter.is_none()
+            && self.lens_make.is_none()
+            && self.lens_model.is_none()
+            && self.focal_length.is_none()
+            && self.focal_length_in_35mm_film.is_none()
+            && self.f_number.is_none()
+            && self.max_aperture_f_number.is_none()
+            && self.exposure_time.is_none()
             && self.iso.is_none()
             && self.exposure_program.is_none()
             && self.exposure_mode.is_none()
@@ -2266,7 +2334,7 @@ impl Camera {
             && self.white_balance.is_none()
             && self.flash.is_none()
             && self.scene_capture_type.is_none()
-            && self.brightness_ev.is_none()
+            && self.brightness_value.is_none()
             && self.sensing_method.is_none()
     }
 }

@@ -1,77 +1,19 @@
 import 'server-only'
 import { cache } from 'react'
-import { z } from 'zod'
 import {
   getAlbumKeyFromAssetPath,
   parseAlbumDescriptor,
   type AlbumDescriptor,
 } from '@/lib/album'
 import { getAlbumMapLocations } from '@/lib/album/locations'
+import { getPhotoAssetUrl, getPhotoManifestUrl } from '@/lib/media-url'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
-import { getPhotoAssetUrl, getPhotoManifestUrl } from '../media-url'
 import { formatCaptureTime } from './capture-time'
+import { manifestSchema } from './manifest'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 
-const photoAssetSchema = z.strictObject({
-  url: z.string().min(1),
-  width: z.number().positive(),
-  height: z.number().positive(),
-  bytes: z.number().nonnegative(),
-  mime: z.string().min(1),
-})
-
-const photoCameraSchema = z.strictObject({
-  make: z.string().min(1).optional(),
-  model: z.string().min(1).optional(),
-  lens: z.string().min(1).optional(),
-  focalLengthMm: z.number().positive().optional(),
-  focalLengthIn35mm: z.number().positive().optional(),
-  aperture: z.number().positive().optional(),
-  shutter: z.string().min(1).optional(),
-  iso: z.number().int().positive().optional(),
-  exposureProgram: z.string().min(1).optional(),
-  exposureMode: z.string().min(1).optional(),
-  meteringMode: z.string().min(1).optional(),
-  whiteBalance: z.string().min(1).optional(),
-  flash: z.string().min(1).optional(),
-  sceneCaptureType: z.string().min(1).optional(),
-  brightnessEv: z.number().optional(),
-  maxAperture: z.number().positive().optional(),
-  sensingMethod: z.string().min(1).optional(),
-})
-
-const photoImageSchema = z.strictObject({
-  orientation: z.number().int().positive().optional(),
-  colorSpace: z.string().min(1).optional(),
-  isLivePhoto: z.boolean().optional(),
-  bitDepth: z.number().int().positive().optional(),
-})
-
-const photoLocationSchema = z.strictObject({
-  lat: z.number(),
-  lng: z.number(),
-  alt: z.number().optional(),
-})
-
-const photoManifestSchema = z.strictObject({
-  original: photoAssetSchema,
-  thumbnail: photoAssetSchema,
-  thumbHash: z.base64().min(8).max(36),
-  title: z.string().min(1),
-  takenAt: z.iso.datetime({ offset: true }),
-  location: photoLocationSchema.optional(),
-  camera: photoCameraSchema,
-  image: photoImageSchema,
-})
-
-const manifestSchema = z.strictObject({
-  version: z.literal(2),
-  updatedAt: z.string().min(1),
-  photos: z.array(photoManifestSchema),
-})
-
-function normalizeAsset(asset: z.infer<typeof photoAssetSchema>): PhotoAsset {
+function normalizeAsset(asset: PhotoAsset): PhotoAsset {
   return {
     ...asset,
     url: getPhotoAssetUrl(asset.url),

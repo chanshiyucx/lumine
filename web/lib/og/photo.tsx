@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og'
 import type { ReactNode } from 'react'
 import sharp from 'sharp'
 import type { Photo } from '@/lib/photo'
+import { formatExposureTimeValue } from '@/lib/photo/formatters'
 import { siteConfig } from '@/lib/site-config'
 import { OG_CACHE_CONTROL, OG_IMAGE_SIZE } from './config'
 
@@ -21,10 +22,15 @@ interface LayoutPieces {
   photoWidth: number
 }
 
+interface ExifItem {
+  label: string
+  text: string
+}
+
 interface InfoPanelProps {
   title: string
   tags: string[]
-  exifItems: Array<{ label: string; text: string }>
+  exifItems: ExifItem[]
   camera: string | null
   formattedDate: string
   compact: boolean
@@ -40,20 +46,23 @@ const THEME = {
   text: '#e0def4',
 }
 function getExifItems(photo: Photo) {
-  const items: Array<{ label: string; text: string }> = []
+  const items: ExifItem[] = []
 
-  if (photo.camera.aperture) {
-    items.push({ label: 'f', text: `/${photo.camera.aperture}` })
+  if (photo.camera.fNumber) {
+    items.push({ label: 'f', text: `/${photo.camera.fNumber}` })
   }
-  if (photo.camera.shutter) {
-    items.push({ label: 's', text: photo.camera.shutter })
+  if (photo.camera.exposureTime) {
+    items.push({
+      label: 's',
+      text: formatExposureTimeValue(photo.camera.exposureTime),
+    })
   }
   if (photo.camera.iso) {
     items.push({ label: 'iso', text: `${photo.camera.iso}` })
   }
 
   const focalLength =
-    photo.camera.focalLengthIn35mm ?? photo.camera.focalLengthMm
+    photo.camera.focalLengthIn35mmFilm ?? photo.camera.focalLength
 
   if (focalLength) {
     items.push({ label: 'mm', text: `${focalLength} mm` })

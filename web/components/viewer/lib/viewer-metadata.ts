@@ -1,8 +1,8 @@
 import type { Photo } from '@/lib/photo'
 import {
-  formatApertureValue,
   formatBrightnessValue,
   formatBytes,
+  formatFNumber,
   formatFocalLength,
   formatMegapixels,
   formatSentenceCase,
@@ -16,7 +16,7 @@ interface InfoRowData {
 
 export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
   return [
-    { label: 'File Name', value: photo.fileName },
+    { label: 'Filename', value: photo.fileName },
     { label: 'Format', value: photo.format },
     {
       label: 'Dimensions',
@@ -36,7 +36,7 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
       value: photo.album.title,
     },
     {
-      label: 'Taken At',
+      label: 'Capture Time',
       value: photo.captureTime.dateTime,
     },
     {
@@ -47,28 +47,42 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
 }
 
 export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
-  return [
+  const rows = [
     {
       label: 'Camera',
       value: photo.cameraName ?? NOT_AVAILABLE_LABEL,
     },
     {
       label: 'Lens',
-      value: photo.camera.lens ?? NOT_AVAILABLE_LABEL,
+      value: photo.camera.lensModel ?? NOT_AVAILABLE_LABEL,
     },
     {
       label: 'Focal Length',
-      value: formatFocalLength(photo.camera.focalLengthMm),
+      value: formatFocalLength(photo.camera.focalLength),
     },
     {
       label: '35mm Equivalent',
-      value: formatFocalLength(photo.camera.focalLengthIn35mm),
+      value: formatFocalLength(photo.camera.focalLengthIn35mmFilm),
     },
     {
       label: 'Max Aperture',
-      value: formatApertureValue(photo.camera.maxAperture),
+      value: formatFNumber(photo.camera.maxApertureFNumber),
     },
   ]
+
+  if (photo.camera.lensMake) {
+    rows.splice(1, 0, {
+      label: 'Lens Manufacturer',
+      value: photo.camera.lensMake,
+    })
+  }
+  if (photo.camera.sensingMethod) {
+    rows.push({
+      label: 'Sensing Method',
+      value: formatSentenceCase(photo.camera.sensingMethod),
+    })
+  }
+  return rows
 }
 
 export function getExposureRows(photo: Photo): InfoRowData[] {
@@ -94,16 +108,12 @@ export function getExposureRows(photo: Photo): InfoRowData[] {
       value: formatSentenceCase(photo.camera.flash),
     },
     {
-      label: 'Sensing Method',
-      value: formatSentenceCase(photo.camera.sensingMethod),
-    },
-    {
       label: 'Scene Capture Type',
       value: formatSentenceCase(photo.camera.sceneCaptureType),
     },
     {
       label: 'Brightness',
-      value: formatBrightnessValue(photo.camera.brightnessEv),
+      value: formatBrightnessValue(photo.camera.brightnessValue),
     },
   ]
 }
