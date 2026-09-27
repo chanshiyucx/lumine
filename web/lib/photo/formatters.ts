@@ -76,7 +76,7 @@ export function formatIsoValue(value?: number) {
   return `ISO ${value}`
 }
 
-export function formatBrightnessValue(value?: number) {
+export function formatExposureBiasValue(value?: number) {
   if (value === undefined) {
     return NOT_AVAILABLE_LABEL
   }

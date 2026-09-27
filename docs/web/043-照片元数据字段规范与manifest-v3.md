@@ -33,7 +33,6 @@ manifest 是供 Web 使用的精简、归一化照片数据契约。直接提取
 | `whiteBalance`          | string          | 归一化为 auto、manual                                                                  |
 | `flash`                 | string          | 原有简化闪光灯状态，不是原始 EXIF 位掩码                                               |
 | `sceneCaptureType`      | string          | EXIF SceneCaptureType 的读取库文本表示                                                 |
-| `sensingMethod`         | string          | EXIF SensingMethod 的有效传感器类型；缺失、未定义和保留值省略                          |
 
 保留现有曝光模式、白平衡、闪光灯和枚举字符串策略，不额外保存枚举编号或原始位掩码。`flash` 的简化值包括 off、on、auto、auto-fired、red-eye、unsupported；它不是用于无损还原 EXIF 的字段。
 
@@ -108,7 +107,6 @@ MaxApertureValue 是 APEX Av，不能将原始值直接显示成 f-number。pipe
 
 - 曝光时间共用数值格式化逻辑：详情页显示 `1/200 s`、`0.3 s`、`30 s`；OG 保持固定的“标签 + 数值”结构，使用独立的 `s` 标签和 `1/200` 等数值文字，不引入可选标签分支。
 - Lens 行读取 lensModel；有 lensMake 时独立显示 Lens Manufacturer。型号未知时不会用制造商冒充。
-- Sensing Method 归入 Device Information；有有效值才显示，不在 Shooting Mode 中展示 Unknown。
 - 其他已有缺失值占位策略保持不变。
 
 ## 示例
@@ -128,7 +126,7 @@ MaxApertureValue 是 APEX Av，不能将原始值直接显示成 f-number。pipe
 }
 ```
 
-lensMake 和 sensingMethod 在源图缺失时不出现，不根据相机品牌补齐。
+lensMake 在源图缺失时不出现，不根据相机品牌补齐。sensingMethod 已从数据契约和 pipeline 输出中移除，不提供旧字段兼容；使用新 Web 前需要重新生成并同步 manifest。
 
 ## 重新生成与验证
 
@@ -141,8 +139,8 @@ lensMake 和 sensingMethod 在源图缺失时不出现，不根据相机品牌�
 - Rust：release 构建、格式检查和严格 Clippy 检查通过。
 - Web：类型、ESLint、Prettier 和差异检查通过。
 - 两张真实样本在独立临时目录重新生成成功，输出 manifest 通过 Web v3 schema，并直接用于拍摄参数和设备信息显示验证。
-- Sony 样本：exposureTime 为 0.005，显示 1/200 s；ISO 100；Sensing Method 省略。
-- iPhone 样本：lensMake 为 Apple，与 lensModel 分开；ISO 160；有效的 Sensing Method 保留。
+- Sony 样本：exposureTime 为 0.005，显示 1/200 s；ISO 100。
+- iPhone 样本：lensMake 为 Apple，与 lensModel 分开；ISO 160。
 - 按紧凑 JSON 比较两张样本的 camera 对象，Sony 从 345 增至 364 字节（+19），iPhone 从 410 增至 439 字节（+29）。这是本次样本实测，不代表全部照片或压缩后的网络传输体积；主要变化是明确字段名和可选的镜头制造商，未增加原始 EXIF 副本。
 
 ## 参考

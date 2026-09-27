@@ -7,6 +7,7 @@ use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tracing::warn;
 
 use super::catalog::{Camera, ImageMetadata, Location};
+use super::sony::extract_creative_look;
 
 pub(super) fn extract_source_metadata(
     exif: Option<&Exif>,
@@ -113,6 +114,8 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
         f_number: positive_rational_value(exif, Tag::FNumber).map(round_to_hundredths_f32),
         max_aperture_f_number: extract_max_aperture(exif),
         exposure_time: positive_rational_value(exif, Tag::ExposureTime),
+        exposure_bias_value: rational_value(exif, Tag::ExposureBiasValue)
+            .map(|value| (value * 100.0).round() / 100.0),
         iso: extract_iso(exif),
         exposure_program: exif_display(exif, Tag::ExposureProgram),
         exposure_mode: compact_exposure_mode(exif),
@@ -121,9 +124,7 @@ fn extract_camera(exif: &Exif) -> Option<Camera> {
         flash: compact_flash(exif),
         scene_capture_type: exif_display(exif, Tag::SceneCaptureType),
         brightness_value: rational_value(exif, Tag::BrightnessValue).map(round_to_hundredths_f32),
-        sensing_method: exif_uint(exif, Tag::SensingMethod)
-            .filter(|value| matches!(value, 2..=5 | 7 | 8))
-            .and_then(|_| exif_display(exif, Tag::SensingMethod)),
+        creative_look: extract_creative_look(exif),
     };
 
     (!camera.is_empty()).then_some(camera)

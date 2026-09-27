@@ -8,6 +8,18 @@ const assetSchema = z.strictObject({
   mime: z.string().min(1),
 })
 
+const creativeLookSchema = z.strictObject({
+  name: z.string().min(1),
+  contrast: z.number().int().min(-9).max(9).optional(),
+  highlights: z.number().int().min(-9).max(9).optional(),
+  shadows: z.number().int().min(-9).max(9).optional(),
+  fade: z.number().int().min(0).max(9).optional(),
+  saturation: z.number().int().min(-9).max(9).optional(),
+  sharpness: z.number().int().min(0).max(9).optional(),
+  sharpnessRange: z.number().int().min(1).max(5).optional(),
+  clarity: z.number().int().min(0).max(9).optional(),
+})
+
 const cameraSchema = z.strictObject({
   make: z.string().min(1).optional(),
   model: z.string().min(1).optional(),
@@ -17,6 +29,7 @@ const cameraSchema = z.strictObject({
   focalLengthIn35mmFilm: z.number().int().positive().optional(),
   fNumber: z.number().positive().optional(),
   exposureTime: z.number().positive().optional(),
+  exposureBiasValue: z.number().optional(),
   iso: z.number().int().positive().optional(),
   exposureProgram: z.string().min(1).optional(),
   exposureMode: z.string().min(1).optional(),
@@ -26,7 +39,7 @@ const cameraSchema = z.strictObject({
   sceneCaptureType: z.string().min(1).optional(),
   maxApertureFNumber: z.number().positive().optional(),
   brightnessValue: z.number().optional(),
-  sensingMethod: z.string().min(1).optional(),
+  creativeLook: creativeLookSchema.optional(),
 })
 
 const imageSchema = z.strictObject({

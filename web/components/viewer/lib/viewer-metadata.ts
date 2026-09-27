@@ -1,7 +1,7 @@
 import type { Photo } from '@/lib/photo'
 import {
-  formatBrightnessValue,
   formatBytes,
+  formatExposureBiasValue,
   formatFNumber,
   formatFocalLength,
   formatMegapixels,
@@ -14,11 +14,39 @@ interface InfoRowData {
   value: string
 }
 
+export function getCreativeLookRows(
+  photo: Pick<Photo, 'camera'>,
+): InfoRowData[] {
+  const look = photo.camera.creativeLook
+  if (!look) return []
+
+  const settings = [
+    ['Contrast', look.contrast, true],
+    ['Highlights', look.highlights, true],
+    ['Shadows', look.shadows, true],
+    ['Fade', look.fade, false],
+    ['Saturation', look.saturation, true],
+    ['Sharpness', look.sharpness, false],
+    ['Sharpness Range', look.sharpnessRange, false],
+    ['Clarity', look.clarity, false],
+  ] as const
+
+  return [
+    { label: 'Look', value: look.name },
+    ...settings.flatMap(([label, value, signed]) =>
+      value === undefined
+        ? []
+        : [{ label, value: `${signed && value > 0 ? '+' : ''}${value}` }],
+    ),
+  ]
+}
+
 export function getLocationInfoRows(photo: Photo): InfoRowData[] {
+  const rows = [{ label: 'Location', value: photo.album.title }]
   const location = photo.location
   if (!location) return []
 
-  const rows = [
+  rows.push(
     {
       label: 'Latitude',
       value: `${Math.abs(location.lat).toFixed(6)}° ${location.lat < 0 ? 'S' : 'N'}`,
@@ -27,7 +55,7 @@ export function getLocationInfoRows(photo: Photo): InfoRowData[] {
       label: 'Longitude',
       value: `${Math.abs(location.lng).toFixed(6)}° ${location.lng < 0 ? 'W' : 'E'}`,
     },
-  ]
+  )
 
   if (location.alt !== undefined) {
     rows.push({ label: 'Altitude', value: `${Math.round(location.alt)}m` })
@@ -67,11 +95,11 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
       label: 'Time Zone',
       value: photo.captureTime.timeZone,
     },
-    {
-      label: 'Location',
-      value: photo.album.title,
-    },
   )
+
+  if (!photo.location) {
+    rows.push({ label: 'Location', value: photo.album.title })
+  }
 
   return rows
 }
@@ -86,47 +114,43 @@ export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
       label: 'Lens',
       value: photo.camera.lensModel ?? NOT_AVAILABLE_LABEL,
     },
-    {
-      label: 'Focal Length',
-      value: formatFocalLength(photo.camera.focalLength),
-    },
-    {
-      label: '35mm Equivalent',
-      value: formatFocalLength(photo.camera.focalLengthIn35mmFilm),
-    },
+    ...(photo.camera.focalLengthIn35mmFilm === undefined ||
+    photo.camera.focalLength === undefined ||
+    photo.camera.focalLengthIn35mmFilm === photo.camera.focalLength
+      ? []
+      : [
+          {
+            label: '35mm Equivalent',
+            value: formatFocalLength(photo.camera.focalLengthIn35mmFilm),
+          },
+        ]),
     {
       label: 'Max Aperture',
       value: formatFNumber(photo.camera.maxApertureFNumber),
     },
   ]
 
-  if (photo.camera.lensMake) {
-    rows.splice(1, 0, {
-      label: 'Lens Manufacturer',
-      value: photo.camera.lensMake,
-    })
-  }
-  if (photo.camera.sensingMethod) {
-    rows.push({
-      label: 'Sensing Method',
-      value: formatSentenceCase(
-        photo.camera.sensingMethod.replace(/\s+sensor$/i, ''),
-      ),
-    })
-  }
   return rows
 }
 
-export function getExposureRows(photo: Photo): InfoRowData[] {
+export function getShootingSettingsRows(photo: Photo): InfoRowData[] {
   return [
     {
-      label: 'Exposure Program',
+      label: 'Shooting Mode',
       value: formatSentenceCase(photo.camera.exposureProgram),
     },
     {
       label: 'Exposure Mode',
       value: formatSentenceCase(photo.camera.exposureMode),
     },
+    ...(photo.camera.exposureBiasValue === undefined
+      ? []
+      : [
+          {
+            label: 'Exposure Compensation',
+            value: formatExposureBiasValue(photo.camera.exposureBiasValue),
+          },
+        ]),
     {
       label: 'Metering Mode',
       value: formatSentenceCase(photo.camera.meteringMode),
@@ -142,10 +166,6 @@ export function getExposureRows(photo: Photo): InfoRowData[] {
     {
       label: 'Scene Capture Type',
       value: formatSentenceCase(photo.camera.sceneCaptureType),
-    },
-    {
-      label: 'Brightness',
-      value: formatBrightnessValue(photo.camera.brightnessValue),
     },
   ]
 }

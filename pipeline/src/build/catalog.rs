@@ -202,6 +202,8 @@ pub(super) struct Camera {
     pub(super) max_aperture_f_number: Option<f32>,
     #[serde(rename = "exposureTime", skip_serializing_if = "Option::is_none")]
     pub(super) exposure_time: Option<f64>,
+    #[serde(rename = "exposureBiasValue", skip_serializing_if = "Option::is_none")]
+    pub(super) exposure_bias_value: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) iso: Option<u32>,
     #[serde(rename = "exposureProgram", skip_serializing_if = "Option::is_none")]
@@ -218,8 +220,30 @@ pub(super) struct Camera {
     pub(super) scene_capture_type: Option<String>,
     #[serde(rename = "brightnessValue", skip_serializing_if = "Option::is_none")]
     pub(super) brightness_value: Option<f32>,
-    #[serde(rename = "sensingMethod", skip_serializing_if = "Option::is_none")]
-    pub(super) sensing_method: Option<String>,
+    #[serde(rename = "creativeLook", skip_serializing_if = "Option::is_none")]
+    pub(super) creative_look: Option<CreativeLook>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct CreativeLook {
+    pub(super) name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) contrast: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) highlights: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) shadows: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) fade: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) saturation: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) sharpness: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) sharpness_range: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) clarity: Option<i32>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -271,6 +295,7 @@ impl Camera {
             && self.f_number.is_none()
             && self.max_aperture_f_number.is_none()
             && self.exposure_time.is_none()
+            && self.exposure_bias_value.is_none()
             && self.iso.is_none()
             && self.exposure_program.is_none()
             && self.exposure_mode.is_none()
@@ -279,6 +304,6 @@ impl Camera {
             && self.flash.is_none()
             && self.scene_capture_type.is_none()
             && self.brightness_value.is_none()
-            && self.sensing_method.is_none()
+            && self.creative_look.is_none()
     }
 }

@@ -1,6 +1,7 @@
 mod avif;
 mod catalog;
 mod metadata;
+mod sony;
 mod source;
 mod storage;
 mod thumbnail;

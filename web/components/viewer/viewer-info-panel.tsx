@@ -4,25 +4,28 @@ import { CaptureSettingChip } from '@/components/photo'
 import { ScrollArea } from '@/components/scroll-area'
 import type { Photo } from '@/lib/photo'
 import { getCaptureSettings } from '@/lib/photo/capture-settings'
+import { formatFocalLength } from '@/lib/photo/formatters'
 import { cn } from '@/lib/style'
 import {
+  getCreativeLookRows,
   getDeviceInfoRows,
-  getExposureRows,
   getLocationInfoRows,
   getPhotoInfoRows,
+  getShootingSettingsRows,
 } from './lib/viewer-metadata'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 import { PhotoHistogram } from './photo-histogram'
 import { ViewerLocationMap } from './viewer-location-map'
 
 interface InfoRowProps {
+  className?: string
   label: string
   value: string
 }
 
-function InfoRow({ label, value }: InfoRowProps) {
+function InfoRow({ className, label, value }: InfoRowProps) {
   return (
-    <div className="flex justify-between gap-3 text-sm">
+    <div className={cn('flex justify-between gap-3 text-sm', className)}>
       <dt className="text-text/50 shrink-0 whitespace-nowrap">{label}</dt>
       <dd className="min-w-0 text-right wrap-anywhere">{value}</dd>
     </div>
@@ -63,27 +66,24 @@ function ViewerInfoPanelContent({
   photo: Photo
   isActive: boolean
 }) {
-  const photoInfoRows = [
-    ...getPhotoInfoRows(photo),
-    ...getLocationInfoRows(photo),
-  ]
-  const captureSettings = getCaptureSettings(photo)
+  const photoInfoRows = getPhotoInfoRows(photo)
+  const locationInfoRows = getLocationInfoRows(photo)
+  const captureSettings = getCaptureSettings(photo).map((setting) =>
+    setting.key === 'focal' && photo.camera.focalLength !== undefined
+      ? { ...setting, value: formatFocalLength(photo.camera.focalLength) }
+      : setting,
+  )
+  const creativeLookRows = getCreativeLookRows(photo)
   const deviceInfoRows = getDeviceInfoRows(photo)
-  const exposureRows = getExposureRows(photo)
+  const shootingSettingsRows = getShootingSettingsRows(photo)
 
   return (
     <div className="space-y-6 p-4">
-      <section className="flex flex-col gap-2">
-        <h3 className="text-sm uppercase">Basic Information</h3>
-        <dl className="flex flex-col gap-1">
-          {photoInfoRows.map((row) => (
-            <InfoRow key={row.label} label={row.label} value={row.value} />
-          ))}
-        </dl>
-        <div hidden={photo.location === undefined}>
-          <ViewerLocationMap location={photo.location} isActive={isActive} />
-        </div>
-      </section>
+      <InfoSection title="Photo Information">
+        {photoInfoRows.map((row) => (
+          <InfoRow key={row.label} label={row.label} value={row.value} />
+        ))}
+      </InfoSection>
 
       <section className="flex flex-col gap-2">
         <h3 className="text-sm uppercase">Capture Parameters</h3>
@@ -92,20 +92,53 @@ function ViewerInfoPanelContent({
             <CaptureSettingChip key={setting.key} setting={setting} />
           ))}
         </div>
+      </section>
+
+      {creativeLookRows.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm uppercase">Creative Look</h3>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+            {creativeLookRows.map((row) => (
+              <InfoRow
+                key={row.label}
+                className={row.label === 'Look' ? 'col-span-2' : 'gap-2'}
+                label={row.label}
+                value={row.value}
+              />
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
+      <section className="flex flex-col gap-2">
+        <h3 className="text-sm uppercase">Histogram</h3>
         <PhotoHistogram photo={photo} isActive={isActive} />
       </section>
 
-      <InfoSection title="Device Information">
+      <InfoSection title="Equipment">
         {deviceInfoRows.map((row) => (
           <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
 
-      <InfoSection title="Capture Mode">
-        {exposureRows.map((row) => (
+      <InfoSection title="Shooting Settings">
+        {shootingSettingsRows.map((row) => (
           <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
+
+      <section
+        hidden={photo.location === undefined}
+        className="flex flex-col gap-2"
+      >
+        <h3 className="text-sm uppercase">Location</h3>
+        <dl className="flex flex-col gap-1">
+          {locationInfoRows.map((row) => (
+            <InfoRow key={row.label} label={row.label} value={row.value} />
+          ))}
+        </dl>
+        <ViewerLocationMap location={photo.location} isActive={isActive} />
+      </section>
     </div>
   )
 }
