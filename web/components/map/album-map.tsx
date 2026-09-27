@@ -8,6 +8,7 @@ import { prepareAlbumMapSelection } from './lib/album-map-selection'
 import { getInitialFocusItems } from './lib/initial-map-focus'
 import {
   CLUSTER_PREVIEW_CAPACITY,
+  MAP_STYLE_URL,
   WORLD_BOUNDS,
   type MapBounds,
 } from './lib/map-config'
@@ -15,8 +16,6 @@ import { expandMapBounds, getMapMarkerImageLoading } from './lib/map-viewport'
 import { MapControls } from './map-controls'
 import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
 
-const MAP_STYLE_URL =
-  'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 const MAP_LOAD_TIMEOUT_MS = 15_000
 
 interface AlbumMapProps {

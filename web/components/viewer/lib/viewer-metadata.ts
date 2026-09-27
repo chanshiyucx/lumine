@@ -60,16 +60,16 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
 
   rows.push(
     {
-      label: 'Location',
-      value: photo.album.title,
-    },
-    {
       label: 'Capture Time',
       value: photo.captureTime.dateTime,
     },
     {
       label: 'Time Zone',
       value: photo.captureTime.timeZone,
+    },
+    {
+      label: 'Location',
+      value: photo.album.title,
     },
   )
 

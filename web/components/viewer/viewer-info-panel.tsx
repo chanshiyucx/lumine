@@ -13,6 +13,7 @@ import {
 } from './lib/viewer-metadata'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 import { PhotoHistogram } from './photo-histogram'
+import { ViewerLocationMap } from './viewer-location-map'
 
 interface InfoRowProps {
   label: string
@@ -21,7 +22,7 @@ interface InfoRowProps {
 
 function InfoRow({ label, value }: InfoRowProps) {
   return (
-    <div className="flex justify-between gap-3 py-1 text-sm">
+    <div className="flex justify-between gap-3 text-sm">
       <dt className="text-text/50 shrink-0 whitespace-nowrap">{label}</dt>
       <dd className="min-w-0 text-right wrap-anywhere">{value}</dd>
     </div>
@@ -37,7 +38,7 @@ function InfoSection({ title, children }: InfoSectionProps) {
   return (
     <section>
       <h3 className="text-sm uppercase">{title}</h3>
-      <dl>{children}</dl>
+      <dl className="flex flex-col gap-1">{children}</dl>
     </section>
   )
 }
@@ -62,19 +63,27 @@ function ViewerInfoPanelContent({
   photo: Photo
   isActive: boolean
 }) {
-  const photoInfoRows = getPhotoInfoRows(photo)
+  const photoInfoRows = [
+    ...getPhotoInfoRows(photo),
+    ...getLocationInfoRows(photo),
+  ]
   const captureSettings = getCaptureSettings(photo)
   const deviceInfoRows = getDeviceInfoRows(photo)
   const exposureRows = getExposureRows(photo)
-  const locationInfoRows = getLocationInfoRows(photo)
 
   return (
     <div className="space-y-6 p-4">
-      <InfoSection title="Basic Information">
-        {photoInfoRows.map((row) => (
-          <InfoRow key={row.label} label={row.label} value={row.value} />
-        ))}
-      </InfoSection>
+      <section>
+        <h3 className="text-sm uppercase">Basic Information</h3>
+        <dl className="flex flex-col gap-1">
+          {photoInfoRows.map((row) => (
+            <InfoRow key={row.label} label={row.label} value={row.value} />
+          ))}
+        </dl>
+        <div hidden={photo.location === undefined}>
+          <ViewerLocationMap location={photo.location} isActive={isActive} />
+        </div>
+      </section>
 
       <section>
         <h3 className="text-sm uppercase">Capture Parameters</h3>
@@ -99,14 +108,6 @@ function ViewerInfoPanelContent({
           <InfoRow key={row.label} label={row.label} value={row.value} />
         ))}
       </InfoSection>
-
-      {locationInfoRows.length > 0 ? (
-        <InfoSection title="Location Information">
-          {locationInfoRows.map((row) => (
-            <InfoRow key={row.label} label={row.label} value={row.value} />
-          ))}
-        </InfoSection>
-      ) : null}
     </div>
   )
 }
