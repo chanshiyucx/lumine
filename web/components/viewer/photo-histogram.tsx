@@ -23,10 +23,10 @@ interface DisplayedHistogram {
 const CHANNELS: readonly Channel[] = ['luminance', 'red', 'green', 'blue']
 
 const CHANNEL_CONFIG: Record<Channel, { alpha: number; rgb: string }> = {
-  red: { alpha: 0.75, rgb: '235, 111, 146' }, // Rose Pine Love
-  green: { alpha: 0.75, rgb: '156, 207, 216' }, // Rose Pine Foam
-  blue: { alpha: 0.75, rgb: '196, 167, 231' }, // Rose Pine Iris
-  luminance: { alpha: 0.28, rgb: '224, 222, 244' }, // Rose Pine Text
+  red: { alpha: 0.75, rgb: '255, 105, 97' },
+  green: { alpha: 0.75, rgb: '52, 199, 89' },
+  blue: { alpha: 0.75, rgb: '64, 156, 255' },
+  luminance: { alpha: 0.28, rgb: '255, 255, 255' },
 }
 
 function calculateSpringProgress(
@@ -363,7 +363,7 @@ export function PhotoHistogram({
     <div
       ref={containerRef}
       className={cn(
-        'bg-text/10 relative h-20 w-full min-w-0 overflow-hidden rounded-md',
+        'bg-text/10 relative h-32 w-full min-w-0 overflow-hidden rounded-md',
         className,
       )}
       role="img"

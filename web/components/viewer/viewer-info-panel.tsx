@@ -36,7 +36,7 @@ interface InfoSectionProps {
 
 function InfoSection({ title, children }: InfoSectionProps) {
   return (
-    <section>
+    <section className="flex flex-col gap-2">
       <h3 className="text-sm uppercase">{title}</h3>
       <dl className="flex flex-col gap-1">{children}</dl>
     </section>
@@ -73,7 +73,7 @@ function ViewerInfoPanelContent({
 
   return (
     <div className="space-y-6 p-4">
-      <section>
+      <section className="flex flex-col gap-2">
         <h3 className="text-sm uppercase">Basic Information</h3>
         <dl className="flex flex-col gap-1">
           {photoInfoRows.map((row) => (
@@ -85,16 +85,14 @@ function ViewerInfoPanelContent({
         </div>
       </section>
 
-      <section>
+      <section className="flex flex-col gap-2">
         <h3 className="text-sm uppercase">Capture Parameters</h3>
-        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+        <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
           {captureSettings.map((setting) => (
             <CaptureSettingChip key={setting.key} setting={setting} />
           ))}
         </div>
-        <div className="mt-2">
-          <PhotoHistogram photo={photo} isActive={isActive} />
-        </div>
+        <PhotoHistogram photo={photo} isActive={isActive} />
       </section>
 
       <InfoSection title="Device Information">

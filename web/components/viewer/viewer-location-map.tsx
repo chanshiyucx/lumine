@@ -62,7 +62,7 @@ export function ViewerLocationMap({
       ref={containerRef}
       data-viewer-location-map
       data-map-status={isLoaded ? 'loaded' : 'loading'}
-      className="relative mt-3 h-40 overflow-hidden rounded-md"
+      className="relative h-40 overflow-hidden rounded-md"
       role="group"
       aria-label="Photo location map"
     >

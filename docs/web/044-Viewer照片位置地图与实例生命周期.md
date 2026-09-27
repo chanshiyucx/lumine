@@ -8,7 +8,7 @@
 
 在 Viewer 信息面板的 Basic Information 中，Time Zone 后依次显示 Latitude、Longitude、可选 Altitude 和照片拍摄位置地图，不另设 Location Information 分区。直接使用 manifest 的 `photo.location.lat/lng`，不使用相册 map.json 的位置代替照片坐标，不修改 manifest 或 pipeline。
 
-地图高 160px，使用与相册地图相同的 CARTO Dark Matter 样式，中心显示 Rose Pine Iris 紫色标记，位置点样式除颜色外对齐 Afilmory：中心点 8px，2px 白色描边、透明度 80%；波纹初始直径 12px、透明度 75%，使用默认 1 秒 animate-ping，不添加额外阴影。颜色复用站点 Iris 主题 token。地图不可拖动、不可滚轮缩放，不接管信息面板的滚动和移动端手势；隐藏地图版权控件，与 Afilmory 的小地图呈现一致。没有照片坐标时，整个位置区域隐藏；经纬度为 0 是合法坐标，不据此排除照片。海拔缺失只省略 Altitude 行。
+地图高 160px，使用与相册地图相同的 CARTO Dark Matter 样式，中心显示 Rose Pine love 紫色标记，位置点样式除颜色外对齐 Afilmory：中心点 8px，2px 白色描边、透明度 80%；波纹初始直径 12px、透明度 75%，使用默认 1 秒 animate-ping，不添加额外阴影。颜色复用站点 love 主题 token。地图不可拖动、不可滚轮缩放，不接管信息面板的滚动和移动端手势；隐藏地图版权控件，与 Afilmory 的小地图呈现一致。没有照片坐标时，整个位置区域隐藏；经纬度为 0 是合法坐标，不据此排除照片。海拔缺失只省略 Altitude 行。
 
 本次不增加点击地图后的跳转、地名查询或相册地图对照片坐标的定位功能。
 

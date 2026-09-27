@@ -54,7 +54,7 @@ export function AlbumMarker({
       <span
         className={cn(
           'album-map-marker-visual bg-overlay relative block size-11 overflow-hidden rounded-full border-2 shadow-xl transition-[scale,border-color,box-shadow] duration-200 ease-out group-hover:scale-[1.08] group-data-[state=open]:scale-[1.08]',
-          pinned ? 'border-iris/80 ring-iris/25 ring-2' : 'border-subtle/50',
+          pinned ? 'border-love/80 ring-love/25 ring-2' : 'border-subtle/50',
         )}
       >
         <ThumbnailImage photo={cover} loading={imageLoading} />
@@ -107,10 +107,10 @@ export function ClusterMarker({
       }}
     >
       <span className="album-map-marker-visual relative block size-full">
-        <span className="bg-iris/20 absolute -inset-1.5 rounded-full" />
+        <span className="bg-love/20 absolute -inset-1.5 rounded-full" />
         <span className="border-subtle/50 bg-overlay relative block size-full overflow-hidden rounded-full border-2 shadow-2xl transition-transform duration-200 ease-out group-hover:scale-105">
           <ThumbnailImage photo={representativeCover} loading={imageLoading} />
-          <span className="from-base/25 to-iris/65 pointer-events-none absolute inset-0 bg-linear-to-br" />
+          <span className="from-base/25 to-love/65 pointer-events-none absolute inset-0 bg-linear-to-br" />
           <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-bold drop-shadow-lg">
             {count}
           </span>

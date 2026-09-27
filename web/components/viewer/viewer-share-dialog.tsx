@@ -307,7 +307,7 @@ export function ViewerShareDialog({
             >
               {isPreviewLoading && !hasPreviewFailed && (
                 <div className="bg-overlay/35 absolute inset-0 flex items-center justify-center">
-                  <div className="border-overlay border-t-iris size-8 animate-spin rounded-full border-2" />
+                  <div className="border-overlay border-t-love size-8 animate-spin rounded-full border-2" />
                 </div>
               )}
               {!hasPreviewFailed && (
