@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { ThumbnailImage } from '@/components/image'
 import { CaptureSettingChip } from '@/components/photo'
 import type { Photo } from '@/lib/photo'
-import { getAvailableCaptureSettings } from '@/lib/photo/capture-settings'
+import { getCaptureSettings } from '@/lib/photo/capture-settings'
 import { formatBytes } from '@/lib/photo/formatters'
 import { cn } from '@/lib/style'
 
@@ -26,9 +26,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
   onOpen,
 }: PhotoMasonryItemProps) {
   const showExpandedInfo = cardHeight > EXPANDED_INFO_MIN_HEIGHT
-  const captureSettings = showExpandedInfo
-    ? getAvailableCaptureSettings(photo)
-    : []
+  const captureSettings = showExpandedInfo ? getCaptureSettings(photo) : []
 
   return (
     <button

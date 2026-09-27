@@ -4,7 +4,6 @@ import {
   formatFNumber,
   formatFocalLength,
   formatIsoValue,
-  NOT_AVAILABLE_LABEL,
 } from './formatters'
 
 export interface CaptureSetting {
@@ -38,10 +37,4 @@ export function getCaptureSettings(photo: Photo): CaptureSetting[] {
       value: formatIsoValue(photo.camera.iso),
     },
   ]
-}
-
-export function getAvailableCaptureSettings(photo: Photo): CaptureSetting[] {
-  return getCaptureSettings(photo).filter(
-    (setting) => setting.value !== NOT_AVAILABLE_LABEL,
-  )
 }

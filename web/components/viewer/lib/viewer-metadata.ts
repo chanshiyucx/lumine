@@ -14,6 +14,55 @@ interface InfoRowData {
   value: string
 }
 
+const EXPOSURE_MODE_LABELS: Record<string, string> = {
+  auto: 'Auto Exposure',
+  manual: 'Manual Exposure',
+  bracket: 'Exposure Bracketing',
+}
+
+const METERING_MODE_LABELS: Record<string, string> = {
+  average: 'Average',
+  'center weighted average': 'Center-weighted average',
+  'center weighted': 'Center-weighted average',
+  center: 'Center-weighted average',
+  spot: 'Spot',
+  'multi spot': 'Multi-spot',
+  pattern: 'Multi-segment',
+  'multi segment': 'Multi-segment',
+  multi: 'Multi-segment',
+  partial: 'Partial',
+  other: 'Other',
+}
+
+function getAvailableMetadataRows(rows: InfoRowData[]): InfoRowData[] {
+  return rows.filter(
+    ({ value }) =>
+      value.trim() !== '' && !/^(unknown|not defined)$/i.test(value.trim()),
+  )
+}
+
+function formatShootingMode(value?: string): string {
+  return formatSentenceCase(value?.trim()).replace(/\b[a-z]/g, (letter) =>
+    letter.toUpperCase(),
+  )
+}
+
+function formatExposureMode(value?: string): string {
+  return (
+    EXPOSURE_MODE_LABELS[value?.trim().toLowerCase() ?? ''] ??
+    formatShootingMode(value)
+  )
+}
+
+function formatMeteringMode(value?: string): string {
+  const key = value
+    ?.trim()
+    .toLowerCase()
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+  return METERING_MODE_LABELS[key ?? ''] ?? formatSentenceCase(value?.trim())
+}
+
 export function getCreativeLookRows(
   photo: Pick<Photo, 'camera'>,
 ): InfoRowData[] {
@@ -114,8 +163,11 @@ export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
       label: 'Lens',
       value: photo.camera.lensModel ?? NOT_AVAILABLE_LABEL,
     },
+    {
+      label: 'Focal Length',
+      value: formatFocalLength(photo.camera.focalLength),
+    },
     ...(photo.camera.focalLengthIn35mmFilm === undefined ||
-    photo.camera.focalLength === undefined ||
     photo.camera.focalLengthIn35mmFilm === photo.camera.focalLength
       ? []
       : [
@@ -130,18 +182,18 @@ export function getDeviceInfoRows(photo: Photo): InfoRowData[] {
     },
   ]
 
-  return rows
+  return getAvailableMetadataRows(rows)
 }
 
 export function getShootingSettingsRows(photo: Photo): InfoRowData[] {
-  return [
+  return getAvailableMetadataRows([
     {
       label: 'Shooting Mode',
-      value: formatSentenceCase(photo.camera.exposureProgram),
+      value: formatShootingMode(photo.camera.exposureProgram),
     },
     {
       label: 'Exposure Mode',
-      value: formatSentenceCase(photo.camera.exposureMode),
+      value: formatExposureMode(photo.camera.exposureMode),
     },
     ...(photo.camera.exposureBiasValue === undefined
       ? []
@@ -153,7 +205,7 @@ export function getShootingSettingsRows(photo: Photo): InfoRowData[] {
         ]),
     {
       label: 'Metering Mode',
-      value: formatSentenceCase(photo.camera.meteringMode),
+      value: formatMeteringMode(photo.camera.meteringMode),
     },
     {
       label: 'White Balance',
@@ -167,5 +219,5 @@ export function getShootingSettingsRows(photo: Photo): InfoRowData[] {
       label: 'Scene Capture Type',
       value: formatSentenceCase(photo.camera.sceneCaptureType),
     },
-  ]
+  ])
 }

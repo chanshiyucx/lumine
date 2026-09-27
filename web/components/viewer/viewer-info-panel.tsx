@@ -40,7 +40,7 @@ interface InfoSectionProps {
 function InfoSection({ title, children }: InfoSectionProps) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm uppercase">{title}</h3>
+      <h3 className="text-sm font-medium uppercase">{title}</h3>
       <dl className="flex flex-col gap-1">{children}</dl>
     </section>
   )
@@ -86,7 +86,7 @@ function ViewerInfoPanelContent({
       </InfoSection>
 
       <section className="flex flex-col gap-2">
-        <h3 className="text-sm uppercase">Capture Parameters</h3>
+        <h3 className="text-sm font-medium uppercase">Capture Parameters</h3>
         <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
           {captureSettings.map((setting) => (
             <CaptureSettingChip key={setting.key} setting={setting} />
@@ -96,7 +96,7 @@ function ViewerInfoPanelContent({
 
       {creativeLookRows.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h3 className="text-sm uppercase">Creative Look</h3>
+          <h3 className="text-sm font-medium uppercase">Creative Look</h3>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
             {creativeLookRows.map((row) => (
               <InfoRow
@@ -111,7 +111,7 @@ function ViewerInfoPanelContent({
       ) : null}
 
       <section className="flex flex-col gap-2">
-        <h3 className="text-sm uppercase">Histogram</h3>
+        <h3 className="text-sm font-medium uppercase">Histogram</h3>
         <PhotoHistogram photo={photo} isActive={isActive} />
       </section>
 
@@ -131,7 +131,7 @@ function ViewerInfoPanelContent({
         hidden={photo.location === undefined}
         className="flex flex-col gap-2"
       >
-        <h3 className="text-sm uppercase">Location</h3>
+        <h3 className="text-sm font-medium uppercase">Location</h3>
         <dl className="flex flex-col gap-1">
           {locationInfoRows.map((row) => (
             <InfoRow key={row.label} label={row.label} value={row.value} />

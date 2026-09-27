@@ -103,11 +103,11 @@ MaxApertureValue 是 APEX Av，不能将原始值直接显示成 f-number。pipe
 
 `web/lib/photo/manifest.ts` 是 v3 校验 schema 和 manifest 类型的唯一来源。PhotoAsset、PhotoCamera、PhotoImage、PhotoLocation、PhotoManifestEntry 从 schema 推导，`collection.ts` 负责获取数据、校验和生成应用派生信息。
 
-展示层使用独立文案：Basic Information、Device Information、Filename、Capture Time，保留 Megapixels。拍摄参数与分享卡片读取同一套新字段。
+展示层使用独立文案：Photo Information、Equipment、Shooting Settings、Filename、Capture Time，保留 Megapixels。拍摄参数与分享卡片读取同一套新字段。
 
 - 曝光时间共用数值格式化逻辑：详情页显示 `1/200 s`、`0.3 s`、`30 s`；OG 保持固定的“标签 + 数值”结构，使用独立的 `s` 标签和 `1/200` 等数值文字，不引入可选标签分支。
-- Lens 行读取 lensModel；有 lensMake 时独立显示 Lens Manufacturer。型号未知时不会用制造商冒充。
-- 其他已有缺失值占位策略保持不变。
+- Lens 行读取 lensModel；型号未知时不会用制造商冒充。
+- Equipment 和 Shooting Settings 隐藏缺失、空白及完整匹配 Unknown／Not defined 的值；文件名、地点名称和 Creative Look 保留原始文本，不按这些关键词过滤。有效的零值、Off 和 Standard 保留。
 
 ## 示例
 
