@@ -137,7 +137,11 @@ function ViewerInfoPanelContent({
             <InfoRow key={row.label} label={row.label} value={row.value} />
           ))}
         </dl>
-        <ViewerLocationMap location={photo.location} isActive={isActive} />
+        <ViewerLocationMap
+          location={photo.location}
+          photoId={photo.slug}
+          isActive={isActive}
+        />
       </section>
     </div>
   )

@@ -10,6 +10,7 @@ import {
   type MapBounds,
 } from '@/lib/map-config'
 import type { AlbumMapItem, MapItem, PhotoMapItem } from '@/lib/map-items'
+import { getPhotoPath } from '@/lib/route-paths'
 import { getInitialFocusItems } from './lib/initial-map-focus'
 import { prepareMapSelection } from './lib/map-selection'
 import {
@@ -26,6 +27,7 @@ const MAP_LOAD_TIMEOUT_MS = 15_000
 interface PhotoMapProps {
   albumItems: AlbumMapItem[]
   photos: PhotoMapItem[]
+  photoId?: string
 }
 
 interface MapViewportState {
@@ -83,8 +85,12 @@ function fitMapToItems(map: MapRef, items: MapItem[], animated: boolean) {
   )
 }
 
-export function PhotoMap({ albumItems, photos }: PhotoMapProps) {
+export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
   const mapRef = useRef<MapRef>(null)
+  const targetHref = photoId ? getPhotoPath(photoId) : undefined
+  const focusedPhoto = targetHref
+    ? photos.find((photo) => photo.href === targetHref)
+    : undefined
   const [viewport, setViewport] = useState<MapViewportState>({
     bounds: WORLD_BOUNDS,
     clusterBounds: WORLD_BOUNDS,
@@ -94,7 +100,9 @@ export function PhotoMap({ albumItems, photos }: PhotoMapProps) {
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
   const [showingAll, setShowingAll] = useState(false)
   const [pinnedSelection, setPinnedSelection] =
-    useState<PinnedSelection | null>(null)
+    useState<PinnedSelection | null>(
+      focusedPhoto ? { kind: 'item', key: focusedPhoto.key } : null,
+    )
   const pinnedItemKey =
     pinnedSelection?.kind === 'item' ? pinnedSelection.key : null
   const pinnedPhotoCluster =
@@ -167,7 +175,17 @@ export function PhotoMap({ albumItems, photos }: PhotoMapProps) {
     const map = mapRef.current
     if (!map) return
 
-    fitMapToItems(map, initialFocusItems, false)
+    if (focusedPhoto) {
+      map.jumpTo({
+        center: [
+          focusedPhoto.location.lng,
+          clampMapLatitude(focusedPhoto.location.lat),
+        ],
+        zoom: 15,
+      })
+    } else {
+      fitMapToItems(map, initialFocusItems, false)
+    }
     setLoadStatus('loaded')
     setShowingAll(false)
   }
@@ -214,7 +232,15 @@ export function PhotoMap({ albumItems, photos }: PhotoMapProps) {
       <Map
         key={mapInstanceKey}
         ref={mapRef}
-        initialViewState={{ longitude: 20, latitude: 42, zoom: 1 }}
+        initialViewState={
+          focusedPhoto
+            ? {
+                longitude: focusedPhoto.location.lng,
+                latitude: clampMapLatitude(focusedPhoto.location.lat),
+                zoom: 15,
+              }
+            : { longitude: 20, latitude: 42, zoom: 1 }
+        }
         minZoom={1}
         maxZoom={MAP_MAX_ZOOM}
         mapStyle={MAP_STYLE_URL}
