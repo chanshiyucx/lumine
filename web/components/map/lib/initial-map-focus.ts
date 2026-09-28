@@ -1,8 +1,9 @@
 import Supercluster from 'supercluster'
-import { CLUSTER_RADIUS, WORLD_BOUNDS } from './map-config'
+import { CLUSTER_RADIUS, WORLD_BOUNDS } from '@/lib/map-config'
+import { clampMapLatitude } from './map-viewport'
 
 const ANALYSIS_ZOOM = 1
-const MIN_DOMINANT_ALBUMS = 3
+const MIN_DOMINANT_ITEMS = 3
 const MIN_DOMINANT_SHARE = 0.6
 
 interface LocatedItem {
@@ -33,7 +34,7 @@ function getCandidateCount<T extends LocatedItem>(
 export function getInitialFocusItems<T extends LocatedItem>(
   items: readonly T[],
 ): T[] {
-  if (items.length < MIN_DOMINANT_ALBUMS) return [...items]
+  if (items.length < MIN_DOMINANT_ITEMS) return [...items]
 
   const points: Supercluster.PointFeature<ItemPointProperties<T>>[] = items.map(
     (item) => ({
@@ -41,7 +42,7 @@ export function getInitialFocusItems<T extends LocatedItem>(
       properties: { item },
       geometry: {
         type: 'Point',
-        coordinates: [item.location.lng, item.location.lat],
+        coordinates: [item.location.lng, clampMapLatitude(item.location.lat)],
       },
     }),
   )
@@ -49,6 +50,7 @@ export function getInitialFocusItems<T extends LocatedItem>(
     radius: CLUSTER_RADIUS,
   }).load(points)
   const candidates = clusterIndex.getClusters(WORLD_BOUNDS, ANALYSIS_ZOOM)
+  if (candidates.length === 0) return [...items]
   const dominantCandidate = candidates.reduce((dominant, candidate) =>
     getCandidateCount(candidate) > getCandidateCount(dominant)
       ? candidate
@@ -59,7 +61,7 @@ export function getInitialFocusItems<T extends LocatedItem>(
 
   const dominantCount = dominantCandidate.properties.point_count
   if (
-    dominantCount < MIN_DOMINANT_ALBUMS ||
+    dominantCount < MIN_DOMINANT_ITEMS ||
     dominantCount / items.length < MIN_DOMINANT_SHARE
   ) {
     return [...items]

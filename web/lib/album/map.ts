@@ -1,4 +1,6 @@
 import 'server-only'
+import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
+import { getPhotoCollection } from '@/lib/photo/collection'
 import { getAlbumPath, getPhotoPath } from '@/lib/route-paths'
 import { formatAlbumDateCompact, type Album } from '.'
 import { getAlbumCatalog } from './catalog'
@@ -14,12 +16,11 @@ export interface AlbumMapCover {
   }
 }
 
-export interface AlbumMapItem {
+interface MapItemBase {
   key: string
   href: string
   label: string
   dateLabel: string
-  photoCount: number
   location: {
     lat: number
     lng: number
@@ -27,7 +28,39 @@ export interface AlbumMapItem {
   covers: [AlbumMapCover, ...AlbumMapCover[]]
 }
 
-const MAX_COVERS = 3
+export interface AlbumMapItem extends MapItemBase {
+  kind: 'album'
+  photoCount: number
+}
+
+export interface PhotoMapItem extends MapItemBase {
+  kind: 'photo'
+  cameraName: string | null
+  location: MapItemBase['location'] & { alt?: number }
+}
+
+export type MapItem = AlbumMapItem | PhotoMapItem
+
+export async function getPhotoMapItems(): Promise<PhotoMapItem[]> {
+  const { photos } = await getPhotoCollection()
+
+  return photos.flatMap((photo) =>
+    photo.location
+      ? [
+          {
+            kind: 'photo' as const,
+            key: `photo:${photo.id}`,
+            href: getPhotoPath(photo.slug),
+            label: photo.title,
+            dateLabel: photo.captureTime.date,
+            cameraName: photo.cameraName,
+            location: photo.location,
+            covers: [getCover(photo)],
+          },
+        ]
+      : [],
+  )
+}
 
 function getCover(photo: Album['photos'][number]): AlbumMapCover {
   return {
@@ -41,12 +74,13 @@ function getCover(photo: Album['photos'][number]): AlbumMapCover {
   }
 }
 
-function getCovers(album: Album): AlbumMapItem['covers'] {
-  const [firstPhoto, ...remainingPhotos] = album.photos
-
+function getCovers(
+  firstPhoto: Album['photos'][number],
+  remainingPhotos: Album['photos'][number][],
+): AlbumMapItem['covers'] {
   return [
     getCover(firstPhoto),
-    ...remainingPhotos.slice(0, MAX_COVERS - 1).map(getCover),
+    ...remainingPhotos.slice(0, MAP_PREVIEW_CAPACITY - 1).map(getCover),
   ]
 }
 
@@ -62,18 +96,25 @@ export async function getAlbumMapItems(): Promise<AlbumMapItem[]> {
       return []
     }
 
+    const photosWithoutLocation = album.photos.filter(
+      (photo) => !photo.location,
+    )
+    const [firstPhoto, ...remainingPhotos] = photosWithoutLocation
+    if (!firstPhoto) return []
+
     return [
       {
+        kind: 'album' as const,
         key: album.key,
         href: getAlbumPath(album.key),
         label: album.title,
         dateLabel: formatAlbumDateCompact(album.date),
-        photoCount: album.photos.length,
+        photoCount: photosWithoutLocation.length,
         location: {
           lat: mappedLocation.lat,
           lng: mappedLocation.lng,
         },
-        covers: getCovers(album),
+        covers: getCovers(firstPhoto, remainingPhotos),
       },
     ]
   })

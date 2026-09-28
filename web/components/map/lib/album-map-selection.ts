@@ -1,47 +1,48 @@
 import Supercluster from 'supercluster'
-import type { AlbumMapItem } from '@/lib/album/map'
-import { CLUSTER_RADIUS, MAX_CLUSTER_ZOOM } from './map-config'
+import type { MapItem } from '@/lib/album/map'
+import { CLUSTER_RADIUS, MAX_CLUSTER_ZOOM } from '@/lib/map-config'
+import { clampMapLatitude } from './map-viewport'
 
-interface AlbumPointProperties {
-  item: AlbumMapItem
+interface MapPointProperties<T extends MapItem> {
+  item: T
 }
 
-interface AlbumClusterProperties {
-  minAlbumKey: string
+interface MapClusterProperties {
+  minItemKey: string
 }
 
-export function prepareAlbumMapSelection(
-  items: AlbumMapItem[],
-  pinnedAlbumKey: string | null,
+export function prepareMapSelection<T extends MapItem>(
+  items: T[],
+  pinnedItemKey: string | null,
+  maxZoom = MAX_CLUSTER_ZOOM,
 ) {
-  const selectedItem = pinnedAlbumKey
-    ? (items.find((item) => item.key === pinnedAlbumKey) ?? null)
+  const selectedItem = pinnedItemKey
+    ? (items.find((item) => item.key === pinnedItemKey) ?? null)
     : null
-  const points: Supercluster.PointFeature<AlbumPointProperties>[] = items
+  const points: Supercluster.PointFeature<MapPointProperties<T>>[] = items
     .filter((item) => item.key !== selectedItem?.key)
     .map((item) => ({
       type: 'Feature',
       properties: { item },
       geometry: {
         type: 'Point',
-        coordinates: [item.location.lng, item.location.lat],
+        coordinates: [item.location.lng, clampMapLatitude(item.location.lat)],
       },
     }))
 
   return {
     selectedItem,
-    clusterIndex: new Supercluster<
-      AlbumPointProperties,
-      AlbumClusterProperties
-    >({
-      radius: CLUSTER_RADIUS,
-      maxZoom: MAX_CLUSTER_ZOOM,
-      map: ({ item }) => ({ minAlbumKey: item.key }),
-      reduce: (accumulated, next) => {
-        if (next.minAlbumKey < accumulated.minAlbumKey) {
-          accumulated.minAlbumKey = next.minAlbumKey
-        }
+    clusterIndex: new Supercluster<MapPointProperties<T>, MapClusterProperties>(
+      {
+        radius: CLUSTER_RADIUS,
+        maxZoom,
+        map: ({ item }) => ({ minItemKey: item.key }),
+        reduce: (accumulated, next) => {
+          if (next.minItemKey < accumulated.minItemKey) {
+            accumulated.minItemKey = next.minItemKey
+          }
+        },
       },
-    }).load(points),
+    ).load(points),
   }
 }

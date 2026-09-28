@@ -1,16 +1,18 @@
 import { ExternalLinkLine } from '@mingcute/react/external-link'
 import Link from 'next/link'
 import { ThumbnailImage } from '@/components/image'
-import type { AlbumMapCover, AlbumMapItem } from '@/lib/album/map'
+import type { AlbumMapCover } from '@/lib/album/map'
 import { cn } from '@/lib/style'
 
 export function AlbumCoverLink({
-  item,
+  label,
+  ariaLabel,
   cover,
   caption,
   className,
 }: {
-  item: AlbumMapItem
+  label: string
+  ariaLabel?: string
   cover: AlbumMapCover
   caption?: string
   className?: string
@@ -24,7 +26,7 @@ export function AlbumCoverLink({
         'group bg-overlay relative block overflow-hidden',
         className,
       )}
-      aria-label={`Open a photo from ${item.label} in a new tab`}
+      aria-label={ariaLabel ?? `Open a photo from ${label} in a new tab`}
     >
       <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
         <ThumbnailImage photo={cover} loading="eager" />

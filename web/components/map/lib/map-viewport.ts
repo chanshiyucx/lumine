@@ -1,6 +1,10 @@
-import type { MapBounds } from './map-config'
+import { MAP_MAX_LATITUDE, type MapBounds } from '@/lib/map-config'
 
 const MAP_BOUNDS_OVERSCAN = 0.25
+
+export function clampMapLatitude(latitude: number) {
+  return Math.max(-MAP_MAX_LATITUDE, Math.min(MAP_MAX_LATITUDE, latitude))
+}
 
 function normalizeLongitude(longitude: number) {
   return ((((longitude + 180) % 360) + 360) % 360) - 180
@@ -47,7 +51,11 @@ export function getMapMarkerImageLoading(
   latitude: number,
   viewportBounds: MapBounds,
 ): 'eager' | 'lazy' {
-  return isPointWithinMapBounds(longitude, latitude, viewportBounds)
+  return isPointWithinMapBounds(
+    longitude,
+    clampMapLatitude(latitude),
+    viewportBounds,
+  )
     ? 'eager'
     : 'lazy'
 }

@@ -2,17 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/maplibre'
-import type { AlbumMapItem } from '@/lib/album/map'
-import { AlbumMarker, ClusterMarker } from './album-map-marker'
-import { prepareAlbumMapSelection } from './lib/album-map-selection'
-import { getInitialFocusItems } from './lib/initial-map-focus'
+import type { AlbumMapItem, MapItem, PhotoMapItem } from '@/lib/album/map'
 import {
-  CLUSTER_PREVIEW_CAPACITY,
+  MAP_MAX_ZOOM,
+  MAP_PREVIEW_CAPACITY,
   MAP_STYLE_URL,
   WORLD_BOUNDS,
   type MapBounds,
-} from './lib/map-config'
-import { expandMapBounds, getMapMarkerImageLoading } from './lib/map-viewport'
+} from '@/lib/map-config'
+import { AlbumMarker, ClusterMarker } from './album-map-marker'
+import { prepareMapSelection } from './lib/album-map-selection'
+import { getInitialFocusItems } from './lib/initial-map-focus'
+import {
+  clampMapLatitude,
+  expandMapBounds,
+  getMapMarkerImageLoading,
+} from './lib/map-viewport'
 import { MapControls } from './map-controls'
 import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
 
@@ -20,6 +25,7 @@ const MAP_LOAD_TIMEOUT_MS = 15_000
 
 interface AlbumMapProps {
   items: AlbumMapItem[]
+  photos: PhotoMapItem[]
 }
 
 interface MapViewportState {
@@ -29,6 +35,15 @@ interface MapViewportState {
 }
 
 type MapLoadStatus = 'loading' | 'loaded' | 'failed'
+
+type PinnedSelection =
+  | { kind: 'item'; key: string }
+  | {
+      kind: 'photo-cluster'
+      key: string
+      items: PhotoMapItem[]
+      location: { lng: number; lat: number }
+    }
 
 function getMapBounds(map: MapRef): MapBounds {
   const bounds = map.getBounds()
@@ -41,11 +56,11 @@ function getMapBounds(map: MapRef): MapBounds {
   ]
 }
 
-function fitMapToItems(map: MapRef, items: AlbumMapItem[], animated: boolean) {
+function fitMapToItems(map: MapRef, items: MapItem[], animated: boolean) {
   if (items.length === 0) return
 
   const longitudes = items.map((item) => item.location.lng)
-  const latitudes = items.map((item) => item.location.lat)
+  const latitudes = items.map((item) => clampMapLatitude(item.location.lat))
   const container = map.getContainer()
   const horizontalPadding = Math.max(container.offsetWidth * 0.06, 40)
   const verticalPadding = Math.max(container.offsetHeight * 0.1, 64)
@@ -68,7 +83,7 @@ function fitMapToItems(map: MapRef, items: AlbumMapItem[], animated: boolean) {
   )
 }
 
-export function AlbumMap({ items }: AlbumMapProps) {
+export function AlbumMap({ items, photos }: AlbumMapProps) {
   const mapRef = useRef<MapRef>(null)
   const [viewport, setViewport] = useState<MapViewportState>({
     bounds: WORLD_BOUNDS,
@@ -78,26 +93,57 @@ export function AlbumMap({ items }: AlbumMapProps) {
   const [loadStatus, setLoadStatus] = useState<MapLoadStatus>('loading')
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
   const [showingAll, setShowingAll] = useState(false)
-  const [pinnedAlbumKey, setPinnedAlbumKey] = useState<string | null>(null)
-  const initialFocusItems = useMemo(() => getInitialFocusItems(items), [items])
+  const [pinnedSelection, setPinnedSelection] =
+    useState<PinnedSelection | null>(null)
+  const pinnedItemKey =
+    pinnedSelection?.kind === 'item' ? pinnedSelection.key : null
+  const pinnedPhotoCluster =
+    pinnedSelection?.kind === 'photo-cluster' ? pinnedSelection : null
+  const allItems = useMemo(() => [...items, ...photos], [items, photos])
+  const initialFocusItems = useMemo(
+    () => getInitialFocusItems<MapItem>(items.length > 0 ? items : photos),
+    [items, photos],
+  )
   const { selectedItem, clusterIndex } = useMemo(
-    () => prepareAlbumMapSelection(items, pinnedAlbumKey),
-    [items, pinnedAlbumKey],
+    () => prepareMapSelection(items, pinnedItemKey),
+    [items, pinnedItemKey],
+  )
+  const availablePhotos = useMemo(() => {
+    if (!pinnedPhotoCluster) return photos
+
+    const pinnedKeys = new Set(pinnedPhotoCluster.items.map((item) => item.key))
+    return photos.filter((photo) => !pinnedKeys.has(photo.key))
+  }, [photos, pinnedPhotoCluster])
+  const photoSelection = useMemo(
+    () => prepareMapSelection(availablePhotos, pinnedItemKey, MAP_MAX_ZOOM),
+    [availablePhotos, pinnedItemKey],
+  )
+  const layers = useMemo(
+    () => [
+      { clusterIndex, selectedItem, kind: 'album' as const },
+      { ...photoSelection, kind: 'photo' as const },
+    ],
+    [clusterIndex, selectedItem, photoSelection],
   )
   const clusters = useMemo(
-    () => clusterIndex.getClusters(viewport.clusterBounds, viewport.zoom),
-    [clusterIndex, viewport.clusterBounds, viewport.zoom],
+    () =>
+      layers.flatMap((layer) =>
+        layer.clusterIndex
+          .getClusters(viewport.clusterBounds, viewport.zoom)
+          .map((feature) => ({ feature, layer })),
+      ),
+    [layers, viewport.clusterBounds, viewport.zoom],
   )
 
   useEffect(() => {
-    if (loadStatus !== 'loading' || items.length === 0) return
+    if (loadStatus !== 'loading' || allItems.length === 0) return
 
     const timeoutId = window.setTimeout(() => {
       setLoadStatus('failed')
     }, MAP_LOAD_TIMEOUT_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [items.length, loadStatus])
+  }, [allItems.length, loadStatus])
 
   const syncMapState = () => {
     const map = mapRef.current
@@ -126,17 +172,17 @@ export function AlbumMap({ items }: AlbumMapProps) {
   }
 
   const handleClusterExpand = (
-    clusterId: number,
+    zoom: number,
     center: [longitude: number, latitude: number],
   ) => {
-    setPinnedAlbumKey(null)
+    setPinnedSelection(null)
 
     const map = mapRef.current
     if (!map) return
 
     map.easeTo({
       center,
-      zoom: clusterIndex.getClusterExpansionZoom(clusterId),
+      zoom,
       duration: 700,
     })
   }
@@ -145,7 +191,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
     const map = mapRef.current
     if (!map) return
 
-    setPinnedAlbumKey(null)
+    setPinnedSelection(null)
 
     if (showingAll) {
       fitMapToItems(map, initialFocusItems, true)
@@ -153,8 +199,8 @@ export function AlbumMap({ items }: AlbumMapProps) {
       return
     }
 
-    fitMapToItems(map, items, true)
-    setShowingAll(initialFocusItems.length < items.length)
+    fitMapToItems(map, allItems, true)
+    setShowingAll(initialFocusItems.length < allItems.length)
   }
 
   return (
@@ -164,11 +210,11 @@ export function AlbumMap({ items }: AlbumMapProps) {
         ref={mapRef}
         initialViewState={{ longitude: 20, latitude: 42, zoom: 1 }}
         minZoom={1}
-        maxZoom={17}
+        maxZoom={MAP_MAX_ZOOM}
         mapStyle={MAP_STYLE_URL}
         projection={{ type: 'mercator' }}
         attributionControl={false}
-        onClick={() => setPinnedAlbumKey(null)}
+        onClick={() => setPinnedSelection(null)}
         onLoad={handleLoad}
         onError={() => {
           if (loadStatus === 'loading') setLoadStatus('failed')
@@ -176,7 +222,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
         onMoveEnd={syncMapState}
       >
         {[
-          ...clusters.map((feature) => {
+          ...clusters.map(({ feature, layer }) => {
             const [longitude, latitude] = feature.geometry.coordinates
             const imageLoading = getMapMarkerImageLoading(
               longitude,
@@ -187,20 +233,49 @@ export function AlbumMap({ items }: AlbumMapProps) {
             if (!('item' in feature.properties)) {
               const { cluster_id: clusterId, point_count: pointCount } =
                 feature.properties
-              const clusterItems = clusterIndex
-                .getLeaves(clusterId, CLUSTER_PREVIEW_CAPACITY)
+              const clusterItems = layer.clusterIndex
+                .getLeaves(clusterId, MAP_PREVIEW_CAPACITY)
                 .map((leaf) => leaf.properties.item)
+
+              const markerKey = `${layer.kind}-cluster-${viewport.zoom}-${feature.properties.minItemKey}`
+              const expansionZoom = Math.min(
+                MAP_MAX_ZOOM,
+                layer.clusterIndex.getClusterExpansionZoom(clusterId),
+              )
+              const canExpand = expansionZoom > viewport.zoom
+              const onPinnedChange =
+                layer.kind === 'photo' && !canExpand
+                  ? () =>
+                      setPinnedSelection({
+                        kind: 'photo-cluster',
+                        key: markerKey,
+                        items: layer.clusterIndex
+                          .getLeaves(clusterId, pointCount)
+                          .map((leaf) => leaf.properties.item),
+                        location: { lng: longitude, lat: latitude },
+                      })
+                  : undefined
 
               return (
                 <ClusterMarker
-                  key={`cluster-${viewport.zoom}-${feature.properties.minAlbumKey}`}
+                  key={markerKey}
                   longitude={longitude}
                   latitude={latitude}
                   count={pointCount}
+                  kind={layer.kind}
+                  pinned={false}
+                  onPinnedChange={onPinnedChange}
+                  canExpand={canExpand}
                   items={clusterItems}
                   imageLoading={imageLoading}
-                  onExpand={() =>
-                    handleClusterExpand(clusterId, [longitude, latitude])
+                  onExpand={
+                    canExpand
+                      ? () =>
+                          handleClusterExpand(expansionZoom, [
+                            longitude,
+                            latitude,
+                          ])
+                      : undefined
                   }
                 />
               )
@@ -215,32 +290,63 @@ export function AlbumMap({ items }: AlbumMapProps) {
                 imageLoading={imageLoading}
                 pinned={false}
                 onPinnedChange={(pinned) => {
-                  setPinnedAlbumKey(pinned ? item.key : null)
+                  setPinnedSelection(
+                    pinned ? { kind: 'item', key: item.key } : null,
+                  )
                 }}
               />
             )
           }),
-          ...(selectedItem
+          ...layers.flatMap(({ selectedItem }) =>
+            selectedItem
+              ? [
+                  <AlbumMarker
+                    key={selectedItem.key}
+                    item={selectedItem}
+                    imageLoading={getMapMarkerImageLoading(
+                      selectedItem.location.lng,
+                      selectedItem.location.lat,
+                      viewport.bounds,
+                    )}
+                    pinned
+                    onPinnedChange={(pinned) => {
+                      setPinnedSelection(
+                        pinned ? { kind: 'item', key: selectedItem.key } : null,
+                      )
+                    }}
+                  />,
+                ]
+              : [],
+          ),
+          ...(pinnedPhotoCluster
             ? [
-                <AlbumMarker
-                  key={selectedItem.key}
-                  item={selectedItem}
-                  imageLoading={getMapMarkerImageLoading(
-                    selectedItem.location.lng,
-                    selectedItem.location.lat,
-                    viewport.bounds,
-                  )}
+                <ClusterMarker
+                  key={pinnedPhotoCluster.key}
+                  longitude={pinnedPhotoCluster.location.lng}
+                  latitude={pinnedPhotoCluster.location.lat}
+                  count={pinnedPhotoCluster.items.length}
+                  kind="photo"
                   pinned
                   onPinnedChange={(pinned) => {
-                    setPinnedAlbumKey(pinned ? selectedItem.key : null)
+                    if (!pinned) setPinnedSelection(null)
                   }}
+                  canExpand={false}
+                  items={pinnedPhotoCluster.items.slice(
+                    0,
+                    MAP_PREVIEW_CAPACITY,
+                  )}
+                  imageLoading={getMapMarkerImageLoading(
+                    pinnedPhotoCluster.location.lng,
+                    pinnedPhotoCluster.location.lat,
+                    viewport.bounds,
+                  )}
                 />,
               ]
             : []),
         ]}
       </Map>
 
-      {items.length > 0 && (
+      {allItems.length > 0 && (
         <MapControls
           showingAll={showingAll}
           onZoomIn={() => mapRef.current?.zoomIn({ duration: 250 })}
@@ -257,7 +363,7 @@ export function AlbumMap({ items }: AlbumMapProps) {
         <MapErrorState className="absolute inset-0 z-30" onRetry={retryMap} />
       )}
 
-      {loadStatus === 'loaded' && items.length === 0 && <MapEmptyState />}
+      {loadStatus === 'loaded' && allItems.length === 0 && <MapEmptyState />}
     </main>
   )
 }

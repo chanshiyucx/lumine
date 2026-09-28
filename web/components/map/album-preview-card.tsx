@@ -1,53 +1,77 @@
-import { ArrowRightUpLine } from '@mingcute/react/arrow-right-up'
+import { ArrowRightLine } from '@mingcute/react/arrow-right'
+import { CalendarLine } from '@mingcute/react/calendar'
+import { CameraLine } from '@mingcute/react/camera'
+import { Mountain2Line } from '@mingcute/react/mountain-2'
 import Link from 'next/link'
-import type { AlbumMapItem } from '@/lib/album/map'
-import { cn } from '@/lib/style'
+import type { MapItem } from '@/lib/album/map'
 import { AlbumCoverLink } from './album-cover-link'
+import { MapCoordinates } from './map-coordinates'
+import { MapPreviewGrid } from './map-preview-grid'
 
-export function AlbumPreviewCard({ item }: { item: AlbumMapItem }) {
-  const photoCountLabel = `${item.photoCount} ${item.photoCount === 1 ? 'photo' : 'photos'}`
-  const detailLabel = `${item.dateLabel} · ${photoCountLabel}`
-  const coverGridClassName =
-    item.covers.length === 1
-      ? 'grid-cols-1'
-      : item.covers.length === 2
-        ? 'grid-cols-2'
-        : 'grid-cols-[3fr_2fr] grid-rows-2'
-
+export function AlbumPreviewCard({ item }: { item: MapItem }) {
   return (
     <section
       className="border-overlay bg-surface/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
-      aria-label={`${item.label} album preview`}
+      aria-label={`${item.label} ${item.kind} preview`}
     >
-      <div className={cn('bg-overlay grid h-32 gap-px', coverGridClassName)}>
-        {item.covers.map((cover, index) => (
+      {item.kind === 'photo' ? (
+        <div className="bg-overlay relative h-32">
           <AlbumCoverLink
-            key={cover.thumbnail.url}
-            item={item}
-            cover={cover}
-            className={
-              item.covers.length > 2 && index === 0 ? 'row-span-2' : undefined
-            }
+            label={item.label}
+            ariaLabel={`Open photo ${item.label} in a new tab`}
+            cover={item.covers[0]}
+            className="h-full"
           />
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="p-4 pb-0">
+          <MapPreviewGrid
+            entries={item.covers.map((cover) => ({
+              key: cover.thumbnail.url,
+              label: item.label,
+              cover,
+            }))}
+            count={item.photoCount}
+            moreHref={item.href}
+          />
+        </div>
+      )}
 
-      <div className="flex items-center justify-between gap-3 p-4">
+      <div className="space-y-3 p-4">
         <Link
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="group/link hover:text-love flex min-w-0 flex-1 items-center gap-1.5 transition-colors"
-          aria-label={`Open ${item.label} album in a new tab`}
+          className="hover:text-love flex items-center gap-2 transition-colors"
+          aria-label={`Open ${item.label} in a new tab`}
         >
-          <h2 className="truncate text-sm font-semibold">{item.label}</h2>
-          <ArrowRightUpLine
-            className="text-subtle size-4 shrink-0 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
+            {item.label}
+          </h2>
+          <ArrowRightLine
+            className="text-subtle size-4 shrink-0"
             aria-hidden="true"
           />
         </Link>
-
-        <p className="text-subtle shrink-0 text-xs">{detailLabel}</p>
+        <div className="text-subtle space-y-2 text-xs">
+          <p className="flex items-center gap-2">
+            <CalendarLine className="size-4 shrink-0" aria-hidden="true" />
+            {item.dateLabel}
+          </p>
+          {item.kind === 'photo' && item.cameraName && (
+            <p className="flex items-center gap-2">
+              <CameraLine className="size-4 shrink-0" aria-hidden="true" />
+              {item.cameraName}
+            </p>
+          )}
+          <MapCoordinates location={item.location} />
+          {item.kind === 'photo' && item.location.alt != null && (
+            <p className="flex items-center gap-2">
+              <Mountain2Line className="size-4 shrink-0" aria-hidden="true" />
+              <span className="font-mono">{item.location.alt.toFixed(1)}m</span>
+            </p>
+          )}
+        </div>
       </div>
     </section>
   )

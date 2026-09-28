@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { MapRef } from 'react-map-gl/maplibre'
-import { MAP_STYLE_URL } from '@/components/map/lib/map-config'
+import { MAP_STYLE_URL } from '@/lib/map-config'
 import type { PhotoLocation } from '@/lib/photo'
 
 interface ViewerLocationMapProps {
