@@ -1,21 +1,18 @@
-import {
-  decodeRawPathSegment,
-  encodePathSegment,
-} from './url-segments'
+import { decodeEncodedPathSegment, encodePathSegment } from './url-segments'
 
 const ALBUM_PATH_PREFIX = '/albums/'
 const PHOTO_PATH_PREFIX = '/photos/'
 
-export function getAlbumPath(albumKey: string) {
-  return `${ALBUM_PATH_PREFIX}${encodePathSegment(albumKey)}`
+export function getAlbumPath(albumId: string) {
+  return `${ALBUM_PATH_PREFIX}${encodePathSegment(albumId)}`
 }
 
-export function getPhotoPath(slug: string) {
-  return `${PHOTO_PATH_PREFIX}${encodePathSegment(slug)}`
+export function getPhotoPath(photoId: string) {
+  return `${PHOTO_PATH_PREFIX}${encodePathSegment(photoId)}`
 }
 
-export function getPhotoOgPath(slug: string) {
-  return `${getPhotoPath(slug)}/opengraph-image`
+export function getPhotoOgPath(photoId: string) {
+  return `${getPhotoPath(photoId)}/opengraph-image`
 }
 
 export function getPhotoSlugFromPathname(pathname: string) {
@@ -29,7 +26,7 @@ export function getPhotoSlugFromPathname(pathname: string) {
     return null
   }
 
-  return decodeRawPathSegment(rawSlug)
+  return decodeEncodedPathSegment(rawSlug)
 }
 
 export function isPhotoPathname(pathname: string) {

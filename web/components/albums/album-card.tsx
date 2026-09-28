@@ -11,8 +11,6 @@ interface AlbumCardProps {
 
 export function AlbumCard({ album, coverLoading }: AlbumCardProps) {
   const { dateLabel } = getPhotoSummary(album.photos)
-  const photoCount = album.photos.length
-  const photoCountLabel = `${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}`
 
   return (
     <Link
@@ -25,9 +23,7 @@ export function AlbumCard({ album, coverLoading }: AlbumCardProps) {
         <h2 className="text-subtle group-hover:text-text truncate font-semibold transition-colors">
           {album.title}
         </h2>
-        <p className="text-muted mt-1 text-sm">
-          {dateLabel} · {photoCountLabel}
-        </p>
+        <p className="text-muted mt-1 text-sm">{dateLabel}</p>
       </div>
     </Link>
   )

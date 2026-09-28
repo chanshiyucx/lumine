@@ -15,7 +15,8 @@ export const runtime = 'nodejs'
 export default async function PhotoOpenGraphImage({
   params,
 }: PhotoOpenGraphImageProps) {
-  const { photo } = await loadPhotoRouteData(params)
+  const { photoId } = await params
+  const { photo } = await loadPhotoRouteData(photoId)
 
   return renderPhotoOgImage(photo)
 }

@@ -2,7 +2,7 @@ export function normalizePathSegment(pathSegment: string) {
   return pathSegment.normalize('NFC')
 }
 
-export function decodeRawPathSegment(pathSegment: string) {
+export function decodeEncodedPathSegment(pathSegment: string) {
   try {
     return normalizePathSegment(decodeURIComponent(pathSegment))
   } catch {

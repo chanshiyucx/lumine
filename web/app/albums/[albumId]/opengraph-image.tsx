@@ -6,7 +6,7 @@ import { siteConfig } from '@/lib/site-config'
 import { loadAlbumRouteData } from './_data'
 
 interface AlbumOpenGraphImageProps {
-  params: Promise<{ albumKey: string }>
+  params: Promise<{ albumId: string }>
 }
 
 export const alt = `Photo album by ${siteConfig.author}`
@@ -17,7 +17,8 @@ export const runtime = 'nodejs'
 export default async function AlbumOpenGraphImage({
   params,
 }: AlbumOpenGraphImageProps) {
-  const album = await loadAlbumRouteData(params)
+  const { albumId } = await params
+  const album = await loadAlbumRouteData(albumId)
 
   const cameraLabel = findCameraLabel(album.photos)
   const formattedDate = formatReadableDate(album.date)

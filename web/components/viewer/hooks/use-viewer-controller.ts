@@ -279,7 +279,8 @@ export function useViewerController({
   })
 
   useEffect(() => {
-    baseUrlRef.current = `/${window.location.search}${window.location.hash}`
+    const { pathname, search, hash } = window.location
+    baseUrlRef.current = `${isPhotoPathname(pathname) ? '/' : pathname}${search}${hash}`
 
     window.addEventListener('popstate', syncFromLocation)
 
