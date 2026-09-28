@@ -1,7 +1,6 @@
 import { ArrowRightLine } from '@mingcute/react/arrow-right'
 import { CalendarLine } from '@mingcute/react/calendar'
 import { CameraLine } from '@mingcute/react/camera'
-import { Mountain2Line } from '@mingcute/react/mountain-2'
 import Link from 'next/link'
 import type { MapItem } from '@/lib/album/map'
 import { AlbumCoverLink } from './album-cover-link'
@@ -58,19 +57,13 @@ export function AlbumPreviewCard({ item }: { item: MapItem }) {
             <CalendarLine className="size-4 shrink-0" aria-hidden="true" />
             {item.dateLabel}
           </p>
-          {item.kind === 'photo' && item.cameraName && (
+          {item.cameraName && (
             <p className="flex items-center gap-2">
               <CameraLine className="size-4 shrink-0" aria-hidden="true" />
               {item.cameraName}
             </p>
           )}
           <MapCoordinates location={item.location} />
-          {item.kind === 'photo' && item.location.alt != null && (
-            <p className="flex items-center gap-2">
-              <Mountain2Line className="size-4 shrink-0" aria-hidden="true" />
-              <span className="font-mono">{item.location.alt.toFixed(1)}m</span>
-            </p>
-          )}
         </div>
       </div>
     </section>

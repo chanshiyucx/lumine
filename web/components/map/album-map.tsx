@@ -233,9 +233,17 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
             if (!('item' in feature.properties)) {
               const { cluster_id: clusterId, point_count: pointCount } =
                 feature.properties
-              const clusterItems = layer.clusterIndex
-                .getLeaves(clusterId, MAP_PREVIEW_CAPACITY)
-                .map((leaf) => leaf.properties.item)
+              const photoItems =
+                layer.kind === 'photo'
+                  ? layer.clusterIndex
+                      .getLeaves(clusterId, pointCount)
+                      .map((leaf) => leaf.properties.item)
+                  : null
+              const clusterItems =
+                photoItems ??
+                layer.clusterIndex
+                  .getLeaves(clusterId, MAP_PREVIEW_CAPACITY)
+                  .map((leaf) => leaf.properties.item)
 
               const markerKey = `${layer.kind}-cluster-${viewport.zoom}-${feature.properties.minItemKey}`
               const expansionZoom = Math.min(
@@ -244,14 +252,12 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
               )
               const canExpand = expansionZoom > viewport.zoom
               const onPinnedChange =
-                layer.kind === 'photo' && !canExpand
+                photoItems && !canExpand
                   ? () =>
                       setPinnedSelection({
                         kind: 'photo-cluster',
                         key: markerKey,
-                        items: layer.clusterIndex
-                          .getLeaves(clusterId, pointCount)
-                          .map((leaf) => leaf.properties.item),
+                        items: photoItems,
                         location: { lng: longitude, lat: latitude },
                       })
                   : undefined
@@ -331,10 +337,7 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
                     if (!pinned) setPinnedSelection(null)
                   }}
                   canExpand={false}
-                  items={pinnedPhotoCluster.items.slice(
-                    0,
-                    MAP_PREVIEW_CAPACITY,
-                  )}
+                  items={pinnedPhotoCluster.items}
                   imageLoading={getMapMarkerImageLoading(
                     pinnedPhotoCluster.location.lng,
                     pinnedPhotoCluster.location.lat,
