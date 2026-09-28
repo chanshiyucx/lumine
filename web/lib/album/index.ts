@@ -72,7 +72,3 @@ export function parseAlbumDescriptor(albumKey: string): AlbumDescriptor {
     date: parseAlbumDate(match[1], match[2], match[3]),
   }
 }
-
-export function formatAlbumDateCompact(date: string) {
-  return date.replaceAll('-', '.')
-}

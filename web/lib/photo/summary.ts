@@ -1,20 +1,20 @@
-export interface MapPhotoCapture {
+interface PhotoCapture {
   takenAt: string
-  dateLabel: string
   cameraName: string | null
+  captureTime: { date: string }
 }
 
-export function getMapPhotoSummary(
-  first: MapPhotoCapture,
-  remaining: readonly MapPhotoCapture[],
-) {
+export function getPhotoSummary(photos: readonly PhotoCapture[]) {
+  const first = photos[0]
+  if (!first) throw new Error('Cannot summarize an empty photo collection')
+
   let earliest = first
   let latest = first
   let earliestTime = Date.parse(first.takenAt)
   let latestTime = earliestTime
   let cameraName = first.cameraName
 
-  for (const photo of remaining) {
+  for (const photo of photos) {
     const time = Date.parse(photo.takenAt)
     if (time < earliestTime) {
       earliest = photo
@@ -27,11 +27,14 @@ export function getMapPhotoSummary(
     if (photo.cameraName !== cameraName) cameraName = null
   }
 
+  const earliestDate = earliest.captureTime.date
+  const latestDate = latest.captureTime.date
+
   return {
     dateLabel:
-      earliest.dateLabel === latest.dateLabel
-        ? earliest.dateLabel
-        : `${earliest.dateLabel} - ${latest.dateLabel}`,
+      earliestDate === latestDate
+        ? earliestDate
+        : `${earliestDate} - ${latestDate}`,
     cameraName,
   }
 }

@@ -1,6 +1,6 @@
 import Supercluster from 'supercluster'
-import type { MapItem } from '@/lib/album/map'
 import { CLUSTER_RADIUS, MAX_CLUSTER_ZOOM } from '@/lib/map-config'
+import type { MapItem } from '@/lib/map-items'
 import { clampMapLatitude } from './map-viewport'
 
 interface MapPointProperties<T extends MapItem> {

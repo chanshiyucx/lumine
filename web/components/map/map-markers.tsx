@@ -3,12 +3,12 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
 import { ThumbnailImage } from '@/components/image'
-import type { AlbumMapCover, MapItem } from '@/lib/album/map'
+import type { MapCover, MapItem } from '@/lib/map-items'
 import { cn } from '@/lib/style'
-import { AlbumPreviewCard } from './album-preview-card'
-import { ClusterPreviewCard } from './cluster-preview-card'
+import { AlbumClusterPreviewCard } from './album-cluster-preview-card'
 import { clampMapLatitude } from './lib/map-viewport'
 import { MapHoverPreview } from './map-hover-preview'
+import { MapItemPreviewCard } from './map-item-preview-card'
 import { PhotoClusterPreviewCard } from './photo-cluster-preview-card'
 
 const PINNED_MARKER_CLASS_NAME = 'border-love/80 ring-love/25 ring-2'
@@ -47,7 +47,7 @@ function renderLocationMarkerTrigger({
   pinned,
   label,
 }: {
-  cover: AlbumMapCover
+  cover: MapCover
   imageLoading: 'eager' | 'lazy'
   pinned: boolean
   label: string
@@ -60,7 +60,7 @@ function renderLocationMarkerTrigger({
     >
       <span
         className={cn(
-          'album-map-marker-visual bg-overlay relative block size-11 overflow-hidden rounded-full border-4 transition-[scale,border-color] duration-200 ease-out group-hover:scale-[1.08] group-data-[state=open]:scale-[1.08]',
+          'map-marker-visual bg-overlay relative block size-11 overflow-hidden rounded-full border-4 transition-[scale,border-color] duration-200 ease-out group-hover:scale-[1.08] group-data-[state=open]:scale-[1.08]',
           pinned ? PINNED_MARKER_CLASS_NAME : 'border-overlay',
         )}
       >
@@ -71,7 +71,7 @@ function renderLocationMarkerTrigger({
   )
 }
 
-export function AlbumMarker({
+export function MapItemMarker({
   item,
   imageLoading,
   pinned,
@@ -99,7 +99,7 @@ export function AlbumMarker({
         pinned={pinned}
         onPinnedChange={onPinnedChange}
       >
-        <AlbumPreviewCard item={item} />
+        <MapItemPreviewCard item={item} />
       </MapHoverPreview>
     </MapMarker>
   )
@@ -149,7 +149,7 @@ export function ClusterMarker({
         onExpand?.()
       }}
     >
-      <span className="album-map-marker-visual relative block size-full transition-transform duration-200 ease-out group-hover:scale-105">
+      <span className="map-marker-visual relative block size-full transition-transform duration-200 ease-out group-hover:scale-105">
         <span className="bg-text/10 absolute -inset-1 rounded-full" />
         <span className="bg-overlay border-overlay relative block size-full overflow-hidden rounded-full border-4">
           <ThumbnailImage photo={representativeCover} loading={imageLoading} />
@@ -177,7 +177,7 @@ export function ClusterMarker({
             location={{ lat: latitude, lng: longitude }}
           />
         ) : (
-          <ClusterPreviewCard count={count} items={items} />
+          <AlbumClusterPreviewCard count={count} items={items} />
         )}
       </MapHoverPreview>
     </MapMarker>

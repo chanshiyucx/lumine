@@ -1,27 +1,27 @@
-.album-map .maplibregl-canvas:focus-visible {
+.photo-map .maplibregl-canvas:focus-visible {
   outline: 2px solid var(--color-love);
   outline-offset: -2px;
 }
 
-.album-map-marker-visual {
+.map-marker-visual {
   transform-origin: center;
-  animation: album-map-marker-in 340ms ease-out both;
+  animation: map-marker-in 340ms ease-out both;
 }
 
-.album-map-hover-preview {
+.map-hover-preview {
   transform-origin: var(--radix-hover-card-content-transform-origin);
 
   &[data-state='open'] {
-    animation: album-map-preview-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: map-preview-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &[data-state='closed'] {
     pointer-events: none;
-    animation: album-map-preview-out 120ms ease-in forwards;
+    animation: map-preview-out 120ms ease-in forwards;
   }
 }
 
-@keyframes album-map-marker-in {
+@keyframes map-marker-in {
   0% {
     transform: scale(0);
   }
@@ -39,7 +39,7 @@
   }
 }
 
-@keyframes album-map-preview-in {
+@keyframes map-preview-in {
   from {
     opacity: 0;
     transform: translateY(4px) scale(0.97);
@@ -51,7 +51,7 @@
   }
 }
 
-@keyframes album-map-preview-out {
+@keyframes map-preview-out {
   from {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -64,11 +64,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .album-map-marker-visual {
+  .map-marker-visual {
     animation: none;
   }
 
-  .album-map-hover-preview {
+  .map-hover-preview {
     animation: none;
   }
 }

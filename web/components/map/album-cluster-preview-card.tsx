@@ -1,7 +1,7 @@
-import type { MapItem } from '@/lib/album/map'
+import type { MapItem } from '@/lib/map-items'
 import { MapPreviewGrid } from './map-preview-grid'
 
-export function ClusterPreviewCard({
+export function AlbumClusterPreviewCard({
   count,
   items,
 }: {

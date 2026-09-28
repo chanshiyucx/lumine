@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import type { AlbumMapCover } from '@/lib/album/map'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
-import { AlbumCoverLink } from './album-cover-link'
+import type { MapCover } from '@/lib/map-items'
+import { MapCoverLink } from './map-cover-link'
 
 export function MapPreviewGrid({
   entries,
@@ -12,7 +12,7 @@ export function MapPreviewGrid({
     key: string
     label: string
     ariaLabel?: string
-    cover: AlbumMapCover
+    cover: MapCover
     caption?: string
   }[]
   count: number
@@ -39,7 +39,7 @@ export function MapPreviewGrid({
   return (
     <div className="grid grid-cols-3 gap-2">
       {visibleEntries.map(({ key, label, ariaLabel, cover, caption }) => (
-        <AlbumCoverLink
+        <MapCoverLink
           key={key}
           label={label}
           ariaLabel={ariaLabel}

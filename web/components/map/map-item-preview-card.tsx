@@ -2,12 +2,12 @@ import { ArrowRightLine } from '@mingcute/react/arrow-right'
 import { CalendarLine } from '@mingcute/react/calendar'
 import { CameraLine } from '@mingcute/react/camera'
 import Link from 'next/link'
-import type { MapItem } from '@/lib/album/map'
-import { AlbumCoverLink } from './album-cover-link'
+import type { MapItem } from '@/lib/map-items'
 import { MapCoordinates } from './map-coordinates'
+import { MapCoverLink } from './map-cover-link'
 import { MapPreviewGrid } from './map-preview-grid'
 
-export function AlbumPreviewCard({ item }: { item: MapItem }) {
+export function MapItemPreviewCard({ item }: { item: MapItem }) {
   return (
     <section
       className="border-overlay bg-surface/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
@@ -15,7 +15,7 @@ export function AlbumPreviewCard({ item }: { item: MapItem }) {
     >
       {item.kind === 'photo' ? (
         <div className="bg-overlay relative h-32">
-          <AlbumCoverLink
+          <MapCoverLink
             label={item.label}
             ariaLabel={`Open photo ${item.label} in a new tab`}
             cover={item.covers[0]}
@@ -55,7 +55,7 @@ export function AlbumPreviewCard({ item }: { item: MapItem }) {
         <div className="text-subtle space-y-2 text-xs">
           <p className="flex items-center gap-2">
             <CalendarLine className="size-4 shrink-0" aria-hidden="true" />
-            {item.dateLabel}
+            {item.kind === 'photo' ? item.captureTime.date : item.dateLabel}
           </p>
           {item.cameraName && (
             <p className="flex items-center gap-2">

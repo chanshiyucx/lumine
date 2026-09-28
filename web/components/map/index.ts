@@ -1,1 +1,1 @@
-export { AlbumMapLoader } from './album-map-loader'
+export { PhotoMapLoader } from './photo-map-loader'

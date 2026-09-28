@@ -1,16 +1,16 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { AlbumMapItem, PhotoMapItem } from '@/lib/album/map'
+import type { AlbumMapItem, PhotoMapItem } from '@/lib/map-items'
 import { MapLoadingState } from './map-states'
 
-interface AlbumMapLoaderProps {
-  items: AlbumMapItem[]
+interface PhotoMapLoaderProps {
+  albumItems: AlbumMapItem[]
   photos: PhotoMapItem[]
 }
 
-export const AlbumMapLoader = dynamic<AlbumMapLoaderProps>(
-  () => import('./album-map').then((module) => module.AlbumMap),
+export const PhotoMapLoader = dynamic<PhotoMapLoaderProps>(
+  () => import('./photo-map').then((module) => module.PhotoMap),
   {
     ssr: false,
     loading: () => (

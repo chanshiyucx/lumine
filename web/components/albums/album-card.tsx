@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { formatAlbumDateCompact, type Album } from '@/lib/album'
+import type { Album } from '@/lib/album'
+import { getPhotoSummary } from '@/lib/photo/summary'
 import { getAlbumPath } from '@/lib/route-paths'
 import { AlbumImageStack, type AlbumCoverLoading } from './album-image-stack'
 
@@ -9,7 +10,7 @@ interface AlbumCardProps {
 }
 
 export function AlbumCard({ album, coverLoading }: AlbumCardProps) {
-  const dateLabel = formatAlbumDateCompact(album.date)
+  const { dateLabel } = getPhotoSummary(album.photos)
   const photoCount = album.photos.length
   const photoCountLabel = `${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}`
 
@@ -24,7 +25,7 @@ export function AlbumCard({ album, coverLoading }: AlbumCardProps) {
         <h2 className="text-subtle group-hover:text-text truncate font-semibold transition-colors">
           {album.title}
         </h2>
-        <p className="text-muted mt-1 truncate text-sm">
+        <p className="text-muted mt-1 text-sm">
           {dateLabel} · {photoCountLabel}
         </p>
       </div>

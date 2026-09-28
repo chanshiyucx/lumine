@@ -1,8 +1,8 @@
 import { CalendarLine } from '@mingcute/react/calendar'
 import { CameraLine } from '@mingcute/react/camera'
-import type { MapItem } from '@/lib/album/map'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
-import { getMapPhotoSummary } from '@/lib/map-photo-summary'
+import type { MapItem } from '@/lib/map-items'
+import { getPhotoSummary } from '@/lib/photo/summary'
 import { MapCoordinates } from './map-coordinates'
 import { MapPreviewGrid } from './map-preview-grid'
 
@@ -16,15 +16,11 @@ export function PhotoClusterPreviewCard({
   location: { lat: number; lng: number }
 }) {
   const photos = items.filter((item) => item.kind === 'photo')
-  const [firstPhoto, ...remainingPhotos] = photos
-  const { dateLabel, cameraName } = getMapPhotoSummary(
-    firstPhoto,
-    remainingPhotos,
-  )
+  const { dateLabel, cameraName } = getPhotoSummary(photos)
 
   return (
     <section
-      className="border-overlay bg-surface/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
+      className="border-overlay bg-surface overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
       aria-label={`${count} photos at this location`}
     >
       <div className="p-4 pb-0">

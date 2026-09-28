@@ -1,10 +1,10 @@
 import { ExternalLinkLine } from '@mingcute/react/external-link'
 import Link from 'next/link'
 import { ThumbnailImage } from '@/components/image'
-import type { AlbumMapCover } from '@/lib/album/map'
+import type { MapCover } from '@/lib/map-items'
 import { cn } from '@/lib/style'
 
-export function AlbumCoverLink({
+export function MapCoverLink({
   label,
   ariaLabel,
   cover,
@@ -13,7 +13,7 @@ export function AlbumCoverLink({
 }: {
   label: string
   ariaLabel?: string
-  cover: AlbumMapCover
+  cover: MapCover
   caption?: string
   className?: string
 }) {

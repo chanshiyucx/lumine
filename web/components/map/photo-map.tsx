@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/maplibre'
-import type { AlbumMapItem, MapItem, PhotoMapItem } from '@/lib/album/map'
 import {
   MAP_MAX_ZOOM,
   MAP_PREVIEW_CAPACITY,
@@ -10,21 +9,22 @@ import {
   WORLD_BOUNDS,
   type MapBounds,
 } from '@/lib/map-config'
-import { AlbumMarker, ClusterMarker } from './album-map-marker'
-import { prepareMapSelection } from './lib/album-map-selection'
+import type { AlbumMapItem, MapItem, PhotoMapItem } from '@/lib/map-items'
 import { getInitialFocusItems } from './lib/initial-map-focus'
+import { prepareMapSelection } from './lib/map-selection'
 import {
   clampMapLatitude,
   expandMapBounds,
   getMapMarkerImageLoading,
 } from './lib/map-viewport'
 import { MapControls } from './map-controls'
+import { ClusterMarker, MapItemMarker } from './map-markers'
 import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
 
 const MAP_LOAD_TIMEOUT_MS = 15_000
 
-interface AlbumMapProps {
-  items: AlbumMapItem[]
+interface PhotoMapProps {
+  albumItems: AlbumMapItem[]
   photos: PhotoMapItem[]
 }
 
@@ -83,7 +83,7 @@ function fitMapToItems(map: MapRef, items: MapItem[], animated: boolean) {
   )
 }
 
-export function AlbumMap({ items, photos }: AlbumMapProps) {
+export function PhotoMap({ albumItems, photos }: PhotoMapProps) {
   const mapRef = useRef<MapRef>(null)
   const [viewport, setViewport] = useState<MapViewportState>({
     bounds: WORLD_BOUNDS,
@@ -99,14 +99,20 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
     pinnedSelection?.kind === 'item' ? pinnedSelection.key : null
   const pinnedPhotoCluster =
     pinnedSelection?.kind === 'photo-cluster' ? pinnedSelection : null
-  const allItems = useMemo(() => [...items, ...photos], [items, photos])
+  const allItems = useMemo(
+    () => [...albumItems, ...photos],
+    [albumItems, photos],
+  )
   const initialFocusItems = useMemo(
-    () => getInitialFocusItems<MapItem>(items.length > 0 ? items : photos),
-    [items, photos],
+    () =>
+      getInitialFocusItems<MapItem>(
+        albumItems.length > 0 ? albumItems : photos,
+      ),
+    [albumItems, photos],
   )
   const { selectedItem, clusterIndex } = useMemo(
-    () => prepareMapSelection(items, pinnedItemKey),
-    [items, pinnedItemKey],
+    () => prepareMapSelection(albumItems, pinnedItemKey),
+    [albumItems, pinnedItemKey],
   )
   const availablePhotos = useMemo(() => {
     if (!pinnedPhotoCluster) return photos
@@ -204,7 +210,7 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
   }
 
   return (
-    <main className="album-map relative h-svh overflow-hidden">
+    <main className="photo-map relative h-svh overflow-hidden">
       <Map
         key={mapInstanceKey}
         ref={mapRef}
@@ -290,7 +296,7 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
             const item = feature.properties.item
 
             return (
-              <AlbumMarker
+              <MapItemMarker
                 key={item.key}
                 item={item}
                 imageLoading={imageLoading}
@@ -306,7 +312,7 @@ export function AlbumMap({ items, photos }: AlbumMapProps) {
           ...layers.flatMap(({ selectedItem }) =>
             selectedItem
               ? [
-                  <AlbumMarker
+                  <MapItemMarker
                     key={selectedItem.key}
                     item={selectedItem}
                     imageLoading={getMapMarkerImageLoading(
