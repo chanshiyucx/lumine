@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { ThumbnailImage } from '@/components/image'
 import { useMobile } from '@/hooks/use-mobile'
+import { clamp } from '@/lib/math'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
@@ -33,10 +34,6 @@ interface ThumbnailRailProps {
   photos: Photo[]
   activeIndex: number
   onSelect: (index: number) => void
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
 }
 
 function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {

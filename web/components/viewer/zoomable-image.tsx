@@ -2,7 +2,7 @@ import Image from 'next/image'
 import type { CSSProperties } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import { useZoomableImage } from './hooks/use-zoomable-image'
-import { INITIAL_SCALE, MIN_SCALE } from './lib/zoomable-image'
+import { INITIAL_SCALE, MIN_SCALE } from './lib/zoom-geometry'
 
 const TRANSFORM_WRAPPER_STYLE = {
   position: 'absolute',

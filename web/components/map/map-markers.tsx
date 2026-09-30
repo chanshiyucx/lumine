@@ -9,6 +9,7 @@ import type {
   MapItem,
   PhotoMapItem,
 } from '@/lib/map-types'
+import { clamp } from '@/lib/math'
 import { cn } from '@/lib/style'
 import { AlbumClusterPreviewCard } from './album-cluster-preview-card'
 import type {
@@ -131,7 +132,7 @@ type MapClusterMarkerProps =
 function MapClusterMarker(props: MapClusterMarkerProps) {
   const { location, count, items, imageLoading, kind, pinned } = props
   const terminalPhotoCluster = !props.canExpand
-  const size = Math.min(66, Math.max(50, 42 + Math.log2(count) * 7))
+  const size = clamp(42 + Math.log2(count) * 7, 50, 66)
   const representativeCover = items[0].covers[0]
   const trigger = !props.canExpand ? (
     renderLocationMarkerTrigger({

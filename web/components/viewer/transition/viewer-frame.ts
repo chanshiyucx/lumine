@@ -1,3 +1,5 @@
+import { fitWithinBounds } from '@/lib/math'
+
 interface RectLike {
   height: number
   left: number
@@ -20,19 +22,21 @@ export interface ViewerFrameTransform {
   y: number
 }
 
+export interface ViewerTransformSnapshot {
+  borderRadius: number
+  rotate: number
+  scale: number
+  translateX: number
+  translateY: number
+}
+
 export function fitMediaFrame(
   media: { height: number; width: number },
   bounds: RectLike,
 ): ViewerFrame {
   const aspectRatio =
     media.width > 0 && media.height > 0 ? media.width / media.height : 1
-  let width = bounds.width
-  let height = width / aspectRatio
-
-  if (height > bounds.height) {
-    height = bounds.height
-    width = height * aspectRatio
-  }
+  const { width, height } = fitWithinBounds(aspectRatio, bounds)
 
   return {
     borderRadius: 0,
@@ -58,13 +62,7 @@ export function getFrameTransform(
 export function projectViewerFrame(
   frame: ViewerFrame,
   viewport: RectLike,
-  snapshot: {
-    borderRadius: number
-    rotate: number
-    scale: number
-    translateX: number
-    translateY: number
-  },
+  snapshot: ViewerTransformSnapshot,
 ): ProjectedViewerFrame {
   const originX = viewport.left + viewport.width * 0.5
   const originY = viewport.top + viewport.height * 0.18

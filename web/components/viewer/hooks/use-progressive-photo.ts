@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
 import { loadPhotoBlob } from '../lib/load-photo-blob'
 
+const BYTES_PER_MEBIBYTE = 1024 * 1024
+
 interface PhotoResourceProgress {
   loadedBytes: number
   progress: number
@@ -24,6 +26,25 @@ function getProgress(
       totalBytes > 0 ? Math.min(100, (loadedBytes / totalBytes) * 100) : 0,
     totalBytes,
   }
+}
+
+function hasSameProgressDisplay(
+  current: PhotoResourceProgress,
+  next: PhotoResourceProgress,
+) {
+  if (current.totalBytes !== next.totalBytes) {
+    return false
+  }
+
+  if (next.totalBytes > 0) {
+    return Math.floor(current.progress) === Math.floor(next.progress)
+  }
+
+  return (
+    (current.loadedBytes === 0) === (next.loadedBytes === 0) &&
+    (current.loadedBytes / BYTES_PER_MEBIBYTE).toFixed(1) ===
+      (next.loadedBytes / BYTES_PER_MEBIBYTE).toFixed(1)
+  )
 }
 
 export function useProgressivePhoto(photo: Photo, loadDelayMs = 0) {
@@ -52,7 +73,7 @@ export function useProgressivePhoto(photo: Photo, loadDelayMs = 0) {
             setState((current) => {
               if (
                 current.status === 'loading' &&
-                Math.floor(current.progress) === Math.floor(progress.progress)
+                hasSameProgressDisplay(current, progress)
               ) {
                 return current
               }

@@ -195,7 +195,7 @@ export function ViewerThumbnailRail({
           : VIEWER_MOTION.chrome.rail.exit
       }
       style={{
-        pointerEvents: isVisible && isInteractive ? 'auto' : 'none',
+        pointerEvents: isInteractive ? 'auto' : 'none',
       }}
     >
       <m.div style={{ opacity }}>

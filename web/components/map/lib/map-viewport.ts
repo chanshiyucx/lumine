@@ -1,4 +1,5 @@
 import { MAP_MAX_LATITUDE, type MapBounds } from '@/lib/map-config'
+import { clamp } from '@/lib/math'
 
 export interface MapViewportState {
   bounds: MapBounds
@@ -9,7 +10,7 @@ export interface MapViewportState {
 const MAP_BOUNDS_OVERSCAN = 0.25
 
 export function clampMapLatitude(latitude: number) {
-  return Math.max(-MAP_MAX_LATITUDE, Math.min(MAP_MAX_LATITUDE, latitude))
+  return clamp(latitude, -MAP_MAX_LATITUDE, MAP_MAX_LATITUDE)
 }
 
 function normalizeLongitude(longitude: number) {

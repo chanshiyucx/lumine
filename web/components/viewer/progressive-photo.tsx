@@ -28,7 +28,6 @@ function ActiveProgressivePhoto({
   shouldMountInteractiveImage = true,
 }: Omit<ProgressivePhotoProps, 'isActive'>) {
   const reduceMotion = useReducedMotion()
-  const [loadedSource, setLoadedSource] = useState<string | null>(null)
   const [settledSource, setSettledSource] = useState<string | null>(null)
   const [scaleLabel, setScaleLabel] = useState(() => formatScaleLabel(1))
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
@@ -40,7 +39,7 @@ function ActiveProgressivePhoto({
   const hasHighResolutionPhoto =
     state.status === 'decoding' || state.status === 'ready'
   const highResolutionSource = hasHighResolutionPhoto ? state.src : null
-  const isOriginalReady = state.status === 'ready' && loadedSource === state.src
+  const isOriginalReady = state.status === 'ready'
   const isOriginalSettled = isOriginalReady && settledSource === state.src
   const isOriginalDisplayed = shouldMountInteractiveImage && isOriginalSettled
 
@@ -49,7 +48,6 @@ function ActiveProgressivePhoto({
       return
     }
 
-    setLoadedSource(highResolutionSource)
     markDecoded()
 
     if (reduceMotion) {
@@ -58,7 +56,7 @@ function ActiveProgressivePhoto({
   }
 
   const handleOriginalAnimationComplete = () => {
-    if (state.status === 'ready' && loadedSource === state.src) {
+    if (state.status === 'ready') {
       setSettledSource(state.src)
     }
   }

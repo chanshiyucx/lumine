@@ -10,6 +10,7 @@ import { m } from 'motion/react'
 import Image from 'next/image'
 import {
   useEffect,
+  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -30,7 +31,8 @@ interface ViewerShareDialogProps {
 }
 
 type CopyStatus = 'idle' | 'copied' | 'failed'
-type DownloadTarget = 'original' | 'preview' | null
+type DownloadTarget = 'original' | 'preview'
+type PreviewStatus = 'loading' | 'ready' | 'error'
 
 interface ShareActionButtonProps {
   icon: ReactNode
@@ -119,9 +121,13 @@ export function ViewerShareDialog({
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const copyStatusTimeoutRef = useRef<number | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  const [downloadTarget, setDownloadTarget] = useState<DownloadTarget>(null)
-  const [isPreviewLoading, setIsPreviewLoading] = useState(true)
-  const [hasPreviewFailed, setHasPreviewFailed] = useState(false)
+  const [downloads, setDownloads] = useState({
+    original: false,
+    preview: false,
+  })
+  const [previewStatus, setPreviewStatus] = useState<PreviewStatus>('loading')
+  const isPreviewLoading = previewStatus === 'loading'
+  const hasPreviewFailed = previewStatus === 'error'
   const titleId = useId()
   const shareUrl = getPhotoShareUrl(photo.slug)
   const ogPreviewUrl = getPhotoOgPath(photo.slug)
@@ -130,24 +136,31 @@ export function ViewerShareDialog({
 
   useDialogFocus(dialogRef, () => returnFocusRef.current, true)
 
+  const closeFromEffect = useEffectEvent(onClose)
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
 
       event.preventDefault()
       event.stopPropagation()
-      onClose()
+      closeFromEffect()
     }
 
     document.addEventListener('keydown', handleKeyDown)
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
       if (copyStatusTimeoutRef.current !== null) {
         window.clearTimeout(copyStatusTimeoutRef.current)
       }
     }
-  }, [onClose])
+  }, [])
 
   const updateCopyStatus = (status: CopyStatus) => {
     setCopyStatus(status)
@@ -196,18 +209,18 @@ export function ViewerShareDialog({
   }
 
   const handleDownload = async (
-    target: Exclude<DownloadTarget, null>,
+    target: DownloadTarget,
     url: string,
     fileName: string,
   ) => {
-    setDownloadTarget(target)
+    setDownloads((current) => ({ ...current, [target]: true }))
 
     await downloadFile(url, fileName)
       .catch(() => {
         window.open(url, '_blank', 'noopener,noreferrer')
       })
       .finally(() => {
-        setDownloadTarget(null)
+        setDownloads((current) => ({ ...current, [target]: false }))
       })
   }
 
@@ -321,11 +334,8 @@ export function ViewerShareDialog({
                     'object-cover transition-opacity duration-300',
                     isPreviewLoading ? 'opacity-0' : 'opacity-100',
                   )}
-                  onLoad={() => setIsPreviewLoading(false)}
-                  onError={() => {
-                    setIsPreviewLoading(false)
-                    setHasPreviewFailed(true)
-                  }}
+                  onLoad={() => setPreviewStatus('ready')}
+                  onError={() => setPreviewStatus('error')}
                   unoptimized
                 />
               )}
@@ -371,8 +381,8 @@ export function ViewerShareDialog({
           />
           <ShareActionButton
             icon={<Download2Line className="size-4.5" aria-hidden="true" />}
-            label={downloadTarget === 'original' ? '…' : 'Original'}
-            disabled={downloadTarget === 'original'}
+            label={downloads.original ? '…' : 'Original'}
+            disabled={downloads.original}
             onClick={() =>
               void handleDownload(
                 'original',
@@ -383,8 +393,8 @@ export function ViewerShareDialog({
           />
           <ShareActionButton
             icon={<PicLine className="size-4.5" aria-hidden="true" />}
-            label={downloadTarget === 'preview' ? '…' : 'Preview'}
-            disabled={downloadTarget === 'preview'}
+            label={downloads.preview ? '…' : 'Preview'}
+            disabled={downloads.preview}
             onClick={() =>
               void handleDownload(
                 'preview',

@@ -12,10 +12,7 @@ import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 import { useDialogFocus } from './hooks/use-dialog-focus'
-import {
-  useMobileViewerInteractions,
-  type MobileDismissSnapshot,
-} from './hooks/use-mobile-viewer-interactions'
+import { useMobileViewerInteractions } from './hooks/use-mobile-viewer-interactions'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
 import { resolveSharedPhotoTransition } from './lib/shared-photo-transition'
 import { VIEWER_MOTION } from './lib/viewer-motion'
@@ -26,6 +23,7 @@ import {
   fitMediaFrame,
   projectViewerFrame,
   type ProjectedViewerFrame,
+  type ViewerTransformSnapshot,
 } from './transition/viewer-frame'
 import {
   advanceViewerRevealState,
@@ -110,7 +108,7 @@ export function Viewer({
   const revealControls = (operationId: number) =>
     advanceReveal(operationId, 'controls')
 
-  const handleMobileDismiss = (snapshot: MobileDismissSnapshot) => {
+  const handleMobileDismiss = (snapshot: ViewerTransformSnapshot) => {
     const stage = mediaStageRef.current
     if (stage) {
       const fittedFrame = fitMediaFrame(

@@ -1,22 +1,15 @@
 import { useDrag } from '@use-gesture/react'
 import { animate, useMotionValue, useTransform } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
+import { clamp } from '@/lib/math'
 import {
-  clamp,
   getDismissPresentation,
   getInspectorSettleVelocity,
   getMobileGestureMetrics,
   shouldDismissViewer,
 } from '../lib/mobile-viewer-gesture'
 import { VIEWER_MOTION } from '../lib/viewer-motion'
-
-export interface MobileDismissSnapshot {
-  borderRadius: number
-  rotate: number
-  scale: number
-  translateX: number
-  translateY: number
-}
+import type { ViewerTransformSnapshot } from '../transition/viewer-frame'
 
 interface GestureMemo {
   ignore: boolean
@@ -27,7 +20,7 @@ interface GestureMemo {
 interface UseMobileViewerInteractionsOptions {
   enabled: boolean
   isZoomed: boolean
-  onDismiss: (snapshot: MobileDismissSnapshot) => void
+  onDismiss: (snapshot: ViewerTransformSnapshot) => void
 }
 
 function getViewport() {
@@ -319,7 +312,6 @@ export function useMobileViewerInteractions({
     infoOpen,
     infoPanelOpacity,
     infoPanelY,
-    inspectorProgress,
     railOpacity,
     settleInspector,
     viewerBorderRadius,

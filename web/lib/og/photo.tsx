@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 import type { ReactNode } from 'react'
 import sharp from 'sharp'
+import { fitWithinBounds } from '@/lib/math'
 import type { Photo } from '@/lib/photo'
 import { formatExposureTimeValue } from '@/lib/photo/formatters'
 import { siteConfig } from '@/lib/site-config'
@@ -135,21 +136,6 @@ function determineLayout(aspect: number): LayoutConfig {
     infoCompact: false,
     photoFit: 'cover',
   }
-}
-
-function fitWithinBox(
-  aspect: number,
-  { maxWidth, maxHeight }: LayoutConfig['photoBox'],
-) {
-  let width = maxWidth
-  let height = width / aspect
-
-  if (height > maxHeight) {
-    height = maxHeight
-    width = height * aspect
-  }
-
-  return { width, height }
 }
 
 async function getRenderablePhotoUrl(photo: Photo) {
@@ -446,7 +432,10 @@ function WideLayout({ gap, photo, info, photoWidth }: LayoutPieces) {
 
 export async function renderPhotoOgImage(photo: Photo) {
   const layout = determineLayout(photo.aspectRatio)
-  const photoSize = fitWithinBox(photo.aspectRatio, layout.photoBox)
+  const photoSize = fitWithinBounds(photo.aspectRatio, {
+    width: layout.photoBox.maxWidth,
+    height: layout.photoBox.maxHeight,
+  })
   const renderablePhotoUrl = await getRenderablePhotoUrl(photo)
   const photoFrame = (
     <PhotoFrame

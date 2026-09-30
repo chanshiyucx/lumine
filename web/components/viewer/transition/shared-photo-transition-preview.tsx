@@ -1,6 +1,7 @@
 import { m, useIsPresent, useReducedMotion } from 'motion/react'
 import {
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useState,
@@ -52,10 +53,6 @@ function readFrame(element: HTMLElement): ViewerFrame {
   }
 }
 
-function setElementVisibility(element: HTMLElement, visibility: string) {
-  element.style.visibility = visibility
-}
-
 export function SharedPhotoTransitionPreview({
   mediaStageRef,
   onEntryComplete,
@@ -74,16 +71,21 @@ export function SharedPhotoTransitionPreview({
   const completedOperationRef = useRef<number | null>(null)
   const completedPresenceExitRef = useRef(false)
 
+  const completeWithoutFrames = useEffectEvent(() => {
+    if (phase === 'entering') {
+      onEntryHandoff(operationId)
+      onEntryComplete(operationId)
+      onPresenceExitComplete(operationId)
+    } else {
+      onExitComplete(operationId)
+    }
+  })
+  const handoffFromEffect = useEffectEvent(onEntryHandoff)
+
   useLayoutEffect(() => {
     const stage = mediaStageRef.current
     if (!stage || !sourceElement.isConnected) {
-      if (phase === 'entering') {
-        onEntryHandoff(operationId)
-        onEntryComplete(operationId)
-        onPresenceExitComplete(operationId)
-      } else {
-        onExitComplete(operationId)
-      }
+      completeWithoutFrames()
       return
     }
 
@@ -105,18 +107,12 @@ export function SharedPhotoTransitionPreview({
       target.width <= 0 ||
       target.height <= 0
     ) {
-      if (phase === 'entering') {
-        onEntryHandoff(operationId)
-        onEntryComplete(operationId)
-        onPresenceExitComplete(operationId)
-      } else {
-        onExitComplete(operationId)
-      }
+      completeWithoutFrames()
       return
     }
 
     const previousVisibility = sourceElement.style.visibility
-    setElementVisibility(sourceElement, 'hidden')
+    sourceElement.style.setProperty('visibility', 'hidden')
     let cancelled = false
     queueMicrotask(() => {
       if (!cancelled) {
@@ -127,15 +123,11 @@ export function SharedPhotoTransitionPreview({
     return () => {
       cancelled = true
       if (sourceElement.isConnected) {
-        setElementVisibility(sourceElement, previousVisibility)
+        sourceElement.style.setProperty('visibility', previousVisibility)
       }
     }
   }, [
     mediaStageRef,
-    onEntryComplete,
-    onEntryHandoff,
-    onExitComplete,
-    onPresenceExitComplete,
     operationId,
     phase,
     photo.original.height,
@@ -150,17 +142,17 @@ export function SharedPhotoTransitionPreview({
     }
 
     if (reduceMotion) {
-      onEntryHandoff(operationId)
+      handoffFromEffect(operationId)
       return
     }
 
     const timer = window.setTimeout(
-      () => onEntryHandoff(operationId),
+      () => handoffFromEffect(operationId),
       VIEWER_MOTION.sharedEntryHandoffDelay * 1000,
     )
 
     return () => window.clearTimeout(timer)
-  }, [frames, onEntryHandoff, operationId, phase, reduceMotion])
+  }, [frames, operationId, phase, reduceMotion])
 
   const transform = frames
     ? getFrameTransform(frames.source, frames.target)

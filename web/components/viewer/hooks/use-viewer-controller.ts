@@ -12,19 +12,17 @@ import {
   isPhotoPathname,
 } from '@/lib/route-paths'
 import {
+  getHistoryMarker,
+  withHistoryMarker,
+  withoutHistoryMarker,
+} from '../lib/viewer-history'
+import {
   createClosedViewerState,
   createDirectViewerState,
   reduceViewerState,
   type ViewerAction,
 } from '../lib/viewer-state'
 import { resolveViewerTrigger } from '../lib/viewer-trigger'
-
-const VIEWER_HISTORY_KEY = '__lumineViewer'
-
-interface ViewerHistoryMarker {
-  baseUrl: string
-  sessionId: string
-}
 
 interface UseViewerControllerOptions {
   galleryRef: RefObject<HTMLElement | null>
@@ -43,45 +41,6 @@ function getPhotoIndexFromPathname(
   }
 
   return slugToIndex.get(photoSlug) ?? null
-}
-
-function getHistoryMarker(): ViewerHistoryMarker | null {
-  const state = window.history.state as
-    Record<string, unknown> | null | undefined
-  const marker = state?.[VIEWER_HISTORY_KEY]
-
-  if (
-    !marker ||
-    typeof marker !== 'object' ||
-    !('baseUrl' in marker) ||
-    !('sessionId' in marker) ||
-    typeof marker.baseUrl !== 'string' ||
-    typeof marker.sessionId !== 'string'
-  ) {
-    return null
-  }
-
-  return {
-    baseUrl: marker.baseUrl,
-    sessionId: marker.sessionId,
-  }
-}
-
-function withHistoryMarker(marker: ViewerHistoryMarker) {
-  return {
-    ...(window.history.state ?? {}),
-    [VIEWER_HISTORY_KEY]: marker,
-  }
-}
-
-function withoutHistoryMarker() {
-  const state = {
-    ...(window.history.state ?? {}),
-  } as Record<string, unknown>
-
-  delete state[VIEWER_HISTORY_KEY]
-
-  return state
 }
 
 function createSessionId() {

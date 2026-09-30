@@ -1,17 +1,3 @@
-function getChunkBlobPart(chunk: Uint8Array): BlobPart {
-  const { buffer, byteLength, byteOffset } = chunk
-
-  if (buffer instanceof ArrayBuffer) {
-    if (byteOffset === 0 && byteLength === buffer.byteLength) {
-      return buffer
-    }
-
-    return buffer.slice(byteOffset, byteOffset + byteLength)
-  }
-
-  return chunk.slice() as Uint8Array<ArrayBuffer>
-}
-
 export async function loadPhotoBlob(
   url: string,
   mimeType: string,
@@ -49,11 +35,7 @@ export async function loadPhotoBlob(
         break
       }
 
-      if (!value) {
-        continue
-      }
-
-      chunks.push(getChunkBlobPart(value))
+      chunks.push(value)
       loadedBytes += value.byteLength
       onProgress(loadedBytes, totalBytes)
     }

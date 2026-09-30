@@ -1,4 +1,4 @@
-import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
+import { clamp } from '@/lib/math'
 
 const DOUBLE_CLICK_SCALE_EPSILON = 0.01
 const SMART_FILL_FALLBACK_SCALE = 2
@@ -43,10 +43,6 @@ interface CalculateImageLayoutOptions {
   sourceWidth: number
   viewportHeight: number
   viewportWidth: number
-}
-
-export function clamp(value: number, minimum: number, maximum: number) {
-  return Math.max(minimum, Math.min(maximum, value))
 }
 
 export function getMaximumRelativeScale(fitScale: number) {
@@ -201,20 +197,4 @@ export function getResizedImageTransform(
   )
 
   return { ...position, scale }
-}
-
-export function getImageMetrics(
-  transform: ReactZoomPanPinchRef | null,
-  layout: ImageLayout | null,
-  source: string,
-) {
-  if (!transform || !layout || layout.source !== source) {
-    return null
-  }
-
-  return {
-    fitScale: layout.fitScale,
-    pixelScale: transform.state.scale * layout.fitScale,
-    relativeScale: transform.state.scale,
-  }
 }

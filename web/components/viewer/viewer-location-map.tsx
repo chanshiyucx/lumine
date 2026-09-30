@@ -37,6 +37,8 @@ export function ViewerLocationMap({
   const containerRef = useRef<HTMLDivElement>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const isMapActive = isActive && location !== undefined
+  const latitude = location?.lat
+  const longitude = location?.lng
 
   // Latch the first eligible location for this Viewer session. Hiding the panel
   // or switching to a photo without GPS must not unmount an existing map.
@@ -47,16 +49,28 @@ export function ViewerLocationMap({
   useEffect(() => {
     const map = mapRef.current
     const container = containerRef.current
-    if (!map || !container || !isActive || !isLoaded || !location) return
-
-    map.resize()
-    map.jumpTo({ center: [location.lng, location.lat], zoom: 15 })
+    if (!map || !container || !isMapActive || !isLoaded) return
 
     // Keep the map sized during panel transitions and breakpoint changes.
     const observer = new ResizeObserver(() => map.resize())
     observer.observe(container)
     return () => observer.disconnect()
-  }, [isActive, isLoaded, location])
+  }, [isLoaded, isMapActive])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (
+      !map ||
+      !isMapActive ||
+      !isLoaded ||
+      latitude === undefined ||
+      longitude === undefined
+    )
+      return
+
+    map.resize()
+    map.jumpTo({ center: [longitude, latitude], zoom: 15 })
+  }, [isLoaded, isMapActive, latitude, longitude])
 
   if (initialLocation === null) return null
 

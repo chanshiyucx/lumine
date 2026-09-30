@@ -8,14 +8,13 @@ import {
   type TouchEvent,
 } from 'react'
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
+import { clamp } from '@/lib/math'
 import { DoubleTapRecognizer } from '../lib/double-tap-recognizer'
 import {
   calculateImageLayout,
-  clamp,
   constrainPosition,
   DOUBLE_CLICK_ANIMATION_TIME,
   getDoubleClickTargetScale,
-  getImageMetrics,
   getMaximumRelativeScale,
   getResizedImageTransform,
   INITIAL_SCALE,
@@ -27,7 +26,7 @@ import {
   WHEEL_STEP,
   ZOOM_STATE_EPSILON,
   type ImageLayout,
-} from '../lib/zoomable-image'
+} from '../lib/zoom-geometry'
 
 interface UseZoomableImageOptions {
   height: number
@@ -139,12 +138,18 @@ export function useZoomableImage({
     return () => observer.disconnect()
   }, [])
 
-  const getMetrics = (requestedTransform?: ReactZoomPanPinchRef | null) =>
-    getImageMetrics(
-      requestedTransform ?? transformRef.current,
-      imageLayoutRef.current,
-      src,
-    )
+  const getMetrics = (requestedTransform?: ReactZoomPanPinchRef | null) => {
+    const transform = requestedTransform ?? transformRef.current
+    const layout = imageLayoutRef.current
+    if (!transform || !layout || layout.source !== src) {
+      return null
+    }
+
+    return {
+      pixelScale: transform.state.scale * layout.fitScale,
+      relativeScale: transform.state.scale,
+    }
+  }
 
   const notifyZoomChange = (transform: ReactZoomPanPinchRef, force = false) => {
     const metrics = getMetrics(transform)
