@@ -8,18 +8,17 @@ import { MapPreviewGrid } from './map-preview-grid'
 
 export function PhotoClusterPreviewCard({
   items,
-  count,
   location,
 }: {
   items: readonly PhotoMapItem[]
-  count: number
   location: { lat: number; lng: number }
 }) {
+  const count = items.length
   const { dateLabel, cameraName } = getPhotoSummary(items)
 
   return (
     <section
-      className="border-overlay bg-surface overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
+      className="overflow-hidden"
       aria-label={`${count} photos at this location`}
     >
       <div className="p-4 pb-0">

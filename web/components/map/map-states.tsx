@@ -56,7 +56,7 @@ export function MapErrorState({
 export function MapEmptyState() {
   return (
     <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-      <p className="border-overlay bg-surface/95 text-subtle rounded-full border px-4 py-2 text-sm shadow-xl">
+      <p className="border-overlay bg-surface text-subtle rounded-full border px-4 py-2 text-sm shadow-xl">
         No mapped albums yet
       </p>
     </div>

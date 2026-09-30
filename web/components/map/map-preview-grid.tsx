@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
 import type { MapCover } from '@/lib/map-types'
+import { cn } from '@/lib/style'
 import { MapCoverLink } from './map-cover-link'
 
 export function MapPreviewGrid({
@@ -28,7 +29,7 @@ export function MapPreviewGrid({
   const moreContent = (
     <>
       <p className="text-lg font-semibold">+{remainingCount}</p>
-      <p className="text-subtle group-hover/more:text-love text-[10px] transition-colors">
+      <p className="text-subtle group-hover/more:text-text group-focus-visible/more:text-text text-[10px] transition-colors">
         More
       </p>
     </>
@@ -54,7 +55,10 @@ export function MapPreviewGrid({
             href={moreHref}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${moreClassName} group/more hover:text-love transition-colors`}
+            className={cn(
+              moreClassName,
+              'group/more hover:bg-text/10 focus-visible:bg-text/10 transition-colors',
+            )}
             aria-label={`Open album with ${remainingCount} more photos in a new tab`}
           >
             {moreContent}

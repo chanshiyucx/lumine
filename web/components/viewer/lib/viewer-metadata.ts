@@ -1,3 +1,4 @@
+import { formatCoordinates } from '@/lib/coordinates'
 import type { Photo } from '@/lib/photo'
 import {
   formatBytes,
@@ -94,15 +95,16 @@ export function getLocationInfoRows(photo: Photo): InfoRowData[] {
   const rows = [{ label: 'Location', value: photo.album.title }]
   const location = photo.location
   if (!location) return []
+  const { latitude, longitude } = formatCoordinates(location)
 
   rows.push(
     {
       label: 'Latitude',
-      value: `${Math.abs(location.lat).toFixed(6)}° ${location.lat < 0 ? 'S' : 'N'}`,
+      value: latitude,
     },
     {
       label: 'Longitude',
-      value: `${Math.abs(location.lng).toFixed(6)}° ${location.lng < 0 ? 'W' : 'E'}`,
+      value: longitude,
     },
   )
 

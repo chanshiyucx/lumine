@@ -44,6 +44,7 @@ function MapMarker({ longitude, latitude, children }: MapMarkerProps) {
   return (
     <Marker
       ref={markerRef}
+      className="font-sans"
       longitude={longitude}
       latitude={clampMapLatitude(latitude)}
     >
@@ -154,7 +155,7 @@ function MapClusterMarker(props: MapClusterMarkerProps) {
         <span className="bg-text/10 absolute -inset-1 rounded-full" />
         <span className="bg-overlay border-overlay relative block size-full overflow-hidden rounded-full border-4">
           <ThumbnailImage photo={representativeCover} loading={imageLoading} />
-          <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-sm font-bold">
+          <span className="bg-base/50 pointer-events-none absolute inset-0 grid place-items-center text-sm font-semibold">
             {count}
           </span>
         </span>
@@ -168,11 +169,7 @@ function MapClusterMarker(props: MapClusterMarkerProps) {
     closeDelay: terminalPhotoCluster ? 120 : 150,
     children:
       props.kind === 'photo' ? (
-        <PhotoClusterPreviewCard
-          items={props.items}
-          count={count}
-          location={location}
-        />
+        <PhotoClusterPreviewCard items={props.items} location={location} />
       ) : (
         <AlbumClusterPreviewCard count={count} items={props.items} />
       ),

@@ -65,7 +65,7 @@ export function MapHoverPreview({
           collisionPadding={16}
           updatePositionStrategy={pinned ? 'always' : 'optimized'}
           hideWhenDetached={pinned}
-          className="map-hover-preview z-50 max-h-[var(--radix-hover-card-content-available-height)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl outline-none"
+          className="map-hover-preview border-overlay bg-surface z-50 max-h-(--radix-hover-card-content-available-height) w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border shadow-xl outline-none"
         >
           {children}
         </HoverCard.Content>

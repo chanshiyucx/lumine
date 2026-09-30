@@ -10,7 +10,7 @@ import { MapPreviewGrid } from './map-preview-grid'
 export function MapItemPreviewCard({ item }: { item: MapItem }) {
   return (
     <section
-      className="border-overlay bg-surface/95 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
+      className="overflow-hidden"
       aria-label={`${item.label} ${item.kind} preview`}
     >
       {item.kind === 'photo' ? (
@@ -41,14 +41,14 @@ export function MapItemPreviewCard({ item }: { item: MapItem }) {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-love flex items-center gap-2 transition-colors"
+          className="group/title flex items-center gap-2"
           aria-label={`Open ${item.label} in a new tab`}
         >
           <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
             {item.label}
           </h2>
           <ArrowRightLine
-            className="text-subtle size-4 shrink-0"
+            className="text-subtle group-hover/title:text-text group-focus-visible/title:text-text size-4 shrink-0 transition-colors"
             aria-hidden="true"
           />
         </Link>

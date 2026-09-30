@@ -10,7 +10,7 @@ export function AlbumClusterPreviewCard({
 }) {
   return (
     <section
-      className="border-overlay bg-surface/95 space-y-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-2xl"
+      className="space-y-3 p-4"
       aria-label={`${count} albums in this area`}
     >
       <h2 className="text-sm font-semibold">{count} albums</h2>

@@ -112,7 +112,7 @@
     animation: none;
   }
 
-  .map-hover-preview {
+  .map-hover-preview[data-state] {
     animation: none;
   }
 }
