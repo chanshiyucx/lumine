@@ -1,5 +1,11 @@
 import { MAP_MAX_LATITUDE, type MapBounds } from '@/lib/map-config'
 
+export interface MapViewportState {
+  bounds: MapBounds
+  clusterBounds: MapBounds
+  zoom: number
+}
+
 const MAP_BOUNDS_OVERSCAN = 0.25
 
 export function clampMapLatitude(latitude: number) {

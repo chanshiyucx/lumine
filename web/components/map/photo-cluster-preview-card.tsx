@@ -1,7 +1,7 @@
 import { CalendarLine } from '@mingcute/react/calendar'
 import { CameraLine } from '@mingcute/react/camera'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
-import type { MapItem } from '@/lib/map-items'
+import type { PhotoMapItem } from '@/lib/map-types'
 import { getPhotoSummary } from '@/lib/photo/summary'
 import { MapCoordinates } from './map-coordinates'
 import { MapPreviewGrid } from './map-preview-grid'
@@ -11,12 +11,11 @@ export function PhotoClusterPreviewCard({
   count,
   location,
 }: {
-  items: MapItem[]
+  items: readonly PhotoMapItem[]
   count: number
   location: { lat: number; lng: number }
 }) {
-  const photos = items.filter((item) => item.kind === 'photo')
-  const { dateLabel, cameraName } = getPhotoSummary(photos)
+  const { dateLabel, cameraName } = getPhotoSummary(items)
 
   return (
     <section
@@ -25,7 +24,7 @@ export function PhotoClusterPreviewCard({
     >
       <div className="p-4 pb-0">
         <MapPreviewGrid
-          entries={photos.slice(0, MAP_PREVIEW_CAPACITY).map((item) => ({
+          entries={items.slice(0, MAP_PREVIEW_CAPACITY).map((item) => ({
             key: item.key,
             label: item.label,
             ariaLabel: `Open photo ${item.label} in a new tab`,

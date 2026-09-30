@@ -3,11 +3,22 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
 import { ThumbnailImage } from '@/components/image'
-import type { MapCover, MapItem } from '@/lib/map-items'
+import type {
+  AlbumMapItem,
+  MapCover,
+  MapItem,
+  PhotoMapItem,
+} from '@/lib/map-types'
 import { cn } from '@/lib/style'
 import { AlbumClusterPreviewCard } from './album-cluster-preview-card'
+import type {
+  ExpandableClusterMarkerData,
+  MapMarkerData,
+  PinnedSelection,
+  TerminalPhotoClusterMarkerData,
+} from './lib/map-clustering'
 import { clampMapLatitude } from './lib/map-viewport'
-import { MapHoverPreview } from './map-hover-preview'
+import { MapHoverPreview, type MapHoverPreviewProps } from './map-hover-preview'
 import { MapItemPreviewCard } from './map-item-preview-card'
 import { PhotoClusterPreviewCard } from './photo-cluster-preview-card'
 
@@ -71,7 +82,7 @@ function renderLocationMarkerTrigger({
   )
 }
 
-export function MapItemMarker({
+function MapItemMarker({
   item,
   imageLoading,
   pinned,
@@ -105,33 +116,23 @@ export function MapItemMarker({
   )
 }
 
-export function ClusterMarker({
-  longitude,
-  latitude,
-  count,
-  items,
-  imageLoading,
-  onExpand,
-  kind,
-  canExpand,
-  pinned,
-  onPinnedChange,
-}: {
-  longitude: number
-  latitude: number
-  count: number
-  items: MapItem[]
-  imageLoading: 'eager' | 'lazy'
-  onExpand?: () => void
-  kind: MapItem['kind']
-  canExpand: boolean
-  pinned: boolean
-  onPinnedChange?: (pinned: boolean) => void
-}) {
-  const terminalPhotoCluster = kind === 'photo' && !canExpand
+type MapClusterMarkerProps =
+  | (Omit<ExpandableClusterMarkerData<AlbumMapItem>, 'type' | 'key'> & {
+      onExpand: () => void
+    })
+  | (Omit<ExpandableClusterMarkerData<PhotoMapItem>, 'type' | 'key'> & {
+      onExpand: () => void
+    })
+  | (Omit<TerminalPhotoClusterMarkerData, 'type' | 'key'> & {
+      onPinnedChange: (pinned: boolean) => void
+    })
+
+function MapClusterMarker(props: MapClusterMarkerProps) {
+  const { location, count, items, imageLoading, kind, pinned } = props
+  const terminalPhotoCluster = !props.canExpand
   const size = Math.min(66, Math.max(50, 42 + Math.log2(count) * 7))
   const representativeCover = items[0].covers[0]
-  const trigger = terminalPhotoCluster ? (
+  const trigger = !props.canExpand ? (
     renderLocationMarkerTrigger({
       cover: representativeCover,
       imageLoading,
@@ -146,7 +147,7 @@ export function ClusterMarker({
       aria-label={`Zoom into ${count} ${kind === 'photo' ? 'photos' : 'albums'}`}
       onClick={(event) => {
         event.stopPropagation()
-        onExpand?.()
+        props.onExpand()
       }}
     >
       <span className="map-marker-visual relative block size-full transition-transform duration-200 ease-out group-hover:scale-105">
@@ -161,25 +162,94 @@ export function ClusterMarker({
     </button>
   )
 
+  const previewProps = {
+    trigger,
+    openDelay: terminalPhotoCluster ? 350 : 300,
+    closeDelay: terminalPhotoCluster ? 120 : 150,
+    children:
+      props.kind === 'photo' ? (
+        <PhotoClusterPreviewCard
+          items={props.items}
+          count={count}
+          location={location}
+        />
+      ) : (
+        <AlbumClusterPreviewCard count={count} items={props.items} />
+      ),
+  }
+  const hoverProps: MapHoverPreviewProps = props.canExpand
+    ? previewProps
+    : {
+        ...previewProps,
+        pinned: props.pinned,
+        onPinnedChange: props.onPinnedChange,
+      }
+
   return (
-    <MapMarker longitude={longitude} latitude={latitude}>
-      <MapHoverPreview
-        trigger={trigger}
-        openDelay={terminalPhotoCluster ? 350 : 300}
-        closeDelay={terminalPhotoCluster ? 120 : 150}
-        pinned={pinned}
-        onPinnedChange={terminalPhotoCluster ? onPinnedChange : undefined}
-      >
-        {kind === 'photo' ? (
-          <PhotoClusterPreviewCard
-            items={items}
-            count={count}
-            location={{ lat: latitude, lng: longitude }}
-          />
-        ) : (
-          <AlbumClusterPreviewCard count={count} items={items} />
-        )}
-      </MapHoverPreview>
+    <MapMarker longitude={location.lng} latitude={location.lat}>
+      <MapHoverPreview {...hoverProps} />
     </MapMarker>
   )
+}
+
+export function MapMarkers({
+  markers,
+  onPinnedChange,
+  onClusterExpand,
+}: {
+  markers: readonly MapMarkerData[]
+  onPinnedChange: (selection: PinnedSelection | null) => void
+  onClusterExpand: (
+    zoom: number,
+    center: [longitude: number, latitude: number],
+  ) => void
+}) {
+  // Keep every marker in one flat list so pinning preserves its component identity.
+  return markers.map((marker) => {
+    if (marker.type === 'item') {
+      const { item } = marker
+      return (
+        <MapItemMarker
+          key={marker.key}
+          item={item}
+          imageLoading={marker.imageLoading}
+          pinned={marker.pinned}
+          onPinnedChange={(pinned) => {
+            onPinnedChange(pinned ? { kind: item.kind, key: item.key } : null)
+          }}
+        />
+      )
+    }
+
+    const { key, ...data } = marker
+    return data.canExpand ? (
+      <MapClusterMarker
+        key={key}
+        {...data}
+        onExpand={() =>
+          onClusterExpand(data.expansionZoom, [
+            data.location.lng,
+            data.location.lat,
+          ])
+        }
+      />
+    ) : (
+      <MapClusterMarker
+        key={key}
+        {...data}
+        onPinnedChange={(pinned) => {
+          onPinnedChange(
+            pinned
+              ? {
+                  kind: 'photo-cluster',
+                  key,
+                  items: data.items,
+                  location: data.location,
+                }
+              : null,
+          )
+        }}
+      />
+    )
+  })
 }

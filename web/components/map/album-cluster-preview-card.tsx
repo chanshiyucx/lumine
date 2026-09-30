@@ -1,4 +1,4 @@
-import type { MapItem } from '@/lib/map-items'
+import type { AlbumMapItem } from '@/lib/map-types'
 import { MapPreviewGrid } from './map-preview-grid'
 
 export function AlbumClusterPreviewCard({
@@ -6,7 +6,7 @@ export function AlbumClusterPreviewCard({
   items,
 }: {
   count: number
-  items: MapItem[]
+  items: readonly AlbumMapItem[]
 }) {
   return (
     <section

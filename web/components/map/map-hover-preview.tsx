@@ -1,6 +1,16 @@
 import * as HoverCard from '@radix-ui/react-hover-card'
 import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 
+export type MapHoverPreviewProps = {
+  trigger: ReactElement
+  children: ReactNode
+  openDelay: number
+  closeDelay: number
+} & (
+  | { pinned: boolean; onPinnedChange: (pinned: boolean) => void }
+  | { pinned?: never; onPinnedChange?: never }
+)
+
 export function MapHoverPreview({
   trigger,
   children,
@@ -8,14 +18,7 @@ export function MapHoverPreview({
   closeDelay,
   pinned,
   onPinnedChange,
-}: {
-  trigger: ReactElement
-  children: ReactNode
-  openDelay: number
-  closeDelay: number
-  pinned?: boolean
-  onPinnedChange?: (pinned: boolean) => void
-}) {
+}: MapHoverPreviewProps) {
   const [hoverOpen, setHoverOpen] = useState(false)
   const touchActivated = useRef(false)
   const togglePinned = () => {

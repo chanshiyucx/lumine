@@ -1,16 +1,25 @@
+import { LocationLine } from '@mingcute/react/location'
 import { cn } from '@/lib/style'
 
 export function MapLoadingState({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'bg-base flex flex-col items-center justify-center text-center',
+        'bg-base flex flex-col items-center justify-center gap-2 text-center',
         className,
       )}
       role="status"
     >
-      <div className="bg-overlay mb-4 size-10 animate-pulse rounded-full motion-reduce:animate-none" />
-      <p className="text-subtle text-sm">Loading places…</p>
+      <div
+        className="text-subtle relative grid size-16 shrink-0 place-items-center"
+        aria-hidden="true"
+      >
+        <span className="map-loading-halo border-subtle/40 absolute inset-2 rounded-full border" />
+        <span className="map-loading-icon relative block size-6">
+          <LocationLine className="size-6" />
+        </span>
+      </div>
+      <p className="text-subtle text-xs">Loading places…</p>
     </div>
   )
 }

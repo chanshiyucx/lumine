@@ -13,4 +13,4 @@ export const WORLD_BOUNDS: MapBounds = [-180, -90, 180, 90]
 export const MAP_STYLE_URL =
   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 export const CLUSTER_RADIUS = 72
-export const MAX_CLUSTER_ZOOM = 15
+export const ALBUM_CLUSTER_MAX_ZOOM = 15

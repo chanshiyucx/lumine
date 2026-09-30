@@ -1,48 +1,12 @@
 import 'server-only'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
+import type { AlbumMapItem, MapCover, PhotoMapItem } from '@/lib/map-types'
 import { getPhotoCollection } from '@/lib/photo/collection'
 import { getPhotoSummary } from '@/lib/photo/summary'
 import { getAlbumPath, getPhotoPath } from '@/lib/route-paths'
 import type { Album } from './album'
 import { getAlbumCatalog } from './album/catalog'
 import { getAlbumMapLocations } from './album/locations'
-
-export interface MapCover {
-  href: string
-  thumbHash: string
-  thumbnail: {
-    url: string
-    width: number
-    height: number
-  }
-}
-
-interface MapItemBase {
-  key: string
-  href: string
-  label: string
-  cameraName: string | null
-  location: {
-    lat: number
-    lng: number
-  }
-  covers: [MapCover, ...MapCover[]]
-}
-
-export interface AlbumMapItem extends MapItemBase {
-  kind: 'album'
-  photoCount: number
-  dateLabel: string
-}
-
-export interface PhotoMapItem extends MapItemBase {
-  kind: 'photo'
-  takenAt: string
-  captureTime: { date: string }
-  location: MapItemBase['location'] & { alt?: number }
-}
-
-export type MapItem = AlbumMapItem | PhotoMapItem
 
 export async function getPhotoMapItems(): Promise<PhotoMapItem[]> {
   const { photos } = await getPhotoCollection()

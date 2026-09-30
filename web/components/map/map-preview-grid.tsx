@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
-import type { MapCover } from '@/lib/map-items'
+import type { MapCover } from '@/lib/map-types'
 import { MapCoverLink } from './map-cover-link'
 
 export function MapPreviewGrid({
