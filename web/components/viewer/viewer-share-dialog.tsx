@@ -50,14 +50,12 @@ function ShareActionButton({
   return (
     <button
       type="button"
-      className="border-overlay bg-overlay/45 text-subtle hover:border-muted/60 hover:bg-overlay/65 hover:text-text flex min-w-0 flex-col items-center gap-1.5 rounded border px-2 py-2.5 text-xs transition-[color,background-color,border-color,opacity] duration-200 disabled:cursor-not-allowed disabled:opacity-60"
+      className="border-overlay bg-overlay/45 text-text hover:border-muted/60 hover:bg-overlay/65 flex min-w-0 flex-col items-center gap-1.5 rounded border px-2 py-2.5 text-xs transition-[background-color,border-color,opacity] duration-200 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={disabled}
       onClick={onClick}
     >
-      <span className="text-text flex size-4.5 items-center justify-center">
-        {icon}
-      </span>
-      <span className="text-text w-full truncate text-center text-[10px] leading-tight">
+      <span className="flex size-4.5 items-center justify-center">{icon}</span>
+      <span className="w-full truncate text-center text-[10px] leading-tight">
         {label}
       </span>
     </button>
@@ -74,14 +72,16 @@ async function copyText(text: string) {
   textArea.value = text
   textArea.style.position = 'fixed'
   textArea.style.opacity = '0'
-  document.body.append(textArea)
-  textArea.select()
 
-  const copied = document.execCommand('copy')
-  textArea.remove()
+  try {
+    document.body.append(textArea)
+    textArea.select()
 
-  if (!copied) {
-    throw new Error('Failed to copy photo link')
+    if (!document.execCommand('copy')) {
+      throw new Error('Failed to copy photo link')
+    }
+  } finally {
+    textArea.remove()
   }
 }
 
@@ -98,12 +98,16 @@ async function downloadFile(url: string, fileName: string) {
 
   const objectUrl = URL.createObjectURL(await response.blob())
   const anchor = document.createElement('a')
-  anchor.href = objectUrl
-  anchor.download = fileName
-  document.body.append(anchor)
-  anchor.click()
-  anchor.remove()
-  URL.revokeObjectURL(objectUrl)
+
+  try {
+    anchor.href = objectUrl
+    anchor.download = fileName
+    document.body.append(anchor)
+    anchor.click()
+  } finally {
+    anchor.remove()
+    URL.revokeObjectURL(objectUrl)
+  }
 }
 
 function getOriginalDownloadName(photo: Photo) {
@@ -113,24 +117,155 @@ function getOriginalDownloadName(photo: Photo) {
   return extension ? `${photo.fileName}.${extension}` : photo.fileName
 }
 
+function useCopyLink(url: string) {
+  const copyStatusTimeoutRef = useRef<number | null>(null)
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
+
+  useEffect(() => {
+    return () => {
+      if (copyStatusTimeoutRef.current !== null) {
+        window.clearTimeout(copyStatusTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const updateCopyStatus = (status: Exclude<CopyStatus, 'idle'>) => {
+    setCopyStatus(status)
+
+    if (copyStatusTimeoutRef.current !== null) {
+      window.clearTimeout(copyStatusTimeoutRef.current)
+    }
+
+    copyStatusTimeoutRef.current = window.setTimeout(() => {
+      setCopyStatus('idle')
+      copyStatusTimeoutRef.current = null
+    }, 1000)
+  }
+
+  const copyLink = async () => {
+    try {
+      await copyText(url)
+      updateCopyStatus('copied')
+    } catch {
+      updateCopyStatus('failed')
+    }
+  }
+
+  return { copyStatus, copyLink }
+}
+
+interface ShareLinkProps {
+  url: string
+  copyStatus: CopyStatus
+  onCopy: () => Promise<void>
+}
+
+function ShareLink({ url, copyStatus, onCopy }: ShareLinkProps) {
+  const isCopied = copyStatus === 'copied'
+
+  return (
+    <div className="mb-4 space-y-2">
+      <p className="text-muted text-xs font-medium">Share link</p>
+      <div className="border-overlay bg-overlay/35 flex items-center gap-2 rounded-lg border px-3 py-2">
+        <span className="min-w-0 flex-1 truncate text-xs">{url}</span>
+        <button
+          type="button"
+          className="border-overlay text-subtle hover:text-text shrink-0 rounded-lg border p-1.5 transition-colors duration-300"
+          onClick={onCopy}
+          aria-label={isCopied ? 'Link copied' : 'Copy link'}
+          disabled={isCopied}
+        >
+          <span className="relative block size-4">
+            <CopyLine
+              className={cn(
+                'absolute inset-0 size-4 transition-[opacity,transform] duration-300',
+                isCopied ? 'scale-0 opacity-0' : 'scale-100 opacity-100',
+              )}
+              aria-hidden="true"
+            />
+            <CheckLine
+              className={cn(
+                'text-foam absolute inset-0 size-4 transition-[opacity,transform] duration-300',
+                isCopied ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
+              )}
+              aria-hidden="true"
+            />
+          </span>
+        </button>
+      </div>
+      <span className="sr-only" aria-live="polite">
+        {isCopied
+          ? 'Link copied.'
+          : copyStatus === 'failed'
+            ? 'Could not copy the link.'
+            : ''}
+      </span>
+    </div>
+  )
+}
+
+interface SharePreviewProps {
+  src: string
+  alt: string
+}
+
+function SharePreview({ src, alt }: SharePreviewProps) {
+  const [status, setStatus] = useState<PreviewStatus>('loading')
+  const isLoading = status === 'loading'
+  const hasFailed = status === 'error'
+
+  return (
+    <div className="mb-4 space-y-2">
+      <p className="text-muted text-xs font-medium">Share preview</p>
+      <div className="border-overlay bg-base/60 overflow-hidden rounded-lg border">
+        <div className="relative w-full" style={{ aspectRatio: '1200 / 628' }}>
+          {isLoading && (
+            <div className="bg-overlay/35 absolute inset-0 flex items-center justify-center">
+              <div className="border-overlay border-t-love size-8 animate-spin rounded-full border-2" />
+            </div>
+          )}
+          {!hasFailed && (
+            <Image
+              src={src}
+              alt={alt}
+              fill
+              loading="eager"
+              sizes="(max-width: 768px) calc(100vw - 3.5rem), 45rem"
+              className={cn(
+                'object-cover transition-opacity duration-300',
+                isLoading ? 'opacity-0' : 'opacity-100',
+              )}
+              onLoad={() => setStatus('ready')}
+              onError={() => setStatus('error')}
+              unoptimized
+            />
+          )}
+          {hasFailed && (
+            <div className="text-muted absolute inset-0 flex items-center justify-center text-xs">
+              Preview unavailable
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ViewerShareDialog({
   photo,
   returnFocusRef,
   onClose,
 }: ViewerShareDialogProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null)
-  const copyStatusTimeoutRef = useRef<number | null>(null)
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloads, setDownloads] = useState({
     original: false,
     preview: false,
   })
-  const [previewStatus, setPreviewStatus] = useState<PreviewStatus>('loading')
-  const isPreviewLoading = previewStatus === 'loading'
-  const hasPreviewFailed = previewStatus === 'error'
   const titleId = useId()
   const shareUrl = getPhotoShareUrl(photo.slug)
   const ogPreviewUrl = getPhotoOgPath(photo.slug)
+  const shareText = `${photo.title} — ${siteConfig.name}`
+  const { copyStatus, copyLink } = useCopyLink(shareUrl)
   const canUseNativeShare =
     typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
@@ -154,40 +289,10 @@ export function ViewerShareDialog({
     }
   }, [])
 
-  useEffect(() => {
-    return () => {
-      if (copyStatusTimeoutRef.current !== null) {
-        window.clearTimeout(copyStatusTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const updateCopyStatus = (status: CopyStatus) => {
-    setCopyStatus(status)
-
-    if (copyStatusTimeoutRef.current !== null) {
-      window.clearTimeout(copyStatusTimeoutRef.current)
-    }
-
-    copyStatusTimeoutRef.current = window.setTimeout(() => {
-      setCopyStatus('idle')
-      copyStatusTimeoutRef.current = null
-    }, 1000)
-  }
-
-  const handleCopyLink = async () => {
-    try {
-      await copyText(shareUrl)
-      updateCopyStatus('copied')
-    } catch {
-      updateCopyStatus('failed')
-    }
-  }
-
   const handleNativeShare = async () => {
     const shareData: ShareData = {
       title: photo.title,
-      text: `${photo.title} — ${siteConfig.name}`,
+      text: shareText,
       url: shareUrl,
     }
 
@@ -199,7 +304,7 @@ export function ViewerShareDialog({
         return
       }
 
-      await handleCopyLink()
+      await copyLink()
     }
   }
 
@@ -208,23 +313,24 @@ export function ViewerShareDialog({
     onClose()
   }
 
-  const handleDownload = async (
-    target: DownloadTarget,
-    url: string,
-    fileName: string,
-  ) => {
+  const handleDownload = async (target: DownloadTarget) => {
+    const url = target === 'original' ? photo.original.url : ogPreviewUrl
+    const fileName =
+      target === 'original'
+        ? getOriginalDownloadName(photo)
+        : `${photo.slug}-og.png`
+
     setDownloads((current) => ({ ...current, [target]: true }))
 
-    await downloadFile(url, fileName)
-      .catch(() => {
-        window.open(url, '_blank', 'noopener,noreferrer')
-      })
-      .finally(() => {
-        setDownloads((current) => ({ ...current, [target]: false }))
-      })
+    try {
+      await downloadFile(url, fileName)
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } finally {
+      setDownloads((current) => ({ ...current, [target]: false }))
+    }
   }
 
-  const shareText = `${photo.title} — ${siteConfig.name}`
   const encodedShareUrl = encodeURIComponent(shareUrl)
   const encodedShareText = encodeURIComponent(shareText)
 
@@ -269,84 +375,8 @@ export function ViewerShareDialog({
           <CloseLine className="size-4" aria-hidden="true" />
         </button>
 
-        <div className="mb-4 space-y-2">
-          <p className="text-muted text-xs font-medium">Share link</p>
-          <div className="border-overlay bg-overlay/35 flex items-center gap-2 rounded-lg border px-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-xs">{shareUrl}</span>
-            <button
-              type="button"
-              className="border-overlay text-subtle hover:text-text shrink-0 rounded-lg border p-1.5 transition-colors duration-300"
-              onClick={handleCopyLink}
-              aria-label={copyStatus === 'copied' ? 'Link copied' : 'Copy link'}
-              disabled={copyStatus === 'copied'}
-            >
-              <span className="relative block size-4">
-                <CopyLine
-                  className={cn(
-                    'absolute inset-0 size-4 transition-[opacity,transform] duration-300',
-                    copyStatus === 'copied'
-                      ? 'scale-0 opacity-0'
-                      : 'scale-100 opacity-100',
-                  )}
-                  aria-hidden="true"
-                />
-                <CheckLine
-                  className={cn(
-                    'text-foam absolute inset-0 size-4 transition-[opacity,transform] duration-300',
-                    copyStatus === 'copied'
-                      ? 'scale-100 opacity-100'
-                      : 'scale-0 opacity-0',
-                  )}
-                  aria-hidden="true"
-                />
-              </span>
-            </button>
-          </div>
-          <span className="sr-only" aria-live="polite">
-            {copyStatus === 'copied'
-              ? 'Link copied.'
-              : copyStatus === 'failed'
-                ? 'Could not copy the link.'
-                : ''}
-          </span>
-        </div>
-
-        <div className="mb-4 space-y-2">
-          <p className="text-muted text-xs font-medium">Share preview</p>
-          <div className="border-overlay bg-base/60 overflow-hidden rounded-lg border">
-            <div
-              className="relative w-full"
-              style={{ aspectRatio: '1200 / 628' }}
-            >
-              {isPreviewLoading && !hasPreviewFailed && (
-                <div className="bg-overlay/35 absolute inset-0 flex items-center justify-center">
-                  <div className="border-overlay border-t-love size-8 animate-spin rounded-full border-2" />
-                </div>
-              )}
-              {!hasPreviewFailed && (
-                <Image
-                  src={ogPreviewUrl}
-                  alt={photo.title}
-                  fill
-                  loading="eager"
-                  sizes="(max-width: 768px) calc(100vw - 3.5rem), 45rem"
-                  className={cn(
-                    'object-cover transition-opacity duration-300',
-                    isPreviewLoading ? 'opacity-0' : 'opacity-100',
-                  )}
-                  onLoad={() => setPreviewStatus('ready')}
-                  onError={() => setPreviewStatus('error')}
-                  unoptimized
-                />
-              )}
-              {hasPreviewFailed && (
-                <div className="text-muted absolute inset-0 flex items-center justify-center text-xs">
-                  Preview unavailable
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ShareLink url={shareUrl} copyStatus={copyStatus} onCopy={copyLink} />
+        <SharePreview src={ogPreviewUrl} alt={photo.title} />
 
         <div
           className={cn(
@@ -383,25 +413,13 @@ export function ViewerShareDialog({
             icon={<Download2Line className="size-4.5" aria-hidden="true" />}
             label={downloads.original ? '…' : 'Original'}
             disabled={downloads.original}
-            onClick={() =>
-              void handleDownload(
-                'original',
-                photo.original.url,
-                getOriginalDownloadName(photo),
-              )
-            }
+            onClick={() => void handleDownload('original')}
           />
           <ShareActionButton
             icon={<PicLine className="size-4.5" aria-hidden="true" />}
             label={downloads.preview ? '…' : 'Preview'}
             disabled={downloads.preview}
-            onClick={() =>
-              void handleDownload(
-                'preview',
-                ogPreviewUrl,
-                `${photo.slug}-og.png`,
-              )
-            }
+            onClick={() => void handleDownload('preview')}
           />
         </div>
       </m.div>
