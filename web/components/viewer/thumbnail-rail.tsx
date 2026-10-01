@@ -15,9 +15,10 @@ import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
 
-const MOBILE_FALLBACK_THUMBNAIL_HEIGHT = 48
-const DESKTOP_FALLBACK_THUMBNAIL_HEIGHT = 64
+const MOBILE_THUMBNAIL_HEIGHT = 48
+const DESKTOP_THUMBNAIL_HEIGHT = 64
 const THUMBNAIL_OVERSCAN = 6
+const HOVER_PREVIEW_OPEN_DELAY = 100
 const HOVER_PREVIEW_PADDING = 12
 const HOVER_PREVIEW_MAX_WIDTH = 460
 const HOVER_PREVIEW_MIN_HEIGHT = 180
@@ -36,7 +37,12 @@ interface ThumbnailRailProps {
   onSelect: (index: number) => void
 }
 
-function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {
+function getHoverPreviewLayout(
+  aspectRatio: number,
+  shellWidth: number,
+  viewportHeight: number,
+  anchorCenter: number,
+) {
   const maxWidth = Math.max(
     1,
     Math.min(
@@ -45,7 +51,7 @@ function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {
     ),
   )
   const maxHeight = clamp(
-    Math.round(window.innerHeight * 0.24),
+    Math.round(viewportHeight * 0.24),
     HOVER_PREVIEW_MIN_HEIGHT,
     HOVER_PREVIEW_MAX_HEIGHT,
   )
@@ -58,10 +64,15 @@ function getHoverPreviewSize(aspectRatio: number, shellWidth: number) {
     width = Math.round(height * aspectRatio)
   }
 
-  return {
-    width: Math.max(1, width),
-    height: Math.max(1, height),
-  }
+  width = Math.max(1, width)
+  height = Math.max(1, height)
+  const left = clamp(
+    anchorCenter - width / 2,
+    HOVER_PREVIEW_PADDING,
+    Math.max(HOVER_PREVIEW_PADDING, shellWidth - width - HOVER_PREVIEW_PADDING),
+  )
+
+  return { left, width, height }
 }
 
 export const ThumbnailRail = memo(function ThumbnailRail({
@@ -71,15 +82,16 @@ export const ThumbnailRail = memo(function ThumbnailRail({
 }: ThumbnailRailProps) {
   const railShellRef = useRef<HTMLDivElement>(null)
   const railViewportRef = useRef<HTMLDivElement>(null)
+  const hasCenteredInitialItemRef = useRef(false)
+  const hoverPreviewTimerRef = useRef<number | null>(null)
   const isMobile = useMobile()
   const reduceMotion = useReducedMotion()
   const thumbnailHeight = isMobile
-    ? MOBILE_FALLBACK_THUMBNAIL_HEIGHT
-    : DESKTOP_FALLBACK_THUMBNAIL_HEIGHT
+    ? MOBILE_THUMBNAIL_HEIGHT
+    : DESKTOP_THUMBNAIL_HEIGHT
   const [hoverPreview, setHoverPreview] = useState<HoverPreviewState | null>(
     null,
   )
-  const hasCenteredInitialItemRef = useRef(false)
 
   useHorizontalWheelScroll(railViewportRef)
 
@@ -131,7 +143,15 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     }
   }, [activeIndex, photos.length, reduceMotion, virtualizer])
 
-  const updateHoverPreview = (index: number, button: HTMLButtonElement) => {
+  const cancelHoverPreviewTimer = () => {
+    if (hoverPreviewTimerRef.current !== null) {
+      window.clearTimeout(hoverPreviewTimerRef.current)
+      hoverPreviewTimerRef.current = null
+    }
+  }
+
+  const scheduleHoverPreview = (index: number, button: HTMLButtonElement) => {
+    cancelHoverPreviewTimer()
     if (
       isMobile ||
       !window.matchMedia('(hover: hover) and (pointer: fine)').matches
@@ -139,43 +159,44 @@ export const ThumbnailRail = memo(function ThumbnailRail({
       return
     }
 
-    const railShell = railShellRef.current
-    const photo = photos[index]
+    hoverPreviewTimerRef.current = window.setTimeout(() => {
+      hoverPreviewTimerRef.current = null
+      if (!button.isConnected || !button.matches(':hover')) {
+        return
+      }
 
-    if (!railShell || !photo) {
-      return
-    }
+      const railShell = railShellRef.current
+      const photo = photos[index]
 
-    const shellRect = railShell.getBoundingClientRect()
-    const buttonRect = button.getBoundingClientRect()
-    const previewSize = getHoverPreviewSize(photo.aspectRatio, shellRect.width)
-    const rawLeft =
-      buttonRect.left -
-      shellRect.left +
-      buttonRect.width / 2 -
-      previewSize.width / 2
-    const maxLeft = Math.max(
-      HOVER_PREVIEW_PADDING,
-      shellRect.width - previewSize.width - HOVER_PREVIEW_PADDING,
-    )
+      if (!railShell || !photo) {
+        return
+      }
 
-    setHoverPreview({
-      index,
-      left: clamp(rawLeft, HOVER_PREVIEW_PADDING, maxLeft),
-      width: previewSize.width,
-      height: previewSize.height,
-    })
+      const shellRect = railShell.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      const layout = getHoverPreviewLayout(
+        photo.aspectRatio,
+        shellRect.width,
+        window.innerHeight,
+        buttonRect.left - shellRect.left + buttonRect.width / 2,
+      )
+
+      setHoverPreview({ index, ...layout })
+    }, HOVER_PREVIEW_OPEN_DELAY)
   }
 
   const clearHoverPreview = () => {
+    cancelHoverPreviewTimer()
     setHoverPreview(null)
   }
 
   useEffect(() => {
-    if (isMobile && hoverPreview) {
+    if (isMobile) {
       setHoverPreview(null)
     }
-  }, [hoverPreview, isMobile])
+
+    return cancelHoverPreviewTimer
+  }, [isMobile])
 
   const hoverPreviewPhoto = hoverPreview ? photos[hoverPreview.index] : null
 
@@ -193,9 +214,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
             height: hoverPreview.height,
           }}
         >
-          <div className="relative size-full">
-            <ThumbnailImage photo={hoverPreviewPhoto} loading="eager" />
-          </div>
+          <ThumbnailImage photo={hoverPreviewPhoto} loading="eager" />
         </div>
       ) : null}
 
@@ -219,7 +238,6 @@ export const ThumbnailRail = memo(function ThumbnailRail({
 
             const index = virtualItem.index
             const isActive = index === activeIndex
-            const isHover = index === hoverPreview?.index
 
             return (
               <button
@@ -228,7 +246,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 tabIndex={-1}
                 className={cn(
                   'transition-filter absolute top-0 cursor-pointer appearance-none overflow-hidden duration-300 ease-out motion-reduce:transition-none',
-                  !isActive && !isHover && 'grayscale',
+                  !isActive && 'grayscale lg:hover:grayscale-0',
                 )}
                 style={{
                   width: virtualItem.size,
@@ -237,7 +255,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
                 }}
                 onClick={() => onSelect(index)}
                 onMouseEnter={(event) =>
-                  updateHoverPreview(index, event.currentTarget)
+                  scheduleHoverPreview(index, event.currentTarget)
                 }
                 onMouseLeave={clearHoverPreview}
                 aria-label={`Open ${photo.title}`}

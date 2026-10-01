@@ -223,7 +223,7 @@ export function ViewerInfoPanel({
             >
               <span
                 aria-hidden="true"
-                className="bg-muted/60 h-1.5 w-11 rounded-full"
+                className="bg-subtle/60 h-1.5 w-11 rounded-full"
               />
             </button>
           </div>
