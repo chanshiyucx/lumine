@@ -16,6 +16,8 @@ const NAVIGATION_BUTTON_CLASS =
   'circle-button pointer-events-auto absolute top-1/2 hidden -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 lg:inline-flex [@media(hover:none)]:hidden'
 
 interface ViewerToolbarProps {
+  canInteract: boolean
+  canToggleInfoPanel: boolean
   chromeOpacity: number | MotionValue<number>
   isInfoPanelOpen: boolean
   isShareDialogOpen: boolean
@@ -27,6 +29,8 @@ interface ViewerToolbarProps {
 }
 
 export function ViewerToolbar({
+  canInteract,
+  canToggleInfoPanel,
   chromeOpacity,
   isInfoPanelOpen,
   isShareDialogOpen,
@@ -36,7 +40,7 @@ export function ViewerToolbar({
   onToggleInfoPanel,
   phase,
 }: ViewerToolbarProps) {
-  const isInteractive = isVisible && phase === 'open'
+  const isInteractive = canInteract && isVisible
 
   return (
     <m.div
@@ -57,6 +61,7 @@ export function ViewerToolbar({
         <button
           type="button"
           className="circle-button"
+          disabled={!canToggleInfoPanel}
           onClick={onToggleInfoPanel}
           aria-expanded={isInfoPanelOpen}
           aria-label={
@@ -165,6 +170,7 @@ export function ViewerNavigation({
 
 interface ViewerThumbnailRailProps {
   activeIndex: number
+  canInteract: boolean
   isVisible: boolean
   onSelect: (index: number) => void
   opacity: number | MotionValue<number>
@@ -174,13 +180,14 @@ interface ViewerThumbnailRailProps {
 
 export function ViewerThumbnailRail({
   activeIndex,
+  canInteract,
   isVisible,
   onSelect,
   opacity,
   phase,
   photos,
 }: ViewerThumbnailRailProps) {
-  const isInteractive = isVisible && phase === 'open'
+  const isInteractive = canInteract && isVisible
 
   return (
     <m.div

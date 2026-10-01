@@ -50,6 +50,7 @@ interface ViewerInfoPanelProps {
   photo: Photo
   isOpen: boolean
   isViewerInteractive: boolean
+  isInputDisabled: boolean
   isViewerVisible: boolean
   presentation: { mode: 'desktop' } | { mode: 'mobile'; style: MotionStyle }
   onClose: () => void
@@ -151,12 +152,15 @@ export function ViewerInfoPanel({
   photo,
   isOpen,
   isViewerInteractive,
+  isInputDisabled,
   isViewerVisible,
   presentation,
   onClose,
 }: ViewerInfoPanelProps) {
   const isMobilePresentation = presentation.mode === 'mobile'
-  const isInteractive = isOpen && isViewerVisible && isViewerInteractive
+  // A temporary input lock must not restart the histogram or map effects.
+  const isActive = isOpen && isViewerVisible && isViewerInteractive
+  const isInteractive = isActive && !isInputDisabled
   const panelMotionStyle: MotionStyle = isMobilePresentation
     ? presentation.style
     : { opacity: 1, y: 0 }
@@ -229,7 +233,7 @@ export function ViewerInfoPanel({
             scrollbarClassName="my-2"
             viewportClassName="viewer-info-scroll-mask overscroll-contain"
           >
-            <ViewerInfoPanelContent photo={photo} isActive={isInteractive} />
+            <ViewerInfoPanelContent photo={photo} isActive={isActive} />
           </ScrollArea>
         </m.div>
       </m.div>

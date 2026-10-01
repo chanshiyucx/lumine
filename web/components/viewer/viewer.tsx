@@ -88,6 +88,7 @@ export function Viewer({
   const currentPhoto = photos[activeIndex]
   const isInteractionEnabled = state.phase === 'open'
   const isShareDialogPresent = isShareDialogOpen || isShareDialogExiting
+  const canInteract = isInteractionEnabled && !isShareDialogPresent
   const canRevealWithoutSharedTransition = state.triggerElement === null
   const isViewerSurfaceVisible =
     state.phase !== 'exiting' &&
@@ -141,11 +142,42 @@ export function Viewer({
   }
 
   const mobile = useMobileViewerInteractions({
-    enabled: isMobile && state.phase !== 'entering' && !isShareDialogPresent,
+    activeIndex,
+    mode:
+      isMobile && state.phase === 'exiting'
+        ? 'exiting'
+        : isMobile && canInteract
+          ? 'interactive'
+          : 'suspended',
     isZoomed: state.isZoomed,
     onDismiss: handleMobileDismiss,
   })
   const isInfoPanelOpen = isMobile ? mobile.infoOpen : isDesktopInfoPanelOpen
+  const canNavigate = canInteract && (!isMobile || !mobile.isStageBlocked)
+  const isMobileInspectorPresent =
+    isMobile && (mobile.infoOpen || mobile.isInspectorPresent)
+  const canUseChrome = canInteract && !isMobileInspectorPresent
+  const canToggleInfoPanel = !isMobile || !state.isZoomed
+  const isInfoPanelInputDisabled = isMobile && mobile.isInspectorInputDisabled
+
+  useLayoutEffect(() => {
+    if (!canInteract) return
+    const dialog = dialogRef.current
+    const active = document.activeElement
+    if (
+      active instanceof HTMLElement &&
+      dialog?.contains(active) &&
+      active.closest('[inert]')
+    ) {
+      dialog.focus({ preventScroll: true })
+    }
+  }, [
+    canNavigate,
+    canUseChrome,
+    isInfoPanelOpen,
+    isInfoPanelInputDisabled,
+    canInteract,
+  ])
 
   const handleClose = () => {
     setDragExitFrame(null)
@@ -165,7 +197,7 @@ export function Viewer({
   useDialogFocus(dialogRef, getRestoreFocusElement, !isShareDialogPresent)
 
   const goToPhoto = (index: number) => {
-    if (!isInteractionEnabled || index < 0 || index >= photos.length) {
+    if (!canNavigate || index < 0 || index >= photos.length) {
       return
     }
 
@@ -174,13 +206,16 @@ export function Viewer({
 
   useViewerKeyboardNavigation({
     activeIndex,
-    enabled: isInteractionEnabled && !isShareDialogPresent,
+    canNavigate,
+    enabled: canInteract,
     onClose: handleClose,
     onGoTo: goToPhoto,
   })
 
   const toggleInfoPanel = () => {
+    if (!canToggleInfoPanel) return
     if (isMobile) {
+      dialogRef.current?.focus({ preventScroll: true })
       mobile.settleInspector(!mobile.infoOpen)
       return
     }
@@ -190,6 +225,7 @@ export function Viewer({
 
   const handleInfoPanelClose = () => {
     if (isMobile) {
+      dialogRef.current?.focus({ preventScroll: true })
       mobile.settleInspector(false)
       return
     }
@@ -264,6 +300,8 @@ export function Viewer({
                   }}
                 >
                   <ViewerToolbar
+                    canInteract={canUseChrome}
+                    canToggleInfoPanel={canToggleInfoPanel}
                     chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
                     isInfoPanelOpen={isInfoPanelOpen}
                     isShareDialogOpen={isShareDialogOpen}
@@ -280,9 +318,10 @@ export function Viewer({
                     concealedForSharedTransition={sharedTransition !== null}
                     isMobile={isMobile}
                     isZoomed={state.isZoomed}
-                    isSwipeDisabled={isMobile && mobile.infoOpen}
+                    isZoomEnabled={!isMobileInspectorPresent}
+                    isSwipeDisabled={isMobile && mobile.isStageBlocked}
                     isInteractionEnabled={isInteractionEnabled}
-                    onActiveIndexChange={goToPhoto}
+                    onActiveIndexChange={onActiveIndexChange}
                     onZoomStateChange={onZoomStateChange}
                   />
 
@@ -297,6 +336,7 @@ export function Viewer({
 
                 <ViewerThumbnailRail
                   activeIndex={activeIndex}
+                  canInteract={canNavigate}
                   isVisible={isViewerSurfaceVisible}
                   onSelect={goToPhoto}
                   opacity={isMobile ? mobile.railOpacity : 1}
@@ -308,7 +348,8 @@ export function Viewer({
               <ViewerInfoPanel
                 photo={currentPhoto}
                 isOpen={isInfoPanelOpen}
-                isViewerInteractive={isInteractionEnabled}
+                isViewerInteractive={canInteract}
+                isInputDisabled={isInfoPanelInputDisabled}
                 isViewerVisible={isViewerSurfaceVisible}
                 presentation={
                   isMobile

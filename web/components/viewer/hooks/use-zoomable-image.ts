@@ -30,6 +30,7 @@ import {
 
 interface UseZoomableImageOptions {
   height: number
+  isZoomEnabled: boolean
   onLoad?: () => void
   onZoomChange?: (pixelScale: number, relativeScale: number) => void
   onZoomStateChange?: (isZoomed: boolean) => void
@@ -44,6 +45,7 @@ interface ViewportSize {
 
 export function useZoomableImage({
   height,
+  isZoomEnabled,
   onLoad,
   onZoomChange,
   onZoomStateChange,
@@ -184,6 +186,7 @@ export function useZoomableImage({
     requestedScale: number,
     animationTime = 0,
   ) => {
+    if (!isZoomEnabled) return
     const transform = transformRef.current
     const wrapper = transform?.instance.wrapperComponent
     const content = transform?.instance.contentComponent
@@ -251,8 +254,12 @@ export function useZoomableImage({
 
   useEffect(() => {
     lastNotifiedPixelScaleRef.current = null
-    doubleTapRecognizer.reset()
-  }, [doubleTapRecognizer, src])
+  }, [src])
+
+  useEffect(
+    () => doubleTapRecognizer.reset(),
+    [doubleTapRecognizer, isZoomEnabled, src],
+  )
 
   const handleWheel = useEffectEvent((event: WheelEvent) => {
     event.preventDefault()
@@ -300,6 +307,7 @@ export function useZoomableImage({
   }
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (!isZoomEnabled) return
     const touch = event.touches[0]
     doubleTapRecognizer.start(
       event.touches.length,

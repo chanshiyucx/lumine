@@ -15,6 +15,7 @@ const TRANSFORM_WRAPPER_STYLE = {
 interface ZoomableImageProps {
   alt: string
   height: number
+  isZoomEnabled: boolean
   onError?: (error: Error) => void
   onLoad?: () => void
   /** Reports source-pixel scale first and fit-relative scale second. */
@@ -27,6 +28,7 @@ interface ZoomableImageProps {
 export function ZoomableImage({
   alt,
   height,
+  isZoomEnabled,
   onError,
   onLoad,
   onZoomChange,
@@ -50,6 +52,7 @@ export function ZoomableImage({
     transformRef,
   } = useZoomableImage({
     height,
+    isZoomEnabled,
     onLoad,
     onZoomChange,
     onZoomStateChange,
@@ -74,10 +77,10 @@ export function ZoomableImage({
         minScale={MIN_SCALE}
         maxScale={effectiveMaxScale}
         wheel={{ disabled: true }}
-        pinch={{ step: 5, disabled: false, allowPanning: false }}
+        pinch={{ step: 5, disabled: !isZoomEnabled, allowPanning: false }}
         doubleClick={{ disabled: true }}
         panning={{
-          disabled: !isZoomed,
+          disabled: !isZoomEnabled || !isZoomed,
           velocityDisabled: true,
         }}
         limitToBounds

@@ -10,6 +10,7 @@ import { ZoomableImage } from './zoomable-image'
 interface ProgressivePhotoProps {
   photo: Photo
   isActive: boolean
+  isZoomEnabled: boolean
   loadDelayMs?: number
   onZoomStateChange?: (isZoomed: boolean) => void
   shouldMountInteractiveImage?: boolean
@@ -23,6 +24,7 @@ function formatScaleLabel(scale: number) {
 
 function ActiveProgressivePhoto({
   photo,
+  isZoomEnabled,
   loadDelayMs = 0,
   onZoomStateChange,
   shouldMountInteractiveImage = true,
@@ -118,6 +120,7 @@ function ActiveProgressivePhoto({
             alt={photo.title}
             width={photo.original.width}
             height={photo.original.height}
+            isZoomEnabled={isZoomEnabled}
             onLoad={handleOriginalLoad}
             onZoomChange={handleZoomChange}
             onZoomStateChange={onZoomStateChange}
@@ -143,6 +146,7 @@ function ActiveProgressivePhoto({
 export function ProgressivePhoto({
   photo,
   isActive,
+  isZoomEnabled,
   loadDelayMs = 0,
   onZoomStateChange,
   shouldMountInteractiveImage = true,
@@ -151,6 +155,7 @@ export function ProgressivePhoto({
     <ActiveProgressivePhoto
       key={photo.original.url}
       photo={photo}
+      isZoomEnabled={isZoomEnabled}
       loadDelayMs={loadDelayMs}
       onZoomStateChange={onZoomStateChange}
       shouldMountInteractiveImage={shouldMountInteractiveImage}

@@ -15,6 +15,7 @@ interface PhotoCarouselProps {
   concealedForSharedTransition: boolean
   isMobile: boolean
   isZoomed: boolean
+  isZoomEnabled: boolean
   isSwipeDisabled: boolean
   isInteractionEnabled: boolean
   onActiveIndexChange: (index: number) => void
@@ -27,6 +28,7 @@ export function PhotoCarousel({
   concealedForSharedTransition,
   isMobile,
   isZoomed,
+  isZoomEnabled,
   isSwipeDisabled,
   isInteractionEnabled,
   onActiveIndexChange,
@@ -98,6 +100,7 @@ export function PhotoCarousel({
               key={photo.original.url}
               photo={photo}
               isActive={isActive}
+              isZoomEnabled={isZoomEnabled}
               loadDelayMs={photo.id === initialPhotoId ? 0 : 150}
               shouldMountInteractiveImage={isInteractionEnabled}
               onZoomStateChange={isActive ? onZoomStateChange : undefined}

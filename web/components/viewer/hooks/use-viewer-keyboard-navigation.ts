@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent } from 'react'
 
 interface UseViewerKeyboardNavigationOptions {
   activeIndex: number
+  canNavigate: boolean
   enabled: boolean
   onClose: () => void
   onGoTo: (index: number) => void
@@ -9,6 +10,7 @@ interface UseViewerKeyboardNavigationOptions {
 
 export function useViewerKeyboardNavigation({
   activeIndex,
+  canNavigate,
   enabled,
   onClose,
   onGoTo,
@@ -23,6 +25,8 @@ export function useViewerKeyboardNavigation({
       onClose()
       return
     }
+
+    if (!canNavigate) return
 
     if (event.key === 'ArrowLeft') {
       event.preventDefault()
