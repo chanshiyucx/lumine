@@ -153,7 +153,6 @@ export function ProgressivePhoto({
 }: ProgressivePhotoProps) {
   return isActive ? (
     <ActiveProgressivePhoto
-      key={photo.original.url}
       photo={photo}
       isZoomEnabled={isZoomEnabled}
       loadDelayMs={loadDelayMs}
