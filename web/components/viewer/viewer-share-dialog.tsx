@@ -277,8 +277,8 @@ export function ViewerShareDialog({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
 
+      // The Viewer's keyboard listener is disabled while this dialog is present.
       event.preventDefault()
-      event.stopPropagation()
       closeFromEffect()
     }
 

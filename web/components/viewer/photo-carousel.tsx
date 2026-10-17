@@ -96,6 +96,7 @@ export function PhotoCarousel({
             virtualIndex={index}
             aria-label={`${index + 1} / ${photos.length}: ${photo.title}`}
           >
+            {/* Swiper Virtual rekeys slides by index; this key resets per-photo state. */}
             <ProgressivePhoto
               key={photo.original.url}
               photo={photo}
