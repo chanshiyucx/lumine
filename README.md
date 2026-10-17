@@ -99,6 +99,8 @@ Your manifest should now be available at [http://localhost:8080/manifest.json](h
 
 For production, publish `manifest.json`, `gallery/`, and `thumbnails/` to any static host or object storage service. Keep `state.json` locally for future pipeline runs. `MEDIA_ORIGIN` must point to the public root containing `manifest.json`.
 
+> **Caching and updated photos.** The production media host serves images with `Cache-Control: max-age=31536000` (one year). Image URLs are derived from the source path and carry no content version, so when a source photo changes, the pipeline overwrites the files at the same URL. Visitors who already viewed the old image may keep seeing it from their browser cache for up to a year; purging the CDN only refreshes the edge, not browsers. This risk is accepted because photos are rarely re-exported. If you need a changed photo to show up reliably, rename the source file (which produces a new URL), or switch to versioned URLs as described in [the Viewer evaluation](docs/web/053-Viewer性能与代码规范优化评估.md#41-p0让一年缓存和同路径更新一致). Do not cache `manifest.json` for long; the frontend revalidates it every 30 seconds.
+
 ## 4. Run the frontend
 
 In a new terminal:
