@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
 import { ThumbnailImage } from '@/components/image'
