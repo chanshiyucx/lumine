@@ -16,6 +16,10 @@ export type PhotoResourceState =
   | { src: string; status: 'ready' }
   | { message: string; status: 'error' }
 
+export function formatProgressBytes(bytes: number) {
+  return `${(bytes / BYTES_PER_MEBIBYTE).toFixed(1)} MB`
+}
+
 function getProgress(
   loadedBytes: number,
   totalBytes: number,
@@ -42,8 +46,8 @@ function hasSameProgressDisplay(
 
   return (
     (current.loadedBytes === 0) === (next.loadedBytes === 0) &&
-    (current.loadedBytes / BYTES_PER_MEBIBYTE).toFixed(1) ===
-      (next.loadedBytes / BYTES_PER_MEBIBYTE).toFixed(1)
+    formatProgressBytes(current.loadedBytes) ===
+      formatProgressBytes(next.loadedBytes)
   )
 }
 

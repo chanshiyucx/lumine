@@ -4,6 +4,7 @@ import { ThumbnailImage } from '@/components/image'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
+import { VIEWER_MOTION } from './lib/viewer-motion'
 import { LoadingIndicator } from './loading-indicator'
 import { ZoomableImage } from './zoomable-image'
 
@@ -105,10 +106,9 @@ function ActiveProgressivePhoto({
           key={`${photo.id}:${state.src}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: isOriginalReady ? 1 : 0 }}
-          transition={{
-            duration: reduceMotion ? 0 : 0.2,
-            ease: 'easeOut',
-          }}
+          transition={
+            reduceMotion ? { duration: 0 } : VIEWER_MOTION.originalFadeIn
+          }
           onAnimationComplete={handleOriginalAnimationComplete}
           className={cn(
             'pointer-events-none absolute inset-0',

@@ -35,6 +35,15 @@ export const VIEWER_MOTION = {
   },
   contentFade: { duration: 0.1, ease: 'easeOut' } satisfies Transition,
   fadeExit: { duration: 0.16, ease: 'easeOut' } satisfies Transition,
+  dismissThrow: {
+    x: { type: 'spring', duration: 0.18, bounce: 0.08 } satisfies Transition,
+    y: { type: 'spring', duration: 0.18, bounce: 0.04 } satisfies Transition,
+  },
+  originalFadeIn: { duration: 0.2, ease: 'easeOut' } satisfies Transition,
+  shareDialog: {
+    backdrop: { duration: 0.18, ease: 'easeOut' } satisfies Transition,
+    panel: { type: 'spring', duration: 0.32, bounce: 0 } satisfies Transition,
+  },
   inspector: {
     close: {
       type: 'spring',

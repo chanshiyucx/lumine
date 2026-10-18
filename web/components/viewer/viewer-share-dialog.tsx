@@ -23,6 +23,7 @@ import { getPhotoOgPath } from '@/lib/route-paths'
 import { siteConfig } from '@/lib/site-config'
 import { cn } from '@/lib/style'
 import { useDialogFocus } from './hooks/use-dialog-focus'
+import { VIEWER_MOTION } from './lib/viewer-motion'
 
 interface ViewerShareDialogProps {
   photo: Photo
@@ -342,7 +343,7 @@ export function ViewerShareDialog({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
+        transition={VIEWER_MOTION.shareDialog.backdrop}
         onPointerDown={onClose}
       />
 
@@ -357,7 +358,7 @@ export function ViewerShareDialog({
         initial={{ opacity: 0, scale: 1.04, filter: 'blur(8px)' }}
         animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
         exit={{ opacity: 0, scale: 0.98, filter: 'blur(6px)' }}
-        transition={{ type: 'spring', duration: 0.32, bounce: 0 }}
+        transition={VIEWER_MOTION.shareDialog.panel}
       >
         <div className="mb-4 min-w-0">
           <p className="text-muted mb-0.5 text-xs font-medium">Share photo</p>
