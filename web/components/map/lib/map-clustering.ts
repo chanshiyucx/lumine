@@ -178,7 +178,9 @@ export function getMapLayerMarkers(
       )
       const marker: ClusterMarkerDataBase = {
         type: 'cluster',
-        key: `${layer.kind}-cluster-${viewport.zoom}-${minItemKey}`,
+        // Clusters at one zoom never share members, so the smallest member key
+        // is unique and lets a cluster keep its marker across zoom levels.
+        key: `${layer.kind}-cluster-${minItemKey}`,
         location: { lng, lat },
         count,
         imageLoading: getMapMarkerImageLoading(lng, lat, viewport.bounds),
