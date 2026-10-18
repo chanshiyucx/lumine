@@ -168,14 +168,12 @@ export function ViewerInfoPanel({
   return (
     <aside
       data-viewer-info-panel
-      aria-hidden={!isInteractive}
       inert={!isInteractive}
       className={cn(
         'fixed inset-x-0 bottom-0 z-200 overflow-hidden pb-[env(safe-area-inset-bottom)] lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:pb-0',
         DESKTOP_PANEL_MOTION_CLASS,
         isOpen ? DESKTOP_PANEL_WIDTH_CLASS : 'lg:w-0',
       )}
-      style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
     >
       <m.div
         data-viewer-chrome="info-panel"

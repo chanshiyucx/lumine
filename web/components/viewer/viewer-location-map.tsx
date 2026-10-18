@@ -1,5 +1,3 @@
-'use client'
-
 import 'maplibre-gl/dist/maplibre-gl.css'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'

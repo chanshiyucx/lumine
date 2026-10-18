@@ -1,5 +1,3 @@
-'use client'
-
 import { AnimatePresence } from 'motion/react'
 import type { RefObject } from 'react'
 import type { Photo } from '@/lib/photo'

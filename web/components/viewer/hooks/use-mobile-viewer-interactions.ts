@@ -190,15 +190,9 @@ export function useMobileViewerInteractions({
       viewport.height * 0.42,
     )
     updateActivity('dismissing')
-    animate(dismissX, targetX, {
-      type: 'spring',
-      duration: 0.18,
-      bounce: 0.08,
-    })
+    animate(dismissX, targetX, VIEWER_MOTION.dismissThrow.x)
     animate(dismissY, targetY, {
-      type: 'spring',
-      duration: 0.18,
-      bounce: 0.04,
+      ...VIEWER_MOTION.dismissThrow.y,
       onComplete: () => {
         if (animationIdRef.current !== animationId) return
         const presentation = getDismissPresentation(

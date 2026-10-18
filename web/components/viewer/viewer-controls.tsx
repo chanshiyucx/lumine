@@ -46,7 +46,6 @@ export function ViewerToolbar({
     <m.div
       className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] right-[calc(env(safe-area-inset-right)+0.5rem)] z-50 flex gap-2"
       data-viewer-chrome="toolbar"
-      aria-hidden={!isInteractive}
       inert={!isInteractive}
       initial={phase === 'entering' ? { opacity: 0, y: -6 } : false}
       animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : -6 }}
@@ -55,7 +54,6 @@ export function ViewerToolbar({
           ? VIEWER_MOTION.chrome.toolbar.enter
           : VIEWER_MOTION.chrome.toolbar.exit
       }
-      style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
     >
       <m.div className="flex gap-2" style={{ opacity: chromeOpacity }}>
         <button
@@ -130,7 +128,6 @@ export function ViewerNavigation({
   return (
     <m.div
       data-viewer-chrome="navigation"
-      aria-hidden={!isInteractive}
       inert={!isInteractive}
       className="pointer-events-none absolute inset-0 z-50"
       initial={phase === 'entering' ? { opacity: 0 } : false}
@@ -192,7 +189,6 @@ export function ViewerThumbnailRail({
   return (
     <m.div
       data-viewer-chrome="thumbnail-rail"
-      aria-hidden={!isInteractive}
       inert={!isInteractive}
       initial={phase === 'entering' ? { opacity: 0, y: 24 } : false}
       animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 24 }}
@@ -201,9 +197,6 @@ export function ViewerThumbnailRail({
           ? VIEWER_MOTION.chrome.rail.enter
           : VIEWER_MOTION.chrome.rail.exit
       }
-      style={{
-        pointerEvents: isInteractive ? 'auto' : 'none',
-      }}
     >
       <m.div style={{ opacity }}>
         <ThumbnailRail

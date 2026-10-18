@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'

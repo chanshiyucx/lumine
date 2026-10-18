@@ -1,23 +1,20 @@
 import { AlertLine } from '@mingcute/react/alert'
 import { Loading3Line } from '@mingcute/react/loading-3'
-import type { PhotoResourceState } from './hooks/use-progressive-photo'
-
-const BYTES_PER_MEBIBYTE = 1024 * 1024
+import {
+  formatProgressBytes,
+  type PhotoResourceState,
+} from './hooks/use-progressive-photo'
 
 interface LoadingIndicatorProps {
   state: PhotoResourceState
 }
 
-function formatLoadingBytes(bytes: number) {
-  return `${(bytes / BYTES_PER_MEBIBYTE).toFixed(1)} MB`
-}
-
 function getBytesLabel(loadedBytes: number, totalBytes: number) {
   if (totalBytes <= 0) {
-    return loadedBytes > 0 ? formatLoadingBytes(loadedBytes) : ''
+    return loadedBytes > 0 ? formatProgressBytes(loadedBytes) : ''
   }
 
-  return `${formatLoadingBytes(loadedBytes)} / ${formatLoadingBytes(totalBytes)}`
+  return `${formatProgressBytes(loadedBytes)} / ${formatProgressBytes(totalBytes)}`
 }
 
 export function LoadingIndicator({ state }: LoadingIndicatorProps) {
