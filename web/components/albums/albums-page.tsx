@@ -66,9 +66,9 @@ export async function AlbumsPage() {
                 return (
                   <li
                     key={album.key}
-                    className="@container relative pl-12 [--marker-y:calc(min(20rem,100cqw)/3)] not-first:mt-16 md:grid md:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] md:pl-0 md:[--marker-y:calc(min(20rem,(100cqw_-_8rem)/2)/3)] md:not-first:-mt-20"
+                    className="@container relative pl-12 [--marker-y:calc(min(20rem,100cqw)/3)] not-first:mt-16 md:grid md:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] md:pl-0 md:[--marker-y:calc(min(18rem,(100cqw_-_8rem)/2)/3)] md:not-first:-mt-20"
                   >
-                    {/* --marker-y is the cover's vertical center: a 3:2 cover at most 20rem wide. */}
+                    {/* --marker-y is the cover's vertical center: a 3:2 cover at most 20rem wide (18rem on desktop). */}
                     <span
                       aria-hidden
                       className="border-muted bg-base absolute top-(--marker-y) left-2 z-10 size-3.5 -translate-1/2 rounded-full border-3 md:left-1/2"

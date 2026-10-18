@@ -15,7 +15,7 @@ export function AlbumCard({ album, coverLoading }: AlbumCardProps) {
   return (
     <Link
       href={getAlbumPath(album.key)}
-      className="group block w-full max-w-80"
+      className="group block w-full max-w-80 md:max-w-72"
     >
       <AlbumImageStack photos={album.photos} coverLoading={coverLoading} />
 
