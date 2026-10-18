@@ -20,9 +20,9 @@ export function AlbumCard({ album, coverLoading }: AlbumCardProps) {
       <AlbumImageStack photos={album.photos} coverLoading={coverLoading} />
 
       <div className="px-2">
-        <h2 className="text-subtle group-hover:text-text truncate font-semibold transition-colors">
+        <h3 className="text-subtle group-hover:text-text truncate font-semibold transition-colors">
           {album.title}
-        </h2>
+        </h3>
         <p className="text-muted mt-1 text-sm">{dateLabel}</p>
       </div>
     </Link>
