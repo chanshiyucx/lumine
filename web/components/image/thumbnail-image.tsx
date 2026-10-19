@@ -12,6 +12,7 @@ interface ThumbnailImageProps {
   photo: ThumbnailImagePhoto
   fit?: 'contain' | 'cover'
   loading?: 'eager' | 'lazy'
+  fetchPriority?: 'high' | 'low' | 'auto'
   showPlaceholder?: boolean
 }
 
@@ -19,6 +20,7 @@ export function ThumbnailImage({
   photo,
   fit = 'cover',
   loading = 'lazy',
+  fetchPriority,
   showPlaceholder = true,
 }: ThumbnailImageProps) {
   const placeholderFitClassName =
@@ -44,6 +46,7 @@ export function ThumbnailImage({
         decoding="auto"
         draggable={false}
         loading={loading}
+        fetchPriority={fetchPriority}
         unoptimized
       />
     </span>

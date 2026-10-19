@@ -1,6 +1,9 @@
 import type { Photo } from '@/lib/photo'
 
 export const MASONRY_GAP = 4
+// Lanes place indexes 0..columnCount-1 in the first row, and every layout
+// except the sub-320px fallback has at least two columns.
+export const PRIORITY_PHOTO_COUNT = 2
 const COLUMN_COUNT_BREAKPOINTS = [
   { minWidth: 2048, columnCount: 8 },
   { minWidth: 1800, columnCount: 7 },
