@@ -15,7 +15,6 @@ interface PhotoMasonryItemProps {
   index: number
   cardHeight: number
   imageLoading: 'eager' | 'lazy'
-  imageFetchPriority?: 'high'
   showHoverInfo: boolean
   onOpen: (index: number, triggerElement: HTMLElement) => void
 }
@@ -25,7 +24,6 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
   index,
   cardHeight,
   imageLoading,
-  imageFetchPriority,
   showHoverInfo,
   onOpen,
 }: PhotoMasonryItemProps) {
@@ -46,11 +44,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
       aria-haspopup="dialog"
     >
       <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
-        <ThumbnailImage
-          photo={photo}
-          loading={imageLoading}
-          fetchPriority={imageFetchPriority}
-        />
+        <ThumbnailImage photo={photo} loading={imageLoading} />
       </span>
 
       {showHoverInfo ? (
