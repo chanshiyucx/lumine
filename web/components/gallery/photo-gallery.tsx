@@ -79,9 +79,6 @@ export function PhotoGallery({
           onVisiblePhotoChange={
             hasFixedHeader ? undefined : handleVisiblePhotoChange
           }
-          // A direct photo link opens the viewer first; its image should not
-          // compete with the hidden list.
-          prioritizeFirstPhotos={initialPhotoSlug === undefined}
         />
       </div>
 

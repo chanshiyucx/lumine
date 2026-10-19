@@ -21,7 +21,6 @@ import {
   getMasonryLayout,
   getPhotoMasonryHeight,
   MASONRY_GAP,
-  PRIORITY_PHOTO_COUNT,
   type MasonryLayout,
 } from './lib/masonry-layout'
 import { PhotoMasonryItem } from './photo-masonry-item'
@@ -40,7 +39,6 @@ interface PhotoMasonryProps {
   photos: Photo[]
   onPhotoOpen: (index: number, triggerElement: HTMLElement) => void
   onVisiblePhotoChange?: (photo: Photo | undefined) => void
-  prioritizeFirstPhotos: boolean
 }
 
 function getFocusedIndex(target: Element) {
@@ -118,7 +116,6 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   photos,
   onPhotoOpen,
   onVisiblePhotoChange,
-  prioritizeFirstPhotos,
 }: PhotoMasonryProps) {
   const scrollElement = useScrollElement()
   const { containerRef, layout } = useMasonryLayout(scrollElement)
@@ -253,12 +250,6 @@ export const PhotoMasonry = memo(function PhotoMasonry({
                   columnCount * INITIAL_EAGER_ITEMS_PER_COLUMN
                     ? 'eager'
                     : 'lazy'
-                }
-                imageFetchPriority={
-                  prioritizeFirstPhotos &&
-                  virtualItem.index < PRIORITY_PHOTO_COUNT
-                    ? 'high'
-                    : undefined
                 }
                 showHoverInfo={canHover}
                 onOpen={onPhotoOpen}
