@@ -1,16 +1,27 @@
 import {
+  defaultRangeExtractor,
   observeElementRect,
   useVirtualizer,
+  type Range,
   type Virtualizer,
 } from '@tanstack/react-virtual'
-import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+} from 'react'
 import { useScrollElement } from '@/components/scroll-area'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import type { Photo } from '@/lib/photo'
 import {
   getDominantMasonryPhoto,
   getMasonryLayout,
   getPhotoMasonryHeight,
   MASONRY_GAP,
+  PRIORITY_PHOTO_COUNT,
   type MasonryLayout,
 } from './lib/masonry-layout'
 import { PhotoMasonryItem } from './photo-masonry-item'
@@ -18,6 +29,8 @@ import { PhotoMasonryItem } from './photo-masonry-item'
 const HEADER_HEIGHT = 48
 const OVERSCAN_ROWS = 3
 const INITIAL_EAGER_ITEMS_PER_COLUMN = 3
+// Matches the media query Tailwind v4 wraps around hover and group-hover.
+const HOVER_QUERY = '(hover: hover)'
 
 interface MeasuredMasonryLayout extends MasonryLayout {
   scrollMargin: number
@@ -27,6 +40,13 @@ interface PhotoMasonryProps {
   photos: Photo[]
   onPhotoOpen: (index: number, triggerElement: HTMLElement) => void
   onVisiblePhotoChange?: (photo: Photo | undefined) => void
+  prioritizeFirstPhotos: boolean
+}
+
+function getFocusedIndex(target: Element) {
+  const index = target.closest('li')?.dataset.index
+
+  return index === undefined ? null : Number(index)
 }
 
 function getScrollMargin(container: HTMLElement, scrollElement: HTMLElement) {
@@ -98,10 +118,13 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   photos,
   onPhotoOpen,
   onVisiblePhotoChange,
+  prioritizeFirstPhotos,
 }: PhotoMasonryProps) {
   const scrollElement = useScrollElement()
   const { containerRef, layout } = useMasonryLayout(scrollElement)
   const selectedPhotoRef = useRef<Photo | undefined>(undefined)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+  const canHover = useMediaQuery(HOVER_QUERY)
   const isLayoutReady = scrollElement !== null && layout !== null
   const columnCount = layout?.columnCount ?? 1
   const columnWidth = layout?.columnWidth ?? 1
@@ -110,6 +133,26 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const estimateSize = (index: number) =>
     getPhotoMasonryHeight(photos[index], columnWidth)
   const getItemKey = useCallback((index: number) => photos[index].id, [photos])
+  // Keep the focused card and its neighbors mounted so scrolling away does not
+  // drop focus to the body, and Tab / Shift+Tab still reach the adjacent card.
+  const rangeExtractor = useCallback(
+    (range: Range) => {
+      const indexes = defaultRangeExtractor(range)
+      if (focusedIndex === null) {
+        return indexes
+      }
+
+      const missing = [focusedIndex - 1, focusedIndex, focusedIndex + 1].filter(
+        (index) =>
+          index >= 0 && index < range.count && !indexes.includes(index),
+      )
+
+      return missing.length === 0
+        ? indexes
+        : [...indexes, ...missing].sort((left, right) => left - right)
+    },
+    [focusedIndex],
+  )
   const handleVirtualizerChange = useCallback(
     (virtualizer: Virtualizer<HTMLElement, HTMLLIElement>) => {
       if (!scrollElement || !onVisiblePhotoChange) {
@@ -146,10 +189,13 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     getScrollElement: () => scrollElement,
     observeElementRect: observeScrollRect,
     getItemKey,
+    rangeExtractor,
     onChange: onVisiblePhotoChange ? handleVirtualizerChange : undefined,
     useFlushSync: false,
   })
 
+  // TanStack caches measurements without tracking estimateSize, so a column
+  // width change within the same column count needs an explicit re-measure.
   useLayoutEffect(() => {
     if (isLayoutReady) {
       virtualizer.measure()
@@ -164,12 +210,24 @@ export const PhotoMasonry = memo(function PhotoMasonry({
 
   const virtualItems = virtualizer.getVirtualItems()
 
+  const handleFocus = (event: FocusEvent<HTMLUListElement>) => {
+    setFocusedIndex(getFocusedIndex(event.target))
+  }
+
+  const handleBlur = (event: FocusEvent<HTMLUListElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setFocusedIndex(null)
+    }
+  }
+
   return (
     <div ref={containerRef}>
       <ul
         className="relative"
         style={{ height: virtualizer.getTotalSize() }}
         aria-label="Photos"
+        onFocus={handleFocus}
+        onBlur={handleBlur}
       >
         {virtualItems.map((virtualItem) => {
           const photo = photos[virtualItem.index]
@@ -177,6 +235,8 @@ export const PhotoMasonry = memo(function PhotoMasonry({
             <li
               key={virtualItem.key}
               data-index={virtualItem.index}
+              aria-posinset={virtualItem.index + 1}
+              aria-setsize={photos.length}
               className="absolute"
               style={{
                 top: virtualItem.start - scrollMargin,
@@ -194,6 +254,13 @@ export const PhotoMasonry = memo(function PhotoMasonry({
                     ? 'eager'
                     : 'lazy'
                 }
+                imageFetchPriority={
+                  prioritizeFirstPhotos &&
+                  virtualItem.index < PRIORITY_PHOTO_COUNT
+                    ? 'high'
+                    : undefined
+                }
+                showHoverInfo={canHover}
                 onOpen={onPhotoOpen}
               />
             </li>
