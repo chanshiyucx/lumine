@@ -16,6 +16,7 @@ import {
 import { useScrollElement } from '@/components/scroll-area'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import type { Photo } from '@/lib/photo'
+import { useMasonryScrollRestoration } from './hooks/use-masonry-scroll-restoration'
 import {
   getDominantMasonryPhoto,
   getMasonryLayout,
@@ -25,6 +26,7 @@ import {
 } from './lib/masonry-layout'
 import { PhotoMasonryItem } from './photo-masonry-item'
 
+// Matches the fixed header's `h-12`.
 const HEADER_HEIGHT = 48
 const OVERSCAN_ROWS = 3
 const INITIAL_EAGER_ITEMS_PER_COLUMN = 3
@@ -126,6 +128,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const columnCount = layout?.columnCount ?? 1
   const columnWidth = layout?.columnWidth ?? 1
   const scrollMargin = layout?.scrollMargin ?? 0
+  const getInitialOffset = useMasonryScrollRestoration(scrollElement, layout)
 
   const estimateSize = (index: number) =>
     getPhotoMasonryHeight(photos[index], columnWidth)
@@ -187,6 +190,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     observeElementRect: observeScrollRect,
     getItemKey,
     rangeExtractor,
+    initialOffset: getInitialOffset,
     onChange: onVisiblePhotoChange ? handleVirtualizerChange : undefined,
     useFlushSync: false,
   })
@@ -222,6 +226,8 @@ export const PhotoMasonry = memo(function PhotoMasonry({
       <ul
         className="relative"
         style={{ height: virtualizer.getTotalSize() }}
+        // Preflight's `list-style: none` makes Safari drop the list role.
+        role="list"
         aria-label="Photos"
         onFocus={handleFocus}
         onBlur={handleBlur}

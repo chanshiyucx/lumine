@@ -8,7 +8,7 @@ import { cn } from '@/lib/style'
 
 const EXPANDED_INFO_MIN_HEIGHT = 140
 const HOVER_REVEAL_CLASS_NAME =
-  'opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none'
+  'opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none'
 
 interface PhotoMasonryItemProps {
   photo: Photo
@@ -43,7 +43,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
     >
-      <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+      <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100">
         <ThumbnailImage photo={photo} loading={imageLoading} />
       </span>
 
