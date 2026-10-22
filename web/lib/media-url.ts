@@ -1,29 +1,34 @@
-import { MEDIA_ORIGIN_ENV } from './env'
+import { MEDIA_BASE_URL_ENV } from './env'
 
-let cachedMediaOrigin: URL | undefined
+let cachedMediaBaseUrl: URL | undefined
 
 const ALBUM_MAP_PATH = 'map.json'
 const PHOTO_MANIFEST_PATH = 'manifest.json'
 
-function getMediaOrigin() {
-  if (cachedMediaOrigin) {
-    return cachedMediaOrigin
+function getMediaBaseUrl() {
+  if (cachedMediaBaseUrl) {
+    return cachedMediaBaseUrl
   }
 
-  const mediaOrigin = process.env[MEDIA_ORIGIN_ENV]
+  const mediaBaseUrl = process.env[MEDIA_BASE_URL_ENV]
 
-  if (!mediaOrigin) {
+  if (!mediaBaseUrl) {
     throw new Error(
-      `Missing ${MEDIA_ORIGIN_ENV}. Set it to the media host origin, for example https://cloud.example.com.`,
+      `Missing ${MEDIA_BASE_URL_ENV}. Set it to the public media directory, for example https://cloud.example.com/public/.`,
     )
   }
 
-  cachedMediaOrigin = new URL('/', mediaOrigin)
-  return cachedMediaOrigin
+  // Keep the directory path and end it with a slash so relative asset paths resolve inside it.
+  const baseUrl = new URL(mediaBaseUrl)
+  baseUrl.pathname = baseUrl.pathname.replace(/\/*$/, '/')
+  baseUrl.search = ''
+  baseUrl.hash = ''
+  cachedMediaBaseUrl = baseUrl
+  return cachedMediaBaseUrl
 }
 
 function resolveMediaUrl(pathname: string) {
-  return new URL(pathname.replace(/^\/+/, ''), getMediaOrigin()).toString()
+  return new URL(pathname.replace(/^\/+/, ''), getMediaBaseUrl()).toString()
 }
 
 export function getPhotoAssetUrl(pathname: string) {
