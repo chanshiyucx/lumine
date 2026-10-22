@@ -1,6 +1,5 @@
-sourcePath = "/absolute/path/to/photos"
-targetPath = "/absolute/path/to/output"
-sourceTags = ["Aether"]
+source_path = "/absolute/path/to/photos"
+target_path = "/absolute/path/to/output"
 originals_dir = "gallery"
 thumbnails_dir = "thumbnails"
 thumbnail_width = 600
@@ -9,3 +8,12 @@ thumbnail_quality = 92
 avif_quality = 95
 avif_speed = 6
 
+# Use [] to publish every photo that has no private tag.
+[public]
+dir = "public"
+tags = ["Public"]
+
+# Private photos always win over public tags.
+[private]
+dir = "private"
+tags = ["Private"]

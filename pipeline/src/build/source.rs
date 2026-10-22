@@ -13,6 +13,7 @@ use tracing::warn;
 use walkdir::WalkDir;
 
 use super::storage::path_to_manifest_key;
+use crate::config::Visibility;
 
 const SUPPORTED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "heif", "heic", "hif"];
 
@@ -20,7 +21,8 @@ const FINDER_TAGS_XATTR: &str = "com.apple.metadata:_kMDItemUserTags";
 
 pub(super) fn collect_selected_sources(
     source_dir: &Path,
-    source_tags: &[String],
+    public_tags: &[String],
+    private_tags: &[String],
 ) -> Result<Vec<SourceItem>> {
     let mut candidates = Vec::new();
 
@@ -39,7 +41,7 @@ pub(super) fn collect_selected_sources(
 
     let results: Vec<_> = candidates
         .par_iter()
-        .map(|path| build_source_item(source_dir, path, source_tags))
+        .map(|path| build_source_item(source_dir, path, public_tags, private_tags))
         .collect();
 
     let mut selected = Vec::new();
@@ -55,11 +57,26 @@ pub(super) fn collect_selected_sources(
 fn build_source_item(
     source_dir: &Path,
     path: &Path,
-    source_tags: &[String],
+    public_tags: &[String],
+    private_tags: &[String],
 ) -> Result<Option<SourceItem>> {
-    if !source_tags.is_empty() && !has_any_finder_tag(path, source_tags)? {
+    let tags = read_finder_tags(path)?;
+    let has_any = |expected: &[String]| expected.iter().any(|tag| tags.contains(tag));
+    let public = public_tags.is_empty() || has_any(public_tags);
+    // A private tag always wins so a mistagged photo is never published.
+    let visibility = if has_any(private_tags) {
+        if !public_tags.is_empty() && public {
+            warn!(
+                "{} has both public and private tags; treating it as private",
+                path.display()
+            );
+        }
+        Visibility::Private
+    } else if public {
+        Visibility::Public
+    } else {
         return Ok(None);
-    }
+    };
 
     let metadata = fs::metadata(path)
         .with_context(|| format!("failed to read metadata for {}", path.display()))?;
@@ -74,14 +91,8 @@ fn build_source_item(
         source_key: path_to_manifest_key(source_dir, path)?,
         size: metadata.len(),
         mtime_ms: metadata_mtime_ms(&metadata)?,
+        visibility,
     }))
-}
-
-fn has_any_finder_tag(path: &Path, expected_tags: &[String]) -> Result<bool> {
-    let tags = read_finder_tags(path)?;
-    Ok(expected_tags
-        .iter()
-        .any(|expected| tags.iter().any(|tag| tag == expected)))
 }
 
 fn read_finder_tags(path: &Path) -> Result<Vec<String>> {
@@ -243,6 +254,7 @@ pub(super) struct SourceItem {
     pub(super) source_key: String,
     pub(super) size: u64,
     pub(super) mtime_ms: u64,
+    pub(super) visibility: Visibility,
 }
 
 pub(super) struct SourceInfo {

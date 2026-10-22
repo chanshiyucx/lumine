@@ -9,13 +9,12 @@ use serde::Deserialize;
 const DEFAULT_CONFIG_PATH: &str = "pipeline.toml";
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
-    #[serde(rename = "targetPath")]
     target_path: PathBuf,
-    #[serde(rename = "sourcePath")]
     source_path: PathBuf,
-    #[serde(default, rename = "sourceTags")]
-    source_tags: Vec<String>,
+    public: VisibilityConfig,
+    private: VisibilityConfig,
     originals_dir: PathBuf,
     thumbnails_dir: PathBuf,
     pub thumbnail_width: u32,
@@ -25,6 +24,21 @@ pub struct Config {
     pub avif_quality: u8,
     #[serde(default = "default_avif_speed")]
     pub avif_speed: u8,
+}
+
+/// One output tree under target_path, selected by macOS Finder tags.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VisibilityConfig {
+    dir: PathBuf,
+    #[serde(default)]
+    tags: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Visibility {
+    Public,
+    Private,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -46,8 +60,35 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
-        if self.source_tags.iter().any(|tag| tag.trim().is_empty()) {
-            bail!("sourceTags must not contain empty values");
+        for (field, tags) in [
+            ("public.tags", &self.public.tags),
+            ("private.tags", &self.private.tags),
+        ] {
+            if tags.iter().any(|tag| tag.trim().is_empty()) {
+                bail!("{field} must not contain empty values");
+            }
+        }
+        if self.private.tags.is_empty() {
+            bail!("private.tags must contain at least one tag");
+        }
+        if let Some(tag) = self
+            .public
+            .tags
+            .iter()
+            .find(|tag| self.private.tags.contains(tag))
+        {
+            bail!("tag {tag:?} must not be listed in both public.tags and private.tags");
+        }
+
+        validate_direct_child_dir("public.dir", &self.public.dir)?;
+        validate_direct_child_dir("private.dir", &self.private.dir)?;
+        if self
+            .public
+            .dir
+            .as_os_str()
+            .eq_ignore_ascii_case(self.private.dir.as_os_str())
+        {
+            bail!("public.dir and private.dir must be different");
         }
 
         validate_direct_child_dir("originals_dir", &self.originals_dir)?;
@@ -83,31 +124,54 @@ impl Config {
         resolve_from_cwd(&self.source_path)
     }
 
-    pub fn source_tags(&self) -> &[String] {
-        &self.source_tags
+    pub fn tags(&self, visibility: Visibility) -> &[String] {
+        &self.visibility(visibility).tags
     }
 
-    pub fn originals_path(&self) -> PathBuf {
-        self.root_dir().join(&self.originals_dir)
+    /// Root of one visibility's output; manifest asset URLs are relative to it.
+    pub fn tree_path(&self, visibility: Visibility) -> PathBuf {
+        self.root_dir().join(&self.visibility(visibility).dir)
     }
 
-    pub fn thumbnails_path(&self) -> PathBuf {
-        self.root_dir().join(&self.thumbnails_dir)
+    pub fn originals_path(&self, visibility: Visibility) -> PathBuf {
+        self.tree_path(visibility).join(&self.originals_dir)
     }
 
-    pub fn manifest_path(&self) -> PathBuf {
-        self.root_dir().join("manifest.json")
+    pub fn thumbnails_path(&self, visibility: Visibility) -> PathBuf {
+        self.tree_path(visibility).join(&self.thumbnails_dir)
+    }
+
+    pub fn manifest_path(&self, visibility: Visibility) -> PathBuf {
+        self.tree_path(visibility).join("manifest.json")
     }
 
     pub fn state_path(&self) -> PathBuf {
         self.root_dir().join("state.json")
+    }
+
+    fn visibility(&self, visibility: Visibility) -> &VisibilityConfig {
+        match visibility {
+            Visibility::Public => &self.public,
+            Visibility::Private => &self.private,
+        }
+    }
+}
+
+impl Visibility {
+    pub const ALL: [Self; 2] = [Self::Public, Self::Private];
+
+    pub fn other(self) -> Self {
+        match self {
+            Self::Public => Self::Private,
+            Self::Private => Self::Public,
+        }
     }
 }
 
 fn validate_direct_child_dir(field: &str, path: &Path) -> Result<()> {
     let mut components = path.components();
     if !matches!(components.next(), Some(Component::Normal(_))) || components.next().is_some() {
-        bail!("{field} must be a direct child directory name under targetPath");
+        bail!("{field} must be a single directory name");
     }
 
     Ok(())

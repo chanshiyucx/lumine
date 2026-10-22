@@ -22,7 +22,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use tracing::warn;
 
-use crate::config::Config;
+use crate::config::{Config, ThumbnailFormat, Visibility};
 use avif::{AVIF_MIME, read_existing_original};
 use catalog::{
     Asset, LoadedManifest, PhotoEntry, StateEntry, StateFile, load_previous_manifest,
@@ -50,19 +50,92 @@ pub(crate) enum BuildExit {
 
 struct BuildPlan {
     root_dir: PathBuf,
-    originals_dir: PathBuf,
-    thumbnails_dir: PathBuf,
+    trees: ByVisibility<OutputTree>,
     total: usize,
     workers: usize,
     avif_threads: usize,
     full_res_parallelism: usize,
     checkpoint_interval: usize,
-    photos: BTreeMap<String, PhotoEntry>,
+    photos: ByVisibility<BTreeMap<String, PhotoEntry>>,
     files: BTreeMap<String, StateEntry>,
     pending: Vec<PhotoBuildItem>,
     reused: usize,
+    relocated: usize,
+    selected: ByVisibility<usize>,
     current_keys: BTreeSet<String>,
     expected_outputs: BTreeSet<String>,
+}
+
+impl BuildPlan {
+    fn write_checkpoint(&self, config: &Config) -> Result<()> {
+        let manifests = Visibility::ALL.map(|visibility| {
+            (
+                self.trees.get(visibility).manifest.as_path(),
+                self.photos.get(visibility),
+            )
+        });
+        write_build_checkpoint(&manifests, &config.state_path(), &self.files)
+    }
+
+    fn output_dirs(&self) -> Vec<&Path> {
+        Visibility::ALL
+            .into_iter()
+            .flat_map(|visibility| {
+                let tree = self.trees.get(visibility);
+                [tree.originals.as_path(), tree.thumbnails.as_path()]
+            })
+            .collect()
+    }
+}
+
+/// Output paths of one visibility. Manifest asset URLs are relative to `root`,
+/// so a photo keeps the same URL path when it moves between trees.
+struct OutputTree {
+    root: PathBuf,
+    originals: PathBuf,
+    thumbnails: PathBuf,
+    manifest: PathBuf,
+}
+
+impl OutputTree {
+    fn new(config: &Config, visibility: Visibility) -> Self {
+        Self {
+            root: config.tree_path(visibility),
+            originals: config.originals_path(visibility),
+            thumbnails: config.thumbnails_path(visibility),
+            manifest: config.manifest_path(visibility),
+        }
+    }
+
+    fn original_path(&self, relative_source: &Path) -> PathBuf {
+        build_original_path(&self.originals, relative_source)
+    }
+
+    fn thumbnail_path(&self, format: ThumbnailFormat, relative_source: &Path) -> PathBuf {
+        build_thumbnail_path(&self.thumbnails, format, relative_source)
+    }
+}
+
+#[derive(Default)]
+struct ByVisibility<T> {
+    public: T,
+    private: T,
+}
+
+impl<T> ByVisibility<T> {
+    fn get(&self, visibility: Visibility) -> &T {
+        match visibility {
+            Visibility::Public => &self.public,
+            Visibility::Private => &self.private,
+        }
+    }
+
+    fn get_mut(&mut self, visibility: Visibility) -> &mut T {
+        match visibility {
+            Visibility::Public => &mut self.public,
+            Visibility::Private => &mut self.private,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -96,18 +169,9 @@ pub(crate) fn run() -> Result<BuildExit> {
         let previous_count = plan.files.len();
         plan.files.retain(|key, _| plan.current_keys.contains(key));
         if summary.processed == 0 || plan.files.len() != previous_count {
-            write_build_checkpoint(
-                &config.manifest_path(),
-                &config.state_path(),
-                &plan.photos,
-                &plan.files,
-            )?;
+            plan.write_checkpoint(&config)?;
         }
-        remove_stale_outputs(
-            &plan.root_dir,
-            [&plan.originals_dir, &plan.thumbnails_dir],
-            &plan.expected_outputs,
-        )?;
+        remove_stale_outputs(&plan.root_dir, &plan.output_dirs(), &plan.expected_outputs)?;
     }
     progress.finish_and_clear();
 
@@ -136,8 +200,10 @@ pub(crate) fn run() -> Result<BuildExit> {
 fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
     let source_dir = config.source_path();
     let root_dir = config.root_dir();
-    let originals_dir = config.originals_path();
-    let thumbnails_dir = config.thumbnails_path();
+    let trees = ByVisibility {
+        public: OutputTree::new(config, Visibility::Public),
+        private: OutputTree::new(config, Visibility::Private),
+    };
 
     let source_metadata = fs::metadata(&source_dir)
         .with_context(|| format!("failed to access source directory {}", source_dir.display()))?;
@@ -146,51 +212,75 @@ fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
     }
 
     validate_path_isolation(&source_dir, &root_dir)?;
-    fs::create_dir_all(&originals_dir).with_context(|| {
-        format!(
-            "failed to create originals directory {}",
-            originals_dir.display()
-        )
-    })?;
-    fs::create_dir_all(&thumbnails_dir).with_context(|| {
-        format!(
-            "failed to create thumbnails directory {}",
-            thumbnails_dir.display()
-        )
-    })?;
-
-    let mut sources = collect_selected_sources(&source_dir, config.source_tags())?;
-    sources.sort_by(|left, right| left.source_key.cmp(&right.source_key));
-
-    let previous_manifest = load_previous_manifest(&config.manifest_path())?;
-    let previous_state = load_previous_state(&config.state_path())?;
-    let current_keys: BTreeSet<_> = sources.iter().map(|item| item.source_key.clone()).collect();
-    let mut expected_outputs = BTreeSet::new();
-    for source in &sources {
-        for path in [
-            build_original_path(&originals_dir, &source.relative_path),
-            build_thumbnail_path(
-                &thumbnails_dir,
-                config.thumbnail_format,
-                &source.relative_path,
-            ),
+    for visibility in Visibility::ALL {
+        let tree = trees.get(visibility);
+        for (label, directory) in [
+            ("originals", &tree.originals),
+            ("thumbnails", &tree.thumbnails),
         ] {
-            let key = path_to_manifest_key(&root_dir, &path)?;
-            if !expected_outputs.insert(key.clone()) {
-                bail!("multiple source files map to output {key}");
-            }
+            fs::create_dir_all(directory).with_context(|| {
+                format!("failed to create {label} directory {}", directory.display())
+            })?;
         }
     }
 
-    let mut photos = BTreeMap::new();
+    let mut sources = collect_selected_sources(
+        &source_dir,
+        config.tags(Visibility::Public),
+        config.tags(Visibility::Private),
+    )?;
+    sources.sort_by(|left, right| left.source_key.cmp(&right.source_key));
+
+    let previous_manifests = ByVisibility {
+        public: load_previous_manifest(&trees.public.manifest)?,
+        private: load_previous_manifest(&trees.private.manifest)?,
+    };
+    let previous_state = load_previous_state(&config.state_path())?;
+    let current_keys: BTreeSet<_> = sources.iter().map(|item| item.source_key.clone()).collect();
+    let mut expected_outputs = BTreeSet::new();
+    let mut asset_urls = BTreeSet::new();
+    let mut selected = ByVisibility::default();
+    for source in &sources {
+        *selected.get_mut(source.visibility) += 1;
+        let tree = trees.get(source.visibility);
+        for path in [
+            tree.original_path(&source.relative_path),
+            tree.thumbnail_path(config.thumbnail_format, &source.relative_path),
+        ] {
+            expected_outputs.insert(path_to_manifest_key(&root_dir, &path)?);
+            // The web merges both manifests, so URLs must be unique across trees.
+            let url = path_to_manifest_key(&tree.root, &path)?;
+            if !asset_urls.insert(url.clone()) {
+                bail!("multiple source files map to output {url}");
+            }
+        }
+    }
+    warn_duplicate_titles(&sources);
+
+    let mut relocated = 0usize;
+    for source in &sources {
+        if relocate_outputs(config, &trees, source)? {
+            relocated += 1;
+        }
+    }
+
+    let mut photos = ByVisibility::<BTreeMap<String, PhotoEntry>>::default();
     let files = previous_state.files.clone();
     let mut pending = Vec::new();
     let mut reused_count = 0usize;
 
     for source in sources {
-        let previous = find_previous_build(config, &source, &previous_manifest, &previous_state)?;
+        let previous = find_previous_build(
+            config,
+            &trees,
+            &source,
+            &previous_manifests,
+            &previous_state,
+        )?;
         if let Some(photo) = previous.complete_photo() {
-            photos.insert(photo.original.url.clone(), photo.clone());
+            photos
+                .get_mut(source.visibility)
+                .insert(photo.original.url.clone(), photo.clone());
             reused_count += 1;
         } else {
             pending.push(PhotoBuildItem { source, previous });
@@ -209,8 +299,7 @@ fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
 
     Ok(BuildPlan {
         root_dir,
-        originals_dir,
-        thumbnails_dir,
+        trees,
         total,
         workers,
         avif_threads: recommended_avif_threads(workers, total),
@@ -220,6 +309,8 @@ fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
         files,
         pending,
         reused: reused_count,
+        relocated,
+        selected,
         current_keys,
         expected_outputs,
     })
@@ -229,8 +320,28 @@ fn print_build_start(config: &Config, plan: &BuildPlan) {
     println!("Build");
     println!("  Source   {}", config.source_path().display());
     println!("  Output   {}", plan.root_dir.display());
-    if !config.source_tags().is_empty() {
-        println!("  Tags     {}", config.source_tags().join(", "));
+    for visibility in Visibility::ALL {
+        let tags = config.tags(visibility);
+        let tags = if tags.is_empty() {
+            "untagged".to_string()
+        } else {
+            tags.join(", ")
+        };
+        let label = match visibility {
+            Visibility::Public => "Public",
+            Visibility::Private => "Private",
+        };
+        println!(
+            "  {label:<8} {}/ · {tags} · {} photos",
+            visibility_dir_name(&plan.root_dir, &plan.trees.get(visibility).root),
+            plan.selected.get(visibility)
+        );
+    }
+    if plan.relocated > 0 {
+        println!(
+            "  Moved    {} photos between public and private",
+            plan.relocated
+        );
     }
     println!(
         "  Photos   {} total · {} to process · {} reused",
@@ -267,13 +378,8 @@ fn execute_build(
         });
     }
 
-    if !plan.photos.is_empty() {
-        write_build_checkpoint(
-            &config.manifest_path(),
-            &config.state_path(),
-            &plan.photos,
-            &plan.files,
-        )?;
+    if !plan.photos.public.is_empty() || !plan.photos.private.is_empty() {
+        plan.write_checkpoint(config)?;
     }
 
     let pending = std::mem::take(&mut plan.pending);
@@ -286,9 +392,10 @@ fn execute_build(
     let worker_count = plan.workers;
     let worker_context = Arc::new(BuildWorkerContext {
         config: config.clone(),
-        root_dir: plan.root_dir.clone(),
-        originals_dir: plan.originals_dir.clone(),
-        thumbnails_dir: plan.thumbnails_dir.clone(),
+        trees: ByVisibility {
+            public: OutputTree::new(config, Visibility::Public),
+            private: OutputTree::new(config, Visibility::Private),
+        },
         avif_threads: plan.avif_threads,
         full_res_limiter: FullResLimiter::new(plan.full_res_parallelism),
         status: BuildStatus::default(),
@@ -328,16 +435,12 @@ fn execute_build(
                     let photo = *photo;
                     plan.files.insert(photo.state_key, photo.state_entry);
                     plan.photos
+                        .get_mut(photo.visibility)
                         .insert(photo.photo_entry.original.url.clone(), photo.photo_entry);
                     processed_count += 1;
                     since_checkpoint += 1;
                     if processed_count == 1 || since_checkpoint >= plan.checkpoint_interval {
-                        write_build_checkpoint(
-                            &config.manifest_path(),
-                            &config.state_path(),
-                            &plan.photos,
-                            &plan.files,
-                        )?;
+                        plan.write_checkpoint(config)?;
                         since_checkpoint = 0;
                     }
                 }
@@ -368,12 +471,7 @@ fn execute_build(
     }
     collect_result?;
 
-    write_build_checkpoint(
-        &config.manifest_path(),
-        &config.state_path(),
-        &plan.photos,
-        &plan.files,
-    )?;
+    plan.write_checkpoint(config)?;
 
     Ok(BuildSummary {
         processed: processed_count,
@@ -394,9 +492,7 @@ fn run_build_worker(context: &BuildWorkerContext, outcomes: &mpsc::Sender<BuildO
 
         let photo_context = PhotoBuildContext {
             config: &context.config,
-            root_dir: &context.root_dir,
-            originals_dir: &context.originals_dir,
-            thumbnails_dir: &context.thumbnails_dir,
+            trees: &context.trees,
             avif_threads: context.avif_threads,
             full_res_limiter: &context.full_res_limiter,
             status: &context.status,
@@ -502,9 +598,7 @@ fn create_build_progress(pending_count: usize) -> Result<ProgressBar> {
 
 struct BuildWorkerContext {
     config: Config,
-    root_dir: PathBuf,
-    originals_dir: PathBuf,
-    thumbnails_dir: PathBuf,
+    trees: ByVisibility<OutputTree>,
     avif_threads: usize,
     full_res_limiter: FullResLimiter,
     status: BuildStatus,
@@ -580,10 +674,66 @@ impl Drop for FullResPermit<'_> {
 
 // Source discovery and cache reuse
 
+fn visibility_dir_name(root: &Path, tree_root: &Path) -> String {
+    tree_root
+        .strip_prefix(root)
+        .unwrap_or(tree_root)
+        .display()
+        .to_string()
+}
+
+fn warn_duplicate_titles(sources: &[SourceItem]) {
+    let mut seen = BTreeMap::new();
+    for source in sources {
+        let Some(title) = source.path.file_stem() else {
+            continue;
+        };
+        if let Some(previous) = seen.insert(title.to_os_string(), &source.source_key) {
+            warn!(
+                "{previous} and {} share the title {}; their photo pages will collide",
+                source.source_key,
+                title.to_string_lossy()
+            );
+        }
+    }
+}
+
+/// Moves outputs left in the other tree after a visibility change, so they are
+/// reused instead of re-encoded. Returns whether anything moved.
+fn relocate_outputs(
+    config: &Config,
+    trees: &ByVisibility<OutputTree>,
+    source: &SourceItem,
+) -> Result<bool> {
+    let current = trees.get(source.visibility);
+    let previous = trees.get(source.visibility.other());
+    let mut moved = false;
+    for (from, to) in [
+        (
+            previous.original_path(&source.relative_path),
+            current.original_path(&source.relative_path),
+        ),
+        (
+            previous.thumbnail_path(config.thumbnail_format, &source.relative_path),
+            current.thumbnail_path(config.thumbnail_format, &source.relative_path),
+        ),
+    ] {
+        if to.exists() || !from.is_file() {
+            continue;
+        }
+        create_parent_directory(&to)?;
+        fs::rename(&from, &to)
+            .with_context(|| format!("failed to move {} to {}", from.display(), to.display()))?;
+        moved = true;
+    }
+    Ok(moved)
+}
+
 fn find_previous_build(
     config: &Config,
+    trees: &ByVisibility<OutputTree>,
     item: &SourceItem,
-    previous_manifest: &LoadedManifest,
+    previous_manifests: &ByVisibility<LoadedManifest>,
     previous_state: &StateFile,
 ) -> Result<PreviousBuild> {
     let stamp = previous_state.files.get(&item.source_key);
@@ -592,25 +742,33 @@ fn find_previous_build(
         Some(_) => SourceStatus::Changed,
         None => SourceStatus::Untracked,
     };
-    let root = config.root_dir();
-    let original_path = build_original_path(&config.originals_path(), &item.relative_path);
-    let thumbnail_path = build_thumbnail_path(
-        &config.thumbnails_path(),
-        config.thumbnail_format,
-        &item.relative_path,
-    );
-    let original_key = path_to_manifest_key(&root, &original_path)?;
-    let photo = previous_manifest.photos_by_key.get(&original_key).cloned();
+    let tree = trees.get(item.visibility);
+    let root = &tree.root;
+    let original_path = tree.original_path(&item.relative_path);
+    let thumbnail_path = tree.thumbnail_path(config.thumbnail_format, &item.relative_path);
+    let original_key = path_to_manifest_key(root, &original_path)?;
+    // After a visibility change the entry is still in the other tree's manifest.
+    let photo = previous_manifests
+        .get(item.visibility)
+        .photos_by_key
+        .get(&original_key)
+        .or_else(|| {
+            previous_manifests
+                .get(item.visibility.other())
+                .photos_by_key
+                .get(&original_key)
+        })
+        .cloned();
     let original = photo
         .as_ref()
         .filter(|_| source_status != SourceStatus::Changed)
-        .and_then(|photo| cached_asset(&root, &original_path, AVIF_MIME, &photo.original));
+        .and_then(|photo| cached_asset(root, &original_path, AVIF_MIME, &photo.original));
     let thumbnail = photo
         .as_ref()
         .filter(|_| source_status != SourceStatus::Changed)
         .and_then(|photo| {
             cached_asset(
-                &root,
+                root,
                 &thumbnail_path,
                 mime_from_format(config.thumbnail_format),
                 &photo.thumbnail,
@@ -645,29 +803,23 @@ fn cached_asset(root: &Path, path: &Path, mime: &str, asset: &Asset) -> Option<A
 fn build_photo(context: &PhotoBuildContext<'_>, item: &PhotoBuildItem) -> Result<BuiltPhoto> {
     let source = &item.source;
     let previous = &item.previous;
-    let original_path = build_original_path(context.originals_dir, &source.relative_path);
-    let thumbnail_path = build_thumbnail_path(
-        context.thumbnails_dir,
-        context.config.thumbnail_format,
-        &source.relative_path,
-    );
+    let tree = context.trees.get(source.visibility);
+    let original_path = tree.original_path(&source.relative_path);
+    let thumbnail_path =
+        tree.thumbnail_path(context.config.thumbnail_format, &source.relative_path);
     let existing_original = if previous.source_status == SourceStatus::Changed {
         None
     } else {
         previous
             .original
             .clone()
-            .or_else(|| read_existing_original(context.root_dir, &original_path))
+            .or_else(|| read_existing_original(&tree.root, &original_path))
     };
     let existing_thumbnail = if previous.source_status == SourceStatus::Changed {
         None
     } else {
         previous.thumbnail.clone().or_else(|| {
-            read_existing_thumbnail(
-                context.root_dir,
-                &thumbnail_path,
-                context.config.thumbnail_format,
-            )
+            read_existing_thumbnail(&tree.root, &thumbnail_path, context.config.thumbnail_format)
         })
     };
     let refresh_metadata =
@@ -769,6 +921,7 @@ fn build_photo(context: &PhotoBuildContext<'_>, item: &PhotoBuildItem) -> Result
         );
     }
     Ok(BuiltPhoto {
+        visibility: source.visibility,
         state_key: source.source_key.clone(),
         state_entry: StateEntry {
             size: source.size,
@@ -809,15 +962,14 @@ impl PreviousBuild {
 
 struct PhotoBuildContext<'a> {
     config: &'a Config,
-    root_dir: &'a Path,
-    originals_dir: &'a Path,
-    thumbnails_dir: &'a Path,
+    trees: &'a ByVisibility<OutputTree>,
     avif_threads: usize,
     full_res_limiter: &'a FullResLimiter,
     status: &'a BuildStatus,
 }
 
 struct BuiltPhoto {
+    visibility: Visibility,
     state_key: String,
     state_entry: StateEntry,
     photo_entry: PhotoEntry,
@@ -833,7 +985,8 @@ fn build_original_asset(
     item: &SourceItem,
     source_info: &SourceInfo,
 ) -> Result<Asset> {
-    let output = build_original_path(context.originals_dir, &item.relative_path);
+    let tree = context.trees.get(item.visibility);
+    let output = tree.original_path(&item.relative_path);
     create_parent_directory(&output)?;
     let _permit = context.full_res_limiter.acquire();
     let _processing = ScopedCounter::new(&context.status.processing);
@@ -841,7 +994,7 @@ fn build_original_asset(
     let _encoding = ScopedCounter::new(&context.status.encoding);
     avif::encode(
         &loaded,
-        context.root_dir,
+        &tree.root,
         &output,
         avif::EncodingOptions {
             quality: context.config.avif_quality,
@@ -856,16 +1009,13 @@ fn build_thumbnail_asset(
     item: &SourceItem,
     source_info: &SourceInfo,
 ) -> Result<BuiltThumbnail> {
-    let output = build_thumbnail_path(
-        context.thumbnails_dir,
-        context.config.thumbnail_format,
-        &item.relative_path,
-    );
+    let tree = context.trees.get(item.visibility);
+    let output = tree.thumbnail_path(context.config.thumbnail_format, &item.relative_path);
     let _processing = ScopedCounter::new(&context.status.processing);
     thumbnail::build(
         &item.path,
         source_info,
-        context.root_dir,
+        &tree.root,
         &output,
         thumbnail::EncodingOptions {
             width: context.config.thumbnail_width,
