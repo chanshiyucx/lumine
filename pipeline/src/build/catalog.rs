@@ -80,11 +80,21 @@ pub(super) fn load_previous_state(path: &Path) -> Result<StateFile> {
 }
 
 pub(super) fn write_build_checkpoint(
-    manifest_path: &Path,
+    manifests: &[(&Path, &BTreeMap<String, PhotoEntry>)],
     state_path: &Path,
-    photos: &BTreeMap<String, PhotoEntry>,
     files: &BTreeMap<String, StateEntry>,
 ) -> Result<()> {
+    for (manifest_path, photos) in manifests {
+        write_manifest(manifest_path, photos)?;
+    }
+    let state = serde_json::to_value(StateFileRef { files })?;
+    if read_json_value(state_path)?.as_ref() != Some(&state) {
+        write_json(state_path, &state)?;
+    }
+    Ok(())
+}
+
+fn write_manifest(manifest_path: &Path, photos: &BTreeMap<String, PhotoEntry>) -> Result<()> {
     let photo_values: Vec<_> = photos.values().collect();
     let mut manifest = serde_json::to_value(ManifestFileRef {
         version: MANIFEST_VERSION,
@@ -104,10 +114,6 @@ pub(super) fn write_build_checkpoint(
     if previous_content.as_ref() != Some(&manifest) {
         manifest["updatedAt"] = serde_json::Value::String(now_rfc3339()?);
         write_json(manifest_path, &manifest)?;
-    }
-    let state = serde_json::to_value(StateFileRef { files })?;
-    if read_json_value(state_path)?.as_ref() != Some(&state) {
-        write_json(state_path, &state)?;
     }
     Ok(())
 }

@@ -45,12 +45,8 @@ cp pipeline.toml.example pipeline.toml
 Open `pipeline.toml` and update the paths:
 
 ```toml
-sourcePath = "/absolute/path/to/photos"
-targetPath = "/absolute/path/to/lumine-output"
-
-# Use [] to process every supported image.
-# Use ["Aether"] to process only files with that macOS Finder tag.
-sourceTags = []
+source_path = "/absolute/path/to/photos"
+target_path = "/absolute/path/to/lumine-output"
 
 originals_dir = "gallery"
 thumbnails_dir = "thumbnails"
@@ -59,6 +55,18 @@ thumbnail_format = "webp"
 thumbnail_quality = 92
 avif_quality = 95
 avif_speed = 6
+
+# Use [] to publish every supported image without a private tag.
+# Use ["Aether"] to publish only files with that macOS Finder tag.
+[public]
+dir = "public"
+tags = []
+
+# Files with any of these Finder tags are built into the private tree,
+# even if they also carry a public tag.
+[private]
+dir = "private"
+tags = ["Private"]
 ```
 
 Run the pipeline from the `pipeline/` directory:
@@ -71,13 +79,15 @@ The first run may take a while because Cargo needs to download and compile the R
 
 ```text
 lumine-output/
-  gallery/       # Full-size AVIF images
-  thumbnails/    # Smaller preview images
-  manifest.json  # Photo data used by the frontend
-  state.json     # Source file sizes and modification times
+  public/
+    gallery/       # Full-size AVIF images
+    thumbnails/    # Smaller preview images
+    manifest.json  # Photo data used by the frontend
+  private/         # Same layout, for photos with a private tag
+  state.json       # Source file sizes and modification times
 ```
 
-The pipeline keeps the album folder structure and extracts useful EXIF data when available, such as the capture time, camera settings, and GPS location. Later runs reuse unchanged files. If a source photo is changed, removed, or no longer has a selected Finder tag, the generated output is updated automatically.
+The pipeline keeps the album folder structure in both trees and extracts useful EXIF data when available, such as the capture time, camera settings, and GPS location. Manifest URLs are relative to their own tree, so a private photo shares its album with the public photos of the same folder. Later runs reuse unchanged files. If a source photo is changed, removed, or no longer has a selected Finder tag, the generated output is updated automatically. When a photo moves between public and private, its existing images are moved to the other tree instead of being re-encoded.
 
 AVIF images and thumbnails are generated independently from the source photos. To refresh AVIF encoding, delete the relevant files under `gallery/`; to refresh thumbnails, delete the relevant files under `thumbnails/`. To refresh metadata extraction or the ThumbHash algorithm, delete `manifest.json`. Run `./build.sh` afterward; existing images are reused when rebuilding the manifest. Encoding settings apply to newly generated images.
 
@@ -85,19 +95,19 @@ AVIF images and thumbnails are generated independently from the source photos. T
 
 See [the build design](docs/pipeline/009-增量构建与手动重建方案.md) for the update and recovery rules.
 
-> Keep `sourcePath` and `targetPath` separate. Neither directory may be inside the other.
+> Keep `source_path` and `target_path` separate. Neither directory may be inside the other.
 
 ## 3. Make the generated media available
 
-The frontend needs to access `manifest.json`, `gallery/`, and `thumbnails/` over HTTP. For a quick local test, start a static file server in a second terminal:
+The frontend needs to access the `public/` tree over HTTP. For a quick local test, start a static file server in a second terminal:
 
 ```bash
-python3 -m http.server 8080 --directory /absolute/path/to/lumine-output
+python3 -m http.server 8080 --directory /absolute/path/to/lumine-output/public
 ```
 
 Your manifest should now be available at [http://localhost:8080/manifest.json](http://localhost:8080/manifest.json).
 
-For production, publish `manifest.json`, `gallery/`, and `thumbnails/` to any static host or object storage service. Keep `state.json` locally for future pipeline runs. `MEDIA_ORIGIN` must point to the public root containing `manifest.json`.
+For production, publish `public/` to any static host or object storage service. The `private/` tree must never be publicly readable; serve it only through an authenticated layer. Keep `state.json` locally for future pipeline runs; it lists every source file, including private ones. `MEDIA_ORIGIN` must point to the public root containing `manifest.json`.
 
 > **Caching and updated photos.** The production media host serves images with `Cache-Control: max-age=31536000` (one year). Image URLs are derived from the source path and carry no content version, so when a source photo changes, the pipeline overwrites the files at the same URL. Visitors who already viewed the old image may keep seeing it from their browser cache for up to a year; purging the CDN only refreshes the edge, not browsers. This risk is accepted because photos are rarely re-exported. If you need a changed photo to show up reliably, rename the source file (which produces a new URL), or switch to versioned URLs as described in [the Viewer evaluation](docs/web/053-Viewer性能与代码规范优化评估.md#41-p0让一年缓存和同路径更新一致). Do not cache `manifest.json` for long; the frontend revalidates it every 30 seconds.
 
@@ -159,7 +169,7 @@ The optional `timeZone` uses an IANA name for the shooting location. Photo detai
 
 After the first setup, the normal workflow is short:
 
-1. Add or edit photos inside `sourcePath`.
+1. Add or edit photos inside `source_path`.
 2. Run `cd pipeline && ./build.sh`.
 3. Upload or serve the updated output folder.
 4. Refresh the website. The frontend checks the manifest for updates every 30 seconds.
@@ -178,7 +188,7 @@ pnpm start       # Run the production build
 
 ## Troubleshooting
 
-- **The gallery is empty:** check `sourceTags`. Use `[]` for all photos, or add the configured Finder tag to your files.
+- **The gallery is empty:** check `public.tags`. Use `[]` for all photos without a private tag, or add the configured Finder tag to your files.
 - **An album name causes an error:** use the `YYYYMMDD-Name` format, for example `20260820-Berlin`.
 - **The frontend cannot load photos:** open `MEDIA_ORIGIN/manifest.json` in a browser and confirm that the generated image URLs are reachable from the same origin.
-- **The pipeline rejects the paths:** use two separate, non-nested directories for `sourcePath` and `targetPath`.
+- **The pipeline rejects the paths:** use two separate, non-nested directories for `source_path` and `target_path`.

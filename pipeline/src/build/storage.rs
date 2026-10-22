@@ -24,7 +24,7 @@ pub(super) fn validate_path_isolation(source_dir: &Path, root_dir: &Path) -> Res
         || canonical_root.starts_with(&canonical_source)
     {
         bail!(
-            "sourcePath and targetPath must be separate, non-nested directories (source: {}, target: {})",
+            "source_path and target_path must be separate, non-nested directories (source: {}, target: {})",
             canonical_source.display(),
             canonical_root.display()
         );
@@ -62,7 +62,7 @@ fn canonicalize_allow_missing(path: &Path) -> Result<PathBuf> {
 
 pub(super) fn remove_stale_outputs(
     root: &Path,
-    directories: [&Path; 2],
+    directories: &[&Path],
     expected: &BTreeSet<String>,
 ) -> Result<()> {
     let canonical_root = fs::canonicalize(root)?;
