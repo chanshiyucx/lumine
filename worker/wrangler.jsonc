@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lumine-private-media",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // Only the custom domain serves this Worker; the Cache API does not work on workers.dev.
+  "routes": [{ "pattern": "private.shiyu.me", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+  // The same bucket as the public site; the Worker only reads keys under private/.
+  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "gallery" }],
+  "vars": {
+    // Origins allowed to fetch() images, e.g. for the viewer's original loading and downloads.
+    "ALLOWED_ORIGINS": "https://gallery.shiyu.me,http://localhost:3000"
+  },
+  // MEDIA_SIGNING_SECRET and PRIVATE_MANIFEST_TOKEN are secrets: `wrangler secret put <NAME>`.
+  "secrets": { "required": ["MEDIA_SIGNING_SECRET", "PRIVATE_MANIFEST_TOKEN"] },
+  "observability": { "enabled": true }
+}
