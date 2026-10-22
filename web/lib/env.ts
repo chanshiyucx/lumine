@@ -1,1 +1,1 @@
-export const MEDIA_ORIGIN_ENV = 'MEDIA_ORIGIN'
+export const MEDIA_BASE_URL_ENV = 'MEDIA_BASE_URL'

@@ -107,7 +107,7 @@ python3 -m http.server 8080 --directory /absolute/path/to/lumine-output/public
 
 Your manifest should now be available at [http://localhost:8080/manifest.json](http://localhost:8080/manifest.json).
 
-For production, publish `public/` to any static host or object storage service. The `private/` tree must never be publicly readable; serve it only through an authenticated layer. Keep `state.json` locally for future pipeline runs; it lists every source file, including private ones. `MEDIA_ORIGIN` must point to the public root containing `manifest.json`.
+For production, publish `public/` to any static host or object storage service. The `private/` tree must never be publicly readable; serve it only through an authenticated layer such as the [private media Worker](worker/README.md). Keep `state.json` locally for future pipeline runs; it lists every source file, including private ones. `MEDIA_BASE_URL` must point to the published `public/` directory, for example `https://cloud.example.com/public/`.
 
 > **Caching and updated photos.** The production media host serves images with `Cache-Control: max-age=31536000` (one year). Image URLs are derived from the source path and carry no content version, so when a source photo changes, the pipeline overwrites the files at the same URL. Visitors who already viewed the old image may keep seeing it from their browser cache for up to a year; purging the CDN only refreshes the edge, not browsers. This risk is accepted because photos are rarely re-exported. If you need a changed photo to show up reliably, rename the source file (which produces a new URL), or switch to versioned URLs as described in [the Viewer evaluation](docs/web/053-Viewer性能与代码规范优化评估.md#41-p0让一年缓存和同路径更新一致). Do not cache `manifest.json` for long; the frontend revalidates it every 30 seconds.
 
@@ -124,7 +124,7 @@ cp .env.example .env.local
 For the local media server above, set `web/.env.local` to:
 
 ```dotenv
-MEDIA_ORIGIN=http://localhost:8080
+MEDIA_BASE_URL=http://localhost:8080
 ```
 
 Then start Next.js:
@@ -141,7 +141,7 @@ Open [http://localhost:3000](http://localhost:3000). Useful pages include:
 
 ## Optional: enable the map page
 
-The map page also reads `map.json` from `MEDIA_ORIGIN`. Create it next to `manifest.json` and add coordinates for any albums you want to show:
+The map page also reads `map.json` from `MEDIA_BASE_URL`. Create it in `public/` next to `manifest.json` and add coordinates for any albums you want to show:
 
 ```json
 {
@@ -190,5 +190,5 @@ pnpm start       # Run the production build
 
 - **The gallery is empty:** check `public.tags`. Use `[]` for all photos without a private tag, or add the configured Finder tag to your files.
 - **An album name causes an error:** use the `YYYYMMDD-Name` format, for example `20260820-Berlin`.
-- **The frontend cannot load photos:** open `MEDIA_ORIGIN/manifest.json` in a browser and confirm that the generated image URLs are reachable from the same origin.
+- **The frontend cannot load photos:** open `MEDIA_BASE_URL/manifest.json` in a browser and confirm that the image paths in it resolve under the same base URL.
 - **The pipeline rejects the paths:** use two separate, non-nested directories for `source_path` and `target_path`.
