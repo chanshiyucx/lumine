@@ -48,6 +48,7 @@ function InfoSection({ title, children }: InfoSectionProps) {
 
 interface ViewerInfoPanelProps {
   photo: Photo
+  linksToMap: boolean
   isOpen: boolean
   isViewerInteractive: boolean
   isInputDisabled: boolean
@@ -62,9 +63,11 @@ const DESKTOP_PANEL_MOTION_CLASS =
 
 function ViewerInfoPanelContent({
   photo,
+  linksToMap,
   isActive,
 }: {
   photo: Photo
+  linksToMap: boolean
   isActive: boolean
 }) {
   const photoInfoRows = getPhotoInfoRows(photo)
@@ -141,6 +144,7 @@ function ViewerInfoPanelContent({
         <ViewerLocationMap
           location={photo.location}
           photoId={photo.slug}
+          linksToMap={linksToMap}
           isActive={isActive}
         />
       </section>
@@ -150,6 +154,7 @@ function ViewerInfoPanelContent({
 
 export function ViewerInfoPanel({
   photo,
+  linksToMap,
   isOpen,
   isViewerInteractive,
   isInputDisabled,
@@ -231,7 +236,11 @@ export function ViewerInfoPanel({
             scrollbarClassName="my-2"
             viewportClassName="viewer-info-scroll-mask overscroll-contain"
           >
-            <ViewerInfoPanelContent photo={photo} isActive={isActive} />
+            <ViewerInfoPanelContent
+              photo={photo}
+              linksToMap={linksToMap}
+              isActive={isActive}
+            />
           </ScrollArea>
         </m.div>
       </m.div>

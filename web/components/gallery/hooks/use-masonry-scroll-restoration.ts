@@ -35,7 +35,8 @@ if (typeof window !== 'undefined') {
       const isViewerTraversal =
         mountedPageKey !== null &&
         (pageKey === mountedPageKey ||
-          isPhotoPathname(window.location.pathname))
+          isPhotoPathname(window.location.pathname) ||
+          isPhotoPathname(window.location.pathname, 'private'))
       if (!isViewerTraversal) {
         traversedPageKey = pageKey
       }

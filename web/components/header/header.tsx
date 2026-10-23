@@ -1,3 +1,4 @@
+import { getPrivateConfig } from '@/lib/private/config'
 import { HeaderCenter } from './header-center'
 import { HeaderLeft } from './header-left'
 import { HeaderRight } from './header-right'
@@ -15,7 +16,7 @@ export function Header() {
       <div className="flex h-12 items-center justify-between gap-2 px-3 lg:gap-3 lg:px-4">
         <HeaderLeft />
         <HeaderCenter />
-        <HeaderRight />
+        <HeaderRight isPrivateModeAvailable={getPrivateConfig() !== null} />
       </div>
     </header>
   )

@@ -9,6 +9,7 @@ import type { PhotoLocation } from '@/lib/photo'
 interface ViewerLocationMapProps {
   location?: PhotoLocation
   photoId: string
+  linksToMap: boolean
   isActive: boolean
 }
 
@@ -21,6 +22,7 @@ const Map = dynamic(() => import('react-map-gl/maplibre'), { ssr: false })
 export function ViewerLocationMap({
   location,
   photoId,
+  linksToMap,
   isActive,
 }: ViewerLocationMapProps) {
   const isHydrated = useSyncExternalStore(
@@ -114,14 +116,16 @@ export function ViewerLocationMap({
         </div>
       )}
 
-      <Link
-        href={{ pathname: '/map', query: { photoId } }}
-        target="_blank"
-        rel="noopener noreferrer"
-        prefetch={false}
-        aria-label="View photo location on the map in a new tab"
-        className="absolute inset-0 cursor-pointer rounded-md transition-colors duration-200 hover:bg-black/10 focus-visible:outline-offset-[-2px]"
-      />
+      {linksToMap && (
+        <Link
+          href={{ pathname: '/map', query: { photoId } }}
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+          aria-label="View photo location on the map in a new tab"
+          className="absolute inset-0 cursor-pointer rounded-md transition-colors duration-200 hover:bg-black/10 focus-visible:outline-offset-[-2px]"
+        />
+      )}
     </div>
   )
 }

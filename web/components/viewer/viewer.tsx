@@ -11,6 +11,7 @@ import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
+import type { PhotoScope } from '@/lib/route-paths'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 import { useMobileViewerInteractions } from './hooks/use-mobile-viewer-interactions'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
@@ -42,6 +43,7 @@ import { ViewerShareDialog } from './viewer-share-dialog'
 
 interface ViewerProps {
   photos: Photo[]
+  scope: PhotoScope
   state: MountedViewerState
   getRestoreFocusElement: () => HTMLElement | null
   onClose: () => void
@@ -54,6 +56,7 @@ interface ViewerProps {
 
 export function Viewer({
   photos,
+  scope,
   state,
   getRestoreFocusElement,
   onClose,
@@ -63,6 +66,8 @@ export function Viewer({
   onPresenceChange,
   onZoomStateChange,
 }: ViewerProps) {
+  // Share links and the map page only know public photos.
+  const linksToPublicPages = scope === 'public'
   const isMobile = useMobile()
   const [isDesktopInfoPanelOpen, setIsDesktopInfoPanelOpen] = useState(true)
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
@@ -307,7 +312,9 @@ export function Viewer({
                     isShareDialogOpen={isShareDialogOpen}
                     isVisible={isViewerControlsVisible}
                     onClose={handleClose}
-                    onOpenShareDialog={handleOpenShareDialog}
+                    onOpenShareDialog={
+                      linksToPublicPages ? handleOpenShareDialog : undefined
+                    }
                     onToggleInfoPanel={toggleInfoPanel}
                     phase={state.phase}
                   />
@@ -347,6 +354,7 @@ export function Viewer({
 
               <ViewerInfoPanel
                 photo={currentPhoto}
+                linksToMap={linksToPublicPages}
                 isOpen={isInfoPanelOpen}
                 isViewerInteractive={canInteract}
                 isInputDisabled={isInfoPanelInputDisabled}

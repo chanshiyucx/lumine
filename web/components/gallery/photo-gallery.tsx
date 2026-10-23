@@ -2,9 +2,11 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useRef } from 'react'
+import { publishPhotoCount } from '@/components/header/lib/photo-count-store'
 import { useScrollElement } from '@/components/scroll-area'
 import { useViewerController } from '@/components/viewer/hooks/use-viewer-controller'
 import type { Photo } from '@/lib/photo'
+import type { PhotoScope } from '@/lib/route-paths'
 import {
   useGalleryHeader,
   type GalleryHeaderState,
@@ -21,12 +23,14 @@ interface PhotoGalleryProps {
   photos: Photo[]
   initialPhotoSlug?: string
   fixedHeaderDetail?: Required<GalleryHeaderState>
+  scope?: PhotoScope
 }
 
 export function PhotoGallery({
   photos,
   initialPhotoSlug,
   fixedHeaderDetail,
+  scope = 'public',
 }: PhotoGalleryProps) {
   const galleryRef = useRef<HTMLDivElement>(null)
   const scrollElement = useScrollElement()
@@ -34,6 +38,7 @@ export function PhotoGallery({
     photos,
     initialPhotoSlug,
     galleryRef,
+    scope,
   })
   const viewerState = viewer.state
   const isViewerMounted = viewerState.phase !== 'closed'
@@ -42,6 +47,16 @@ export function PhotoGallery({
     scrollElement,
     fixedHeaderDetail,
   )
+
+  // The header's server-rendered total covers public photos only.
+  useEffect(() => {
+    if (scope !== 'private') {
+      return
+    }
+
+    publishPhotoCount(photos.length)
+    return () => publishPhotoCount(null)
+  }, [scope, photos.length])
 
   useEffect(() => {
     if (initialPhotoSlug || !('requestIdleCallback' in window)) {
@@ -85,6 +100,7 @@ export function PhotoGallery({
       {isViewerMounted && (
         <Viewer
           photos={photos}
+          scope={scope}
           state={viewerState}
           getRestoreFocusElement={viewer.getRestoreFocusElement}
           onActiveIndexChange={viewer.select}
