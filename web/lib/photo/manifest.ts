@@ -72,6 +72,7 @@ export const manifestSchema = z.strictObject({
   photos: z.array(photoSchema),
 })
 
+export type PhotoManifest = z.infer<typeof manifestSchema>
 export type PhotoAsset = z.infer<typeof assetSchema>
 export type PhotoCamera = z.infer<typeof cameraSchema>
 export type PhotoImage = z.infer<typeof imageSchema>

@@ -23,7 +23,7 @@ interface ViewerToolbarProps {
   isShareDialogOpen: boolean
   isVisible: boolean
   onClose: () => void
-  onOpenShareDialog: () => void
+  onOpenShareDialog?: () => void
   onToggleInfoPanel: () => void
   phase: ViewerPhase
 }
@@ -82,16 +82,18 @@ export function ViewerToolbar({
           )}
         </button>
 
-        <button
-          type="button"
-          className="circle-button"
-          onClick={onOpenShareDialog}
-          aria-haspopup="dialog"
-          aria-expanded={isShareDialogOpen}
-          aria-label="Share photo"
-        >
-          <ShareForwardLine className="size-4" aria-hidden="true" />
-        </button>
+        {onOpenShareDialog && (
+          <button
+            type="button"
+            className="circle-button"
+            onClick={onOpenShareDialog}
+            aria-haspopup="dialog"
+            aria-expanded={isShareDialogOpen}
+            aria-label="Share photo"
+          >
+            <ShareForwardLine className="size-4" aria-hidden="true" />
+          </button>
+        )}
 
         <button
           type="button"

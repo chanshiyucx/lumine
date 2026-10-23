@@ -9,16 +9,13 @@ import { getAlbumMapLocations } from '@/lib/album/locations'
 import { getPhotoAssetUrl, getPhotoManifestUrl } from '@/lib/media-url'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
 import { formatCaptureTime } from './capture-time'
-import { manifestSchema } from './manifest'
+import { manifestSchema, type PhotoManifest } from './manifest'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
 
-function normalizeAsset(asset: PhotoAsset): PhotoAsset {
-  return {
-    ...asset,
-    url: getPhotoAssetUrl(asset.url),
-  }
-}
+type AlbumLocations = Awaited<ReturnType<typeof getAlbumMapLocations>>
+
+type AssetUrlResolver = (pathname: string) => string
 
 function getFileNameFromAssetPath(pathname: string) {
   const rawFileName = pathname.split('/').pop() ?? 'unknown'
@@ -32,11 +29,11 @@ function getPhotoFormat(asset: PhotoAsset) {
   return (extension ?? asset.mime.replace('image/', '')).toUpperCase()
 }
 
-async function fetchManifestJson() {
-  const manifestUrl = getPhotoManifestUrl()
-  const response = await fetch(manifestUrl, {
-    next: { revalidate: PHOTO_MANIFEST_REVALIDATE_SECONDS },
-  })
+export async function fetchPhotoManifest(
+  manifestUrl: string,
+  init: RequestInit,
+) {
+  const response = await fetch(manifestUrl, init)
 
   if (!response.ok) {
     throw new Error(
@@ -59,9 +56,24 @@ async function fetchManifestJson() {
 
 export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
   const [manifest, locations] = await Promise.all([
-    fetchManifestJson(),
+    fetchPhotoManifest(getPhotoManifestUrl(), {
+      next: { revalidate: PHOTO_MANIFEST_REVALIDATE_SECONDS },
+    }),
     getAlbumMapLocations(),
   ])
+
+  return toPhotoCollection(manifest, locations, getPhotoAssetUrl)
+})
+
+export function toPhotoCollection(
+  manifest: PhotoManifest,
+  locations: AlbumLocations,
+  resolveAssetUrl: AssetUrlResolver,
+): PhotoCollection {
+  const normalizeAsset = (asset: PhotoAsset): PhotoAsset => ({
+    ...asset,
+    url: resolveAssetUrl(asset.url),
+  })
   const photos = manifest.photos.toSorted(
     (left, right) => Date.parse(right.takenAt) - Date.parse(left.takenAt),
   )
@@ -100,4 +112,4 @@ export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {
       }
     }),
   }
-})
+}

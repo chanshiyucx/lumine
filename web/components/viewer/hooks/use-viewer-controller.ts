@@ -7,9 +7,11 @@ import {
 } from 'react'
 import type { Photo } from '@/lib/photo'
 import {
+  getGalleryPath,
   getPhotoPath,
   getPhotoSlugFromPathname,
   isPhotoPathname,
+  type PhotoScope,
 } from '@/lib/route-paths'
 import {
   getHistoryMarker,
@@ -28,13 +30,15 @@ interface UseViewerControllerOptions {
   galleryRef: RefObject<HTMLElement | null>
   initialPhotoSlug?: string
   photos: Photo[]
+  scope: PhotoScope
 }
 
 function getPhotoIndexFromPathname(
   pathname: string,
+  scope: PhotoScope,
   slugToIndex: Map<string, number>,
 ) {
-  const photoSlug = getPhotoSlugFromPathname(pathname)
+  const photoSlug = getPhotoSlugFromPathname(pathname, scope)
 
   if (photoSlug === null) {
     return null
@@ -53,6 +57,7 @@ export function useViewerController({
   galleryRef,
   photos,
   initialPhotoSlug,
+  scope,
 }: UseViewerControllerOptions) {
   const slugToIndex = new Map(photos.map((photo, index) => [photo.slug, index]))
   const initialIndex = initialPhotoSlug
@@ -87,7 +92,7 @@ export function useViewerController({
   }
 
   const getPhotoUrl = (photo: Photo) => {
-    return `${getPhotoPath(photo.slug)}${window.location.search}${window.location.hash}`
+    return `${getPhotoPath(photo.slug, scope)}${window.location.search}${window.location.hash}`
   }
 
   const open = (index: number, explicitTrigger?: HTMLElement | null) => {
@@ -98,7 +103,7 @@ export function useViewerController({
 
     const triggerElement = resolveViewerTrigger(photo.id, explicitTrigger)
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
-    if (!isPhotoPathname(window.location.pathname)) {
+    if (!isPhotoPathname(window.location.pathname, scope)) {
       baseUrlRef.current = currentUrl
     }
 
@@ -210,6 +215,7 @@ export function useViewerController({
   const syncFromLocation = useEffectEvent(() => {
     const index = getPhotoIndexFromPathname(
       window.location.pathname,
+      scope,
       slugToIndex,
     )
 
@@ -239,14 +245,14 @@ export function useViewerController({
 
   useEffect(() => {
     const { pathname, search, hash } = window.location
-    baseUrlRef.current = `${isPhotoPathname(pathname) ? '/' : pathname}${search}${hash}`
+    baseUrlRef.current = `${isPhotoPathname(pathname, scope) ? getGalleryPath(scope) : pathname}${search}${hash}`
 
     window.addEventListener('popstate', syncFromLocation)
 
     return () => {
       window.removeEventListener('popstate', syncFromLocation)
     }
-  }, [])
+  }, [scope])
 
   return {
     close,
