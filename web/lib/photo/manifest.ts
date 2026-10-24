@@ -60,7 +60,8 @@ const photoSchema = z.strictObject({
   thumbnail: assetSchema,
   thumbHash: z.base64().min(8).max(36),
   title: z.string().min(1),
-  takenAt: z.iso.datetime({ offset: true }),
+  // Without an offset it is local time; toPhotoCollection resolves it via the album.
+  takenAt: z.iso.datetime({ offset: true, local: true }),
   location: locationSchema.optional(),
   camera: cameraSchema,
   image: imageSchema,

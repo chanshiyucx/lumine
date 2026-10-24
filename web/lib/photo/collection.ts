@@ -8,7 +8,7 @@ import {
 import { getAlbumMapLocations } from '@/lib/album/locations'
 import { getPhotoAssetUrl, getPhotoManifestUrl } from '@/lib/media-url'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
-import { formatCaptureTime } from './capture-time'
+import { formatCaptureTime, resolveTakenAt } from './capture-time'
 import { manifestSchema, type PhotoManifest } from './manifest'
 
 const PHOTO_MANIFEST_REVALIDATE_SECONDS = 30
@@ -74,42 +74,43 @@ export function toPhotoCollection(
     ...asset,
     url: resolveAssetUrl(asset.url),
   })
-  const photos = manifest.photos.toSorted(
-    (left, right) => Date.parse(right.takenAt) - Date.parse(left.takenAt),
-  )
   const albumsByKey = new Map<string, AlbumDescriptor>()
+  const photos = manifest.photos.map((photo) => {
+    const original = normalizeAsset(photo.original)
+    const thumbnail = normalizeAsset(photo.thumbnail)
+    const albumKey = getAlbumKeyFromAssetPath(photo.original.url)
+    const timeZone = locations.get(albumKey)?.timeZone
+    // From here on every takenAt carries a UTC offset.
+    const takenAt = resolveTakenAt(photo.takenAt, timeZone)
+    let album = albumsByKey.get(albumKey)
+
+    if (!album) {
+      album = parseAlbumDescriptor(albumKey)
+      albumsByKey.set(albumKey, album)
+    }
+
+    return {
+      ...photo,
+      takenAt,
+      id: photo.original.url,
+      slug: createPhotoSlug(photo.title),
+      fileName: getFileNameFromAssetPath(photo.original.url),
+      album,
+      format: getPhotoFormat(photo.original),
+      cameraName:
+        [photo.camera.make, photo.camera.model].filter(Boolean).join(' ') ||
+        null,
+      captureTime: formatCaptureTime(takenAt, timeZone),
+      aspectRatio: thumbnail.width / thumbnail.height,
+      original,
+      thumbnail,
+    }
+  })
 
   return {
     updatedAt: manifest.updatedAt,
-    photos: photos.map((photo) => {
-      const original = normalizeAsset(photo.original)
-      const thumbnail = normalizeAsset(photo.thumbnail)
-      const albumKey = getAlbumKeyFromAssetPath(photo.original.url)
-      let album = albumsByKey.get(albumKey)
-
-      if (!album) {
-        album = parseAlbumDescriptor(albumKey)
-        albumsByKey.set(albumKey, album)
-      }
-
-      return {
-        ...photo,
-        id: photo.original.url,
-        slug: createPhotoSlug(photo.title),
-        fileName: getFileNameFromAssetPath(photo.original.url),
-        album,
-        format: getPhotoFormat(photo.original),
-        cameraName:
-          [photo.camera.make, photo.camera.model].filter(Boolean).join(' ') ||
-          null,
-        captureTime: formatCaptureTime(
-          photo.takenAt,
-          locations.get(albumKey)?.timeZone,
-        ),
-        aspectRatio: thumbnail.width / thumbnail.height,
-        original,
-        thumbnail,
-      }
-    }),
+    photos: photos.sort(
+      (left, right) => Date.parse(right.takenAt) - Date.parse(left.takenAt),
+    ),
   }
 }
