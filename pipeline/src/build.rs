@@ -248,7 +248,8 @@ fn prepare_build_plan(config: &Config) -> Result<BuildPlan> {
             tree.thumbnail_path(config.thumbnail_format, &source.relative_path),
         ] {
             expected_outputs.insert(path_to_manifest_key(&root_dir, &path)?);
-            // The web merges both manifests, so URLs must be unique across trees.
+            // A photo keeps this URL when it moves between trees, and the web uses it as the
+            // photo id, so URLs must be unique across both trees.
             let url = path_to_manifest_key(&tree.root, &path)?;
             if !asset_urls.insert(url.clone()) {
                 bail!("multiple source files map to output {url}");
@@ -323,7 +324,7 @@ fn print_build_start(config: &Config, plan: &BuildPlan) {
     for visibility in Visibility::ALL {
         let tags = config.tags(visibility);
         let tags = if tags.is_empty() {
-            "untagged".to_string()
+            "all non-private".to_string()
         } else {
             tags.join(", ")
         };
