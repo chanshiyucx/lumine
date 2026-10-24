@@ -11,7 +11,8 @@ const KEY_PREFIX = 'private/'
 // Must match originals_dir and thumbnails_dir in pipeline.toml.
 const ASSET_DIRS = new Set(['gallery', 'thumbnails'])
 const MANIFEST_PATH = '/manifest.json'
-// The web signs links until the unlock session expires (3 days); anything longer is rejected.
+// The web signs links until the unlock session expires (3 days); links valid for more than
+// 7 days are rejected.
 const MAX_LINK_TTL_SECONDS = 7 * 24 * 60 * 60
 // How long a data center keeps an image after reading it from R2.
 const EDGE_CACHE_SECONDS = 30 * 24 * 60 * 60
