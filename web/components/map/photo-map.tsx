@@ -21,7 +21,7 @@ import {
   expandMapBounds,
   type MapViewportState,
 } from './lib/map-viewport'
-import { MapControls } from './map-controls'
+import { MapAttribution, MapControls } from './map-controls'
 import { MapMarkers } from './map-markers'
 import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
 
@@ -249,6 +249,8 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
           />
         )}
       </Map>
+
+      <MapAttribution />
 
       {allItems.length > 0 && (
         <MapControls

@@ -46,3 +46,26 @@ export function MapControls({
     </div>
   )
 }
+
+const ATTRIBUTIONS = [
+  { label: 'OpenStreetMap', href: 'https://www.openstreetmap.org/copyright' },
+  { label: 'CARTO', href: 'https://carto.com/attribution/' },
+]
+
+export function MapAttribution() {
+  return (
+    <p className="border-overlay bg-surface/85 text-subtle absolute right-[max(1.25rem,env(safe-area-inset-right))] bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-10 flex gap-2 rounded-lg border px-2.5 py-1 text-xs whitespace-nowrap shadow-xl backdrop-blur-xl">
+      {ATTRIBUTIONS.map(({ label, href }) => (
+        <a
+          key={label}
+          className="hover:text-text transition-colors"
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          © {label}
+        </a>
+      ))}
+    </p>
+  )
+}
