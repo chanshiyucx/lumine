@@ -14,12 +14,12 @@ const columnClassNames = [
 const tilesPerColumn = 14
 const tileTones = [
   'bg-surface',
-  'bg-iris/12',
-  'bg-overlay',
-  'bg-foam/10',
-  'bg-surface',
+  'bg-love/10',
+  'bg-gold/10',
   'bg-rose/10',
-  'bg-pine/15',
+  'bg-pine/10',
+  'bg-foam/10',
+  'bg-iris/10',
 ]
 
 const columns = columnClassNames.map((className, column) => ({
