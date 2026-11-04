@@ -53,6 +53,26 @@ function readFrame(element: HTMLElement): ViewerFrame {
   }
 }
 
+// Closing during the entry preview's fade-out overlaps it with the exit preview,
+// so the source stays hidden until the last preview lets go of it.
+const sourceElementHolds = new WeakMap<HTMLElement, number>()
+
+function hideSourceElement(element: HTMLElement) {
+  sourceElementHolds.set(element, (sourceElementHolds.get(element) ?? 0) + 1)
+  element.style.setProperty('visibility', 'hidden')
+
+  return () => {
+    const holds = sourceElementHolds.get(element) ?? 0
+
+    if (holds > 1) {
+      sourceElementHolds.set(element, holds - 1)
+    } else {
+      sourceElementHolds.delete(element)
+      element.style.removeProperty('visibility')
+    }
+  }
+}
+
 export function SharedPhotoTransitionPreview({
   mediaStageRef,
   onEntryComplete,
@@ -111,8 +131,7 @@ export function SharedPhotoTransitionPreview({
       return
     }
 
-    const previousVisibility = sourceElement.style.visibility
-    sourceElement.style.setProperty('visibility', 'hidden')
+    const releaseSourceElement = hideSourceElement(sourceElement)
     let cancelled = false
     queueMicrotask(() => {
       if (!cancelled) {
@@ -122,9 +141,7 @@ export function SharedPhotoTransitionPreview({
 
     return () => {
       cancelled = true
-      if (sourceElement.isConnected) {
-        sourceElement.style.setProperty('visibility', previousVisibility)
-      }
+      releaseSourceElement()
     }
   }, [
     mediaStageRef,

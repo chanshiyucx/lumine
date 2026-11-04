@@ -33,13 +33,3 @@ export function withHistoryMarker(marker: ViewerHistoryMarker) {
     [VIEWER_HISTORY_KEY]: marker,
   }
 }
-
-export function withoutHistoryMarker() {
-  const state = {
-    ...(window.history.state ?? {}),
-  } as Record<string, unknown>
-
-  delete state[VIEWER_HISTORY_KEY]
-
-  return state
-}

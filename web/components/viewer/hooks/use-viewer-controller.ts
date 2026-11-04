@@ -1,3 +1,4 @@
+import { useRouter } from 'next/navigation'
 import {
   useEffect,
   useEffectEvent,
@@ -13,11 +14,7 @@ import {
   isPhotoPathname,
   type PhotoScope,
 } from '@/lib/route-paths'
-import {
-  getHistoryMarker,
-  withHistoryMarker,
-  withoutHistoryMarker,
-} from '../lib/viewer-history'
+import { getHistoryMarker, withHistoryMarker } from '../lib/viewer-history'
 import {
   createClosedViewerState,
   createDirectViewerState,
@@ -25,6 +22,10 @@ import {
   type ViewerAction,
 } from '../lib/viewer-state'
 import { resolveViewerTrigger } from '../lib/viewer-trigger'
+
+// The route change after closing replaces this gallery, so the next one has to
+// take over the focus the viewer would have restored.
+let shouldFocusNextGallery = false
 
 interface UseViewerControllerOptions {
   galleryRef: RefObject<HTMLElement | null>
@@ -59,6 +60,7 @@ export function useViewerController({
   initialPhotoSlug,
   scope,
 }: UseViewerControllerOptions) {
+  const router = useRouter()
   const slugToIndex = new Map(photos.map((photo, index) => [photo.slug, index]))
   const initialIndex = initialPhotoSlug
     ? (slugToIndex.get(initialPhotoSlug) ?? null)
@@ -71,6 +73,7 @@ export function useViewerController({
   const stateRef = useRef(state)
   const sessionIdRef = useRef<string | null>(null)
   const baseUrlRef = useRef('/')
+  const exitUrlRef = useRef<string | null>(null)
   const restoreFocusElementRef = useRef<HTMLElement | null>(null)
   const isPresentRef = useRef(false)
 
@@ -131,18 +134,22 @@ export function useViewerController({
 
     applyAction({ type: 'select', index })
 
-    const marker = getHistoryMarker() ?? {
-      baseUrl: baseUrlRef.current,
-      sessionId: getSessionId(),
-    }
-    window.history.replaceState(
-      withHistoryMarker(marker),
-      '',
-      getPhotoUrl(photo),
-    )
+    // The marker stands for a gallery entry, so only open() may create one.
+    window.history.replaceState(window.history.state, '', getPhotoUrl(photo))
   }
 
-  const beginClose = () => {
+  const completeExit = (operationId: number) => {
+    applyAction({ type: 'exit-complete', operationId })
+
+    const exitUrl = exitUrlRef.current
+    if (exitUrl !== null && stateRef.current.phase === 'closed') {
+      exitUrlRef.current = null
+      shouldFocusNextGallery = true
+      router.replace(exitUrl)
+    }
+  }
+
+  const beginClose = (exitUrl: string | null = null) => {
     const current = stateRef.current
     if (current.phase === 'closed' || current.phase === 'exiting') {
       return false
@@ -157,6 +164,7 @@ export function useViewerController({
       ? null
       : resolveViewerTrigger(photo.id, current.triggerElement)
     restoreFocusElementRef.current = triggerElement
+    exitUrlRef.current = exitUrl
     applyAction({
       type: 'close',
       mode: triggerElement ? 'shared' : 'fade',
@@ -164,27 +172,23 @@ export function useViewerController({
     })
 
     if (!isPresentRef.current) {
-      applyAction({
-        type: 'exit-complete',
-        operationId: stateRef.current.operationId,
-      })
+      completeExit(stateRef.current.operationId)
     }
 
     return true
   }
 
   const close = () => {
-    if (!beginClose()) {
-      return
-    }
+    const hasGalleryEntry =
+      getHistoryMarker()?.sessionId === sessionIdRef.current
 
-    const marker = getHistoryMarker()
-    if (marker?.sessionId === sessionIdRef.current) {
+    // Without a gallery entry to return to, the page behind the viewer is still
+    // the photo route, and only the router can move this history entry off it.
+    const exitUrl = hasGalleryEntry ? null : baseUrlRef.current
+
+    if (beginClose(exitUrl) && hasGalleryEntry) {
       window.history.back()
-      return
     }
-
-    window.history.replaceState(withoutHistoryMarker(), '', baseUrlRef.current)
   }
 
   const setZoomed = (isZoomed: boolean) => {
@@ -193,10 +197,6 @@ export function useViewerController({
 
   const completeEntry = (operationId: number) => {
     applyAction({ type: 'entry-complete', operationId })
-  }
-
-  const completeExit = (operationId: number) => {
-    applyAction({ type: 'exit-complete', operationId })
   }
 
   const getRestoreFocusElement = () => {
@@ -242,6 +242,13 @@ export function useViewerController({
 
     beginClose()
   })
+
+  useEffect(() => {
+    if (shouldFocusNextGallery) {
+      shouldFocusNextGallery = false
+      galleryRef.current?.focus({ preventScroll: true })
+    }
+  }, [galleryRef])
 
   useEffect(() => {
     const { pathname, search, hash } = window.location

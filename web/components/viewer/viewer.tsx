@@ -7,11 +7,18 @@ import {
   m,
   MotionConfig,
 } from 'motion/react'
-import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 import type { PhotoScope } from '@/lib/route-paths'
+import { siteConfig } from '@/lib/site-config'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 import { useMobileViewerInteractions } from './hooks/use-mobile-viewer-interactions'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
@@ -91,6 +98,7 @@ export function Viewer({
 
   const activeIndex = state.activeIndex
   const currentPhoto = photos[activeIndex]
+  const publicPhotoTitle = linksToPublicPages ? currentPhoto.title : null
   const isInteractionEnabled = state.phase === 'open'
   const isShareDialogPresent = isShareDialogOpen || isShareDialogExiting
   const canInteract = isInteractionEnabled && !isShareDialogPresent
@@ -200,6 +208,25 @@ export function Viewer({
   }
 
   useDialogFocus(dialogRef, getRestoreFocusElement, !isShareDialogPresent)
+
+  // The viewer moves between photos without a route change, so Next won't update
+  // the title. Private pages keep their route's title to match the server.
+  useEffect(() => {
+    if (publicPhotoTitle === null) {
+      return
+    }
+
+    const routeTitle = document.title
+    const photoPageTitle = `${publicPhotoTitle} | ${siteConfig.title}`
+    document.title = photoPageTitle
+
+    return () => {
+      // A route change may already have set its own title.
+      if (document.title === photoPageTitle) {
+        document.title = routeTitle
+      }
+    }
+  }, [publicPhotoTitle])
 
   const goToPhoto = (index: number) => {
     if (!canNavigate || index < 0 || index >= photos.length) {
