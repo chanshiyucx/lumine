@@ -1,144 +1,57 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
-import type { ReactNode } from 'react'
 import sharp from 'sharp'
 import { fitWithinBounds } from '@/lib/math'
 import type { Photo } from '@/lib/photo'
-import { formatExposureTimeValue } from '@/lib/photo/formatters'
-import { siteConfig } from '@/lib/site-config'
+import {
+  formatExposureTime,
+  formatFNumber,
+  formatFocalLength,
+  formatIsoValue,
+} from '@/lib/photo/formatters'
 import { OG_CACHE_CONTROL, OG_IMAGE_SIZE } from './config'
 
-interface LayoutConfig {
-  arrangement: 'split' | 'stack' | 'wide'
-  padding: number
-  gap: number
-  photoBox: { maxWidth: number; maxHeight: number }
-  infoCompact: boolean
-  photoFit: 'cover' | 'contain'
-}
-
-interface LayoutPieces {
-  gap: number
-  photo: ReactNode
-  info: ReactNode
-  photoWidth: number
-}
-
-interface ExifItem {
-  label: string
-  text: string
-}
-
-interface InfoPanelProps {
-  title: string
-  tags: string[]
-  exifItems: ExifItem[]
-  camera: string | null
-  formattedDate: string
-  compact: boolean
-}
-
 const CANVAS = OG_IMAGE_SIZE
-const OG_ASPECT_RATIO = CANVAS.width / CANVAS.height
+const PADDING = 28
+const CAPTION_INSET = 40
+const CAPTION_HEIGHT = 84
+const CAPTION_SHADE_HEIGHT = 168
+const ALBUM_TITLE_MAX_WIDTH = 360
+const PHOTO_BOUNDS = {
+  width: CANVAS.width - PADDING * 2,
+  height: CANVAS.height - PADDING - CAPTION_HEIGHT,
+}
+const BACKDROP_BLUR_SIGMA = 48
+const BACKDROP_BRIGHTNESS = 0.46
+const BACKDROP_SATURATION = 1.8
 const THEME = {
-  accent: '#c4a7e7',
-  base: '#191724',
-  surface: '#232136',
-  overlay: '#2a273f',
+  base: '#232136',
+  scrim: 'rgba(35,33,54,0.12)',
   text: '#e0def4',
 }
+const geistMedium = await readFile(
+  join(process.cwd(), 'assets/fonts/Geist-Medium.ttf'),
+)
+
 function getExifItems(photo: Photo) {
-  const items: ExifItem[] = []
+  const { camera } = photo
+  const focalLength = camera.focalLengthIn35mmFilm ?? camera.focalLength
+  const items: string[] = []
 
-  if (photo.camera.fNumber) {
-    items.push({ label: 'f', text: `/${photo.camera.fNumber}` })
-  }
-  if (photo.camera.exposureTime) {
-    items.push({
-      label: 's',
-      text: formatExposureTimeValue(photo.camera.exposureTime),
-    })
-  }
-  if (photo.camera.iso) {
-    items.push({ label: 'iso', text: `${photo.camera.iso}` })
-  }
-
-  const focalLength =
-    photo.camera.focalLengthIn35mmFilm ?? photo.camera.focalLength
-
-  if (focalLength) {
-    items.push({ label: 'mm', text: `${focalLength} mm` })
-  }
+  if (focalLength) items.push(formatFocalLength(focalLength))
+  if (camera.fNumber) items.push(formatFNumber(camera.fNumber))
+  if (camera.exposureTime) items.push(formatExposureTime(camera.exposureTime))
+  if (camera.iso) items.push(formatIsoValue(camera.iso))
 
   return items
 }
 
-function determineLayout(aspect: number): LayoutConfig {
-  const resolvedAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1
-
-  if (resolvedAspect < 0.9) {
-    const padding = 60
-
-    return {
-      arrangement: 'split',
-      padding,
-      gap: 44,
-      photoBox: {
-        maxWidth: CANVAS.width * 0.44,
-        maxHeight: CANVAS.height - padding * 2,
-      },
-      infoCompact: false,
-      photoFit: 'cover',
-    }
-  }
-
-  if (resolvedAspect <= 1.1) {
-    const padding = 60
-
-    return {
-      arrangement: 'split',
-      padding,
-      gap: 44,
-      photoBox: {
-        maxWidth: CANVAS.width * 0.5,
-        maxHeight: CANVAS.height - padding * 2,
-      },
-      infoCompact: false,
-      photoFit: 'cover',
-    }
-  }
-
-  if (resolvedAspect >= 2.35) {
-    const padding = 50
-
-    return {
-      arrangement: 'wide',
-      padding,
-      gap: 28,
-      photoBox: {
-        maxWidth: CANVAS.width - padding * 2,
-        maxHeight: 340,
-      },
-      infoCompact: true,
-      photoFit: 'contain',
-    }
-  }
-
-  const padding = 54
-
-  return {
-    arrangement: resolvedAspect / OG_ASPECT_RATIO <= 0.82 ? 'split' : 'stack',
-    padding,
-    gap: 26,
-    photoBox: {
-      maxWidth: CANVAS.width - padding * 2,
-      maxHeight: 410,
-    },
-    infoCompact: false,
-    photoFit: 'cover',
-  }
+function toJpegDataUrl(jpeg: Buffer) {
+  return `data:image/jpeg;base64,${jpeg.toString('base64')}`
 }
 
-async function getRenderablePhotoUrl(photo: Photo) {
+async function getRenderableImages(photo: Photo) {
   const response = await fetch(photo.thumbnail.url, { cache: 'no-store' })
 
   if (!response.ok) {
@@ -147,381 +60,151 @@ async function getRenderablePhotoUrl(photo: Photo) {
     )
   }
 
-  const jpeg = await sharp(await response.arrayBuffer())
-    .resize({
-      fit: 'inside',
-      height: 1000,
-      width: 1400,
-      withoutEnlargement: true,
-    })
-    .jpeg({ mozjpeg: true, quality: 88 })
-    .toBuffer()
+  const source = await response.arrayBuffer()
+  const [photoJpeg, backdropJpeg] = await Promise.all([
+    sharp(source)
+      .resize({
+        fit: 'inside',
+        height: 1000,
+        width: 1400,
+        withoutEnlargement: true,
+      })
+      .jpeg({ mozjpeg: true, quality: 88 })
+      .toBuffer(),
+    sharp(source)
+      .resize({ fit: 'cover', height: CANVAS.height, width: CANVAS.width })
+      .blur(BACKDROP_BLUR_SIGMA)
+      .modulate({ saturation: BACKDROP_SATURATION })
+      .linear(BACKDROP_BRIGHTNESS, 0)
+      .jpeg({ quality: 80 })
+      .toBuffer(),
+  ])
 
-  return `data:image/jpeg;base64,${jpeg.toString('base64')}`
-}
-
-function PhotoFrame({
-  width,
-  height,
-  fit,
-  src,
-}: {
-  width: number
-  height: number
-  fit: 'cover' | 'contain'
-  src: string
-}) {
-  return (
-    <div
-      style={{
-        width,
-        height,
-        position: 'relative',
-        borderRadius: 12,
-        overflow: 'hidden',
-        boxShadow:
-          '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(224,222,244,0.05)',
-        backgroundColor: THEME.base,
-        display: 'flex',
-      }}
-    >
-      {/* ImageResponse renders native image elements into the generated PNG. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: fit,
-          borderRadius: 12,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'linear-gradient(135deg, rgba(224,222,244,0.08) 0%, transparent 50%)',
-          display: 'flex',
-        }}
-      />
-    </div>
-  )
-}
-
-function InfoPanel({
-  title,
-  tags,
-  exifItems,
-  camera,
-  formattedDate,
-  compact,
-}: InfoPanelProps) {
-  const fontScale = compact ? 0.85 : 1.08
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: compact ? 12 : 16,
-        color: THEME.text,
-      }}
-    >
-      <h1
-        style={{
-          margin: 0,
-          fontSize: compact ? 28 : 38,
-          fontWeight: 700,
-          letterSpacing: '-0.5px',
-          lineHeight: 1.25,
-        }}
-      >
-        {title}
-      </h1>
-
-      {tags.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {tags.slice(0, compact ? 2 : 3).map((tag) => (
-            <div
-              key={tag}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: 13 * fontScale,
-                color: 'rgba(224,222,244,0.9)',
-                backgroundColor: 'rgba(57,53,82,0.72)',
-                padding: `${compact ? 4 : 6}px ${compact ? 12 : 14}px`,
-                borderRadius: 16,
-                border: '1px solid rgba(196,167,231,0.3)',
-                letterSpacing: '0.2px',
-              }}
-            >
-              #{tag}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {camera && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            color: 'rgba(224,222,244,0.7)',
-            fontSize: 15 * fontScale,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 11 * fontScale,
-              color: 'rgba(144,140,170,0.75)',
-              letterSpacing: '0.3px',
-              textTransform: 'uppercase',
-            }}
-          >
-            cam
-          </span>
-          <span>{camera}</span>
-        </div>
-      )}
-
-      {exifItems.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: compact ? 12 : 18,
-            color: 'rgba(224,222,244,0.75)',
-            fontSize: 14 * fontScale,
-            flexWrap: 'wrap',
-          }}
-        >
-          {exifItems.map((item) => (
-            <div
-              key={`${item.label}-${item.text}`}
-              style={{ display: 'flex', gap: 4, alignItems: 'center' }}
-            >
-              <span
-                style={{
-                  fontSize: 10 * fontScale,
-                  color: 'rgba(144,140,170,0.68)',
-                  letterSpacing: '0.2px',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {item.label}
-              </span>
-              <span>{item.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div
-        style={{
-          color: 'rgba(144,140,170,0.9)',
-          fontSize: 13 * fontScale,
-          marginTop: compact ? 2 : 6,
-          display: 'flex',
-        }}
-      >
-        {formattedDate}
-      </div>
-
-      <div
-        style={{
-          width: compact ? 50 : 80,
-          height: 3,
-          background: THEME.accent,
-          borderRadius: 2,
-          display: 'flex',
-        }}
-      />
-    </div>
-  )
-}
-
-function SplitLayout({ gap, photo, info }: LayoutPieces) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap,
-        width: '100%',
-        height: '100%',
-      }}
-    >
-      <div style={{ display: 'flex', flexShrink: 0 }}>{photo}</div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          flex: 1,
-          height: '100%',
-        }}
-      >
-        {info}
-      </div>
-    </div>
-  )
-}
-
-function StackLayout({ gap, photo, info, photoWidth }: LayoutPieces) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap,
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-        {photo}
-      </div>
-      <div
-        style={{
-          width: '100%',
-          maxWidth: photoWidth,
-          display: 'flex',
-          flexShrink: 0,
-        }}
-      >
-        {info}
-      </div>
-    </div>
-  )
-}
-
-function WideLayout({ gap, photo, info, photoWidth }: LayoutPieces) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap,
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-start',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-        {photo}
-      </div>
-      <div
-        style={{
-          width: '100%',
-          maxWidth: photoWidth,
-          margin: '0 auto',
-          display: 'flex',
-          flexShrink: 0,
-        }}
-      >
-        {info}
-      </div>
-    </div>
-  )
+  return {
+    backdropUrl: toJpegDataUrl(backdropJpeg),
+    photoUrl: toJpegDataUrl(photoJpeg),
+  }
 }
 
 export async function renderPhotoOgImage(photo: Photo) {
-  const layout = determineLayout(photo.aspectRatio)
-  const photoSize = fitWithinBounds(photo.aspectRatio, {
-    width: layout.photoBox.maxWidth,
-    height: layout.photoBox.maxHeight,
-  })
-  const renderablePhotoUrl = await getRenderablePhotoUrl(photo)
-  const photoFrame = (
-    <PhotoFrame
-      width={photoSize.width}
-      height={photoSize.height}
-      fit={layout.photoFit}
-      src={renderablePhotoUrl}
-    />
-  )
-  const infoPanel = (
-    <InfoPanel
-      title={photo.title}
-      tags={[photo.album.title]}
-      exifItems={getExifItems(photo)}
-      camera={photo.cameraName}
-      formattedDate={photo.captureTime.date}
-      compact={layout.infoCompact}
-    />
-  )
-  const layoutProps: LayoutPieces = {
-    gap: layout.gap,
-    photo: photoFrame,
-    info: infoPanel,
-    photoWidth: photoSize.width,
-  }
-  const content =
-    layout.arrangement === 'wide' ? (
-      <WideLayout {...layoutProps} />
-    ) : layout.arrangement === 'stack' ? (
-      <StackLayout {...layoutProps} />
-    ) : (
-      <SplitLayout {...layoutProps} />
-    )
+  const photoSize = fitWithinBounds(photo.aspectRatio, PHOTO_BOUNDS)
+  const { backdropUrl, photoUrl } = await getRenderableImages(photo)
+  const exifItems = getExifItems(photo)
 
   return new ImageResponse(
     <div
       style={{
         width: '100%',
         height: '100%',
-        padding: layout.padding,
         position: 'relative',
         overflow: 'hidden',
-        background: `radial-gradient(circle at 100% 100%, ${THEME.base} 0%, transparent 52%), linear-gradient(135deg, ${THEME.base} 0%, ${THEME.surface} 52%, ${THEME.overlay} 100%)`,
+        backgroundColor: THEME.base,
         color: THEME.text,
-        fontFamily: 'sans-serif',
+        fontFamily: 'Geist',
+        fontWeight: 500,
         display: 'flex',
       }}
     >
+      {/* ImageResponse renders native image elements into the generated PNG. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={backdropUrl}
+        alt=""
+        width={CANVAS.width}
+        height={CANVAS.height}
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      />
       <div
         style={{
           position: 'absolute',
-          inset: 0,
-          opacity: 0.04,
-          background:
-            'linear-gradient(90deg, rgba(224,222,244,0.1) 1px, transparent 1px), linear-gradient(0deg, rgba(224,222,244,0.1) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
+          top: 0,
+          left: 0,
+          width: CANVAS.width,
+          height: CANVAS.height,
+          backgroundColor: THEME.scrim,
           display: 'flex',
         }}
       />
       <div
         style={{
           position: 'absolute',
-          bottom: 32,
-          right: 32,
-          fontSize: 20,
-          fontWeight: 500,
-          color: 'rgba(224,222,244,0.68)',
-          letterSpacing: '0.5px',
+          left: 0,
+          bottom: 0,
+          width: CANVAS.width,
+          height: CAPTION_SHADE_HEIGHT,
+          backgroundImage:
+            'linear-gradient(to top, rgba(0,0,0,0.32), rgba(0,0,0,0))',
           display: 'flex',
         }}
-      >
-        {siteConfig.author} · {siteConfig.name}
-      </div>
+      />
+
       <div
         style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
+          position: 'absolute',
+          top: PADDING,
+          left: PADDING,
+          width: PHOTO_BOUNDS.width,
+          height: PHOTO_BOUNDS.height,
+          alignItems: 'center',
+          justifyContent: 'center',
           display: 'flex',
         }}
       >
-        {content}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photoUrl}
+          alt=""
+          width={photoSize.width}
+          height={photoSize.height}
+          style={{
+            borderRadius: 12,
+            boxShadow:
+              '0 24px 48px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(224,222,244,0.08)',
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          left: CAPTION_INSET,
+          right: CAPTION_INSET,
+          bottom: 0,
+          height: CAPTION_HEIGHT,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 24,
+          fontSize: 28,
+          whiteSpace: 'nowrap',
+          display: 'flex',
+        }}
+      >
+        <div style={{ alignItems: 'baseline', gap: 16, display: 'flex' }}>
+          <span
+            style={{
+              maxWidth: ALBUM_TITLE_MAX_WIDTH,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {photo.album.title}
+          </span>
+          <span>{photo.captureTime.date}</span>
+        </div>
+        {exifItems.length > 0 && (
+          <div style={{ gap: 12, display: 'flex' }}>
+            {exifItems.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+        )}
       </div>
     </div>,
     {
       ...CANVAS,
+      fonts: [
+        { name: 'Geist', data: geistMedium, style: 'normal', weight: 500 },
+      ],
       headers: {
         'Cache-Control': OG_CACHE_CONTROL,
       },

@@ -17,6 +17,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
+import { ThumbHashImage } from '@/components/image'
 import type { Photo } from '@/lib/photo'
 import { getPhotoShareUrl } from '@/lib/photo/share'
 import { getPhotoOgPath } from '@/lib/route-paths'
@@ -166,7 +167,7 @@ function ShareLink({ url, copyStatus, onCopy }: ShareLinkProps) {
 
   return (
     <div className="mb-4 space-y-2">
-      <p className="text-muted text-xs font-medium">Share link</p>
+      <p className="text-subtle text-xs font-medium">Share link</p>
       <div className="border-overlay bg-overlay/35 flex items-center gap-2 rounded-lg border px-3 py-2">
         <span className="min-w-0 flex-1 truncate text-xs">{url}</span>
         <button
@@ -208,24 +209,25 @@ function ShareLink({ url, copyStatus, onCopy }: ShareLinkProps) {
 interface SharePreviewProps {
   src: string
   alt: string
+  thumbHash: string
 }
 
-function SharePreview({ src, alt }: SharePreviewProps) {
+function SharePreview({ src, alt, thumbHash }: SharePreviewProps) {
   const [status, setStatus] = useState<PreviewStatus>('loading')
   const isLoading = status === 'loading'
   const hasFailed = status === 'error'
 
   return (
     <div className="mb-4 space-y-2">
-      <p className="text-muted text-xs font-medium">Share preview</p>
-      <div className="border-overlay bg-base/60 overflow-hidden rounded-lg border">
-        <div className="relative w-full" style={{ aspectRatio: '1200 / 628' }}>
-          {isLoading && (
-            <div className="bg-overlay/35 absolute inset-0 flex items-center justify-center">
-              <div className="border-overlay border-t-love size-8 animate-spin rounded-full border-2" />
-            </div>
-          )}
-          {!hasFailed && (
+      <p className="text-subtle text-xs font-medium">Share preview</p>
+      <div
+        className="bg-overlay/35 ring-text/5 relative w-full overflow-hidden rounded-lg ring-1"
+        style={{ aspectRatio: '1200 / 628' }}
+      >
+        {!hasFailed && (
+          <>
+            <ThumbHashImage thumbHash={thumbHash} className="object-cover" />
+            <div className="bg-base/70 absolute inset-0" />
             <Image
               src={src}
               alt={alt}
@@ -240,13 +242,14 @@ function SharePreview({ src, alt }: SharePreviewProps) {
               onError={() => setStatus('error')}
               unoptimized
             />
-          )}
-          {hasFailed && (
-            <div className="text-muted absolute inset-0 flex items-center justify-center text-xs">
-              Preview unavailable
-            </div>
-          )}
-        </div>
+          </>
+        )}
+        {hasFailed && (
+          <div className="text-subtle absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs">
+            <PicLine className="size-5" aria-hidden="true" />
+            Preview unavailable
+          </div>
+        )}
       </div>
     </div>
   )
@@ -361,7 +364,7 @@ export function ViewerShareDialog({
         transition={VIEWER_MOTION.shareDialog.panel}
       >
         <div className="mb-4 min-w-0">
-          <p className="text-muted mb-0.5 text-xs font-medium">Share photo</p>
+          <p className="text-subtle mb-0.5 text-xs font-medium">Share photo</p>
           <h2 id={titleId} className="truncate text-lg font-semibold">
             {photo.title}
           </h2>
@@ -377,7 +380,11 @@ export function ViewerShareDialog({
         </button>
 
         <ShareLink url={shareUrl} copyStatus={copyStatus} onCopy={copyLink} />
-        <SharePreview src={ogPreviewUrl} alt={photo.title} />
+        <SharePreview
+          src={ogPreviewUrl}
+          alt={photo.title}
+          thumbHash={photo.thumbHash}
+        />
 
         <div
           className={cn(
