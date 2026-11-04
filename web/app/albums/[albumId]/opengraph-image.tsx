@@ -1,7 +1,6 @@
 import { formatReadableDate } from '@/lib/date'
-import { findCameraLabel } from '@/lib/og/camera-label'
 import { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from '@/lib/og/config'
-import { renderMosaicOgImage, type StatItem } from '@/lib/og/mosaic'
+import { formatCount, renderMosaicOgImage } from '@/lib/og/mosaic'
 import { siteConfig } from '@/lib/site-config'
 import { loadAlbumRouteData } from './_data'
 
@@ -20,23 +19,10 @@ export default async function AlbumOpenGraphImage({
   const { albumId } = await params
   const album = await loadAlbumRouteData(albumId)
 
-  const cameraLabel = findCameraLabel(album.photos)
-  const formattedDate = formatReadableDate(album.date)
-
-  const stats: StatItem[] = [{ label: 'photos', value: album.photos.length }]
-
-  if (cameraLabel) {
-    stats.push({ label: 'cam', value: cameraLabel })
-  }
-
-  if (formattedDate) {
-    stats.push({ label: 'date', value: formattedDate })
-  }
-
   return renderMosaicOgImage({
+    detail: formatReadableDate(album.date),
     photos: album.photos,
-    stats,
-    tag: album.title,
-    title: `${siteConfig.author} · ${siteConfig.name}`,
+    stats: [formatCount(album.photos.length, 'photo')],
+    title: album.title,
   })
 }

@@ -1,279 +1,153 @@
-import { ImageResponse } from 'next/og'
 import sharp from 'sharp'
 import type { Photo } from '@/lib/photo'
-import { OG_CACHE_CONTROL, OG_IMAGE_SIZE } from './config'
-
-export interface StatItem {
-  label?: string
-  value: string | number
-}
+import {
+  createBackdropUrl,
+  fetchOgPhotoSource,
+  OG_PHOTO_BOUNDS,
+  OG_PHOTO_STYLE,
+  renderAmbientOgImage,
+  toJpegDataUrl,
+} from './photo'
 
 export interface MosaicOgOptions {
-  description?: string | null
+  detail?: string | null
   photos: Photo[]
-  stats: StatItem[]
-  tag?: string | null
+  stats: string[]
   title: string
 }
 
-const THEME = {
-  accent: '#c4a7e7',
-  base: '#191724',
-  surface: '#232136',
-  text: '#e0def4',
+interface MosaicCell {
+  height: number
+  left: number
+  photo: Photo
+  top: number
+  width: number
 }
 
-const MOSAIC_PHOTO_COUNT = 6
+const MOSAIC_GAP = 8
+const LEAD_LAYOUT_MIN_PHOTOS = 3
+const LEAD_WIDTH = 774
+const SIDE_WIDTH = OG_PHOTO_BOUNDS.width - LEAD_WIDTH - MOSAIC_GAP
+const SIDE_HEIGHT = (OG_PHOTO_BOUNDS.height - MOSAIC_GAP) / 2
 
-async function getMosaicPhotoUrls(photos: Photo[]) {
+export function formatCount(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`
+}
+
+function getLeadCells(photos: Photo[]): MosaicCell[] {
+  const [lead, top, bottom] = [
+    ...photos.filter((photo) => photo.aspectRatio >= 1),
+    ...photos.filter((photo) => photo.aspectRatio < 1),
+  ]
+  const sideLeft = LEAD_WIDTH + MOSAIC_GAP
+
+  return [
+    {
+      photo: lead,
+      left: 0,
+      top: 0,
+      width: LEAD_WIDTH,
+      height: OG_PHOTO_BOUNDS.height,
+    },
+    {
+      photo: top,
+      left: sideLeft,
+      top: 0,
+      width: SIDE_WIDTH,
+      height: SIDE_HEIGHT,
+    },
+    {
+      photo: bottom,
+      left: sideLeft,
+      top: SIDE_HEIGHT + MOSAIC_GAP,
+      width: SIDE_WIDTH,
+      height: SIDE_HEIGHT,
+    },
+  ]
+}
+
+function getRowCells(photos: Photo[]): MosaicCell[] {
+  const totalGap = MOSAIC_GAP * (photos.length - 1)
+  const totalAspect = photos.reduce(
+    (total, photo) => total + photo.aspectRatio,
+    0,
+  )
+  const height = Math.min(
+    OG_PHOTO_BOUNDS.height,
+    (OG_PHOTO_BOUNDS.width - totalGap) / totalAspect,
+  )
+  const top = Math.round((OG_PHOTO_BOUNDS.height - height) / 2)
+  let left = (OG_PHOTO_BOUNDS.width - (height * totalAspect + totalGap)) / 2
+
+  return photos.map((photo) => {
+    const width = height * photo.aspectRatio
+    const cell = {
+      photo,
+      left: Math.round(left),
+      top,
+      width: Math.round(width),
+      height: Math.round(height),
+    }
+
+    left += width + MOSAIC_GAP
+
+    return cell
+  })
+}
+
+function getMosaicCells(photos: Photo[]) {
   if (photos.length === 0) {
     return []
   }
 
-  const photoUrls = await Promise.all(
-    photos.slice(0, MOSAIC_PHOTO_COUNT).map(async (photo) => {
-      const response = await fetch(photo.thumbnail.url, { cache: 'no-store' })
+  return photos.length < LEAD_LAYOUT_MIN_PHOTOS
+    ? getRowCells(photos)
+    : getLeadCells(photos)
+}
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch OG photo (${response.status} ${response.statusText})`,
-        )
-      }
-
-      const jpeg = await sharp(await response.arrayBuffer())
-        .resize({
-          fit: 'cover',
-          height: 330,
-          width: 440,
-        })
-        .jpeg({ mozjpeg: true, quality: 80 })
+async function getMosaicImages(cells: MosaicCell[]) {
+  const sources = await Promise.all(
+    cells.map(({ photo }) => fetchOgPhotoSource(photo)),
+  )
+  const [backdropUrl, ...photoUrls] = await Promise.all([
+    sources.length > 0 ? createBackdropUrl(sources[0]) : null,
+    ...cells.map(async ({ height, width }, index) => {
+      const jpeg = await sharp(sources[index])
+        .resize({ fit: 'cover', height, width })
+        .jpeg({ mozjpeg: true, quality: 88 })
         .toBuffer()
 
-      return `data:image/jpeg;base64,${jpeg.toString('base64')}`
+      return toJpegDataUrl(jpeg)
     }),
-  )
+  ])
 
-  return Array.from(
-    { length: MOSAIC_PHOTO_COUNT },
-    (_, index) => photoUrls[index % photoUrls.length],
-  )
+  return { backdropUrl, photoUrls }
 }
 
 export async function renderMosaicOgImage({
-  description,
+  detail,
   photos,
   stats,
-  tag,
   title,
-}: MosaicOgOptions): Promise<Response> {
-  const photoUrls = await getMosaicPhotoUrls(photos)
-  const rows = [photoUrls.slice(0, 3), photoUrls.slice(3, 6)]
+}: MosaicOgOptions) {
+  const cells = getMosaicCells(photos)
+  const { backdropUrl, photoUrls } = await getMosaicImages(cells)
 
-  return new ImageResponse(
-    <div
-      style={{
-        alignItems: 'center',
-        background: THEME.base,
-        color: THEME.text,
-        display: 'flex',
-        fontFamily: 'sans-serif',
-        height: '100%',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        position: 'relative',
-        width: '100%',
-      }}
-    >
-      {photoUrls.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            height: 628,
-            left: 0,
-            opacity: 0.85,
-            padding: 0,
-            position: 'absolute',
-            top: 0,
-            width: 1200,
-          }}
-        >
-          {rows.map((row, rowIndex) => (
-            <div
-              key={rowIndex}
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: 6,
-                height: 311,
-                width: 1200,
-              }}
-            >
-              {row.map((url, imageIndex) => (
-                <div
-                  key={`${rowIndex}-${imageIndex}`}
-                  style={{
-                    backgroundColor: THEME.surface,
-                    display: 'flex',
-                    height: 311,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    width: 396,
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt=""
-                    style={{
-                      height: 311,
-                      objectFit: 'cover',
-                      width: 396,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div
-        style={{
-          background:
-            'radial-gradient(circle at 50% 50%, rgba(25,23,36,0.35) 0%, rgba(25,23,36,0.78) 100%), linear-gradient(180deg, rgba(25,23,36,0.2) 0%, rgba(25,23,36,0.68) 100%)',
-          display: 'flex',
-          height: 628,
-          left: 0,
-          position: 'absolute',
-          top: 0,
-          width: 1200,
-        }}
+  return renderAmbientOgImage({
+    backdropUrl,
+    children: cells.map(({ height, left, photo, top, width }, index) => (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        key={photo.id}
+        src={photoUrls[index] ?? ''}
+        alt=""
+        width={width}
+        height={height}
+        style={{ ...OG_PHOTO_STYLE, position: 'absolute', left, top }}
       />
-
-      <div
-        style={{
-          background:
-            'linear-gradient(90deg, rgba(224,222,244,0.1) 1px, transparent 1px), linear-gradient(0deg, rgba(224,222,244,0.1) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          display: 'flex',
-          height: 628,
-          left: 0,
-          opacity: 0.06,
-          position: 'absolute',
-          top: 0,
-          width: 1200,
-        }}
-      />
-
-      <div
-        style={{
-          alignItems: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          justifyContent: 'center',
-          maxWidth: 900,
-          position: 'relative',
-          textAlign: 'center',
-          width: '100%',
-        }}
-      >
-        <h1
-          style={{
-            color: THEME.text,
-            fontSize: 54,
-            fontWeight: 800,
-            letterSpacing: '-1px',
-            lineHeight: 1.15,
-            margin: 0,
-          }}
-        >
-          {title}
-        </h1>
-
-        {tag && (
-          <div
-            style={{
-              alignItems: 'center',
-              backgroundColor: 'rgba(57,53,82,0.72)',
-              border: '1px solid rgba(196,167,231,0.3)',
-              borderRadius: 16,
-              color: 'rgba(224,222,244,0.9)',
-              display: 'flex',
-              fontSize: 14,
-              letterSpacing: '0.3px',
-              padding: '4px 14px',
-            }}
-          >
-            #{tag}
-          </div>
-        )}
-
-        {description && (
-          <p
-            style={{
-              color: 'rgba(224, 222, 244, 0.75)',
-              fontSize: 20,
-              letterSpacing: '0.2px',
-              margin: 0,
-            }}
-          >
-            {description}
-          </p>
-        )}
-
-        {stats.length > 0 && (
-          <div
-            style={{
-              alignItems: 'center',
-              color: 'rgba(224, 222, 244, 0.85)',
-              display: 'flex',
-              gap: 24,
-              marginTop: 6,
-            }}
-          >
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                style={{ alignItems: 'center', display: 'flex', gap: 6 }}
-              >
-                {stat.label && (
-                  <span
-                    style={{
-                      color: 'rgba(144,140,170,0.75)',
-                      fontSize: 12,
-                      letterSpacing: '0.3px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {stat.label}
-                  </span>
-                )}
-                <span style={{ fontSize: 16 }}>{stat.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div
-          style={{
-            background: THEME.accent,
-            borderRadius: 2,
-            display: 'flex',
-            height: 3,
-            marginTop: 8,
-            width: 80,
-          }}
-        />
-      </div>
-    </div>,
-    {
-      ...OG_IMAGE_SIZE,
-      headers: {
-        'Cache-Control': OG_CACHE_CONTROL,
-      },
-    },
-  )
+    )),
+    detail,
+    meta: stats,
+    title,
+  })
 }
