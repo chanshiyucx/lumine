@@ -22,6 +22,7 @@
 @theme {
   --animate-svg-text: svg-text 10s infinite ease-in-out backwards;
   --animate-preview-enter: preview-enter 0.2s ease-out forwards;
+  --animate-delayed-reveal: delayed-reveal 160ms ease-out 350ms backwards;
 
   @keyframes svg-text {
     0% {
@@ -45,6 +46,12 @@
     100% {
       stroke-dashoffset: var(--path-length);
       fill-opacity: 0;
+    }
+  }
+
+  @keyframes delayed-reveal {
+    from {
+      opacity: 0;
     }
   }
 

@@ -1,5 +1,6 @@
 import { AlertLine } from '@mingcute/react/alert'
 import { Loading3Line } from '@mingcute/react/loading-3'
+import { cn } from '@/lib/style'
 import {
   formatProgressBytes,
   type PhotoResourceState,
@@ -28,7 +29,13 @@ export function LoadingIndicator({ state }: LoadingIndicatorProps) {
     : getBytesLabel(state.loadedBytes, state.totalBytes)
 
   return (
-    <div className="bg-overlay/80 pointer-events-none absolute right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl">
+    <div
+      className={cn(
+        'bg-overlay/80 pointer-events-none absolute right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-xl',
+        !isError &&
+          'animate-delayed-reveal motion-reduce:[animation-duration:0ms]',
+      )}
+    >
       {isError ? (
         <AlertLine className="size-4" aria-hidden="true" />
       ) : (
