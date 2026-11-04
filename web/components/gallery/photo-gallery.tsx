@@ -18,6 +18,7 @@ const Viewer = dynamic(() =>
 )
 
 const preloadViewer = () => import('@/components/viewer/viewer').catch(() => {})
+const VIEWER_PRELOAD_FALLBACK_DELAY = 1000
 
 interface PhotoGalleryProps {
   photos: Photo[]
@@ -32,7 +33,7 @@ export function PhotoGallery({
   fixedHeaderDetail,
   scope = 'public',
 }: PhotoGalleryProps) {
-  const galleryRef = useRef<HTMLDivElement>(null)
+  const galleryRef = useRef<HTMLElement>(null)
   const scrollElement = useScrollElement()
   const viewer = useViewerController({
     photos,
@@ -43,6 +44,8 @@ export function PhotoGallery({
   const viewerState = viewer.state
   const isViewerMounted = viewerState.phase !== 'closed'
   const hasFixedHeader = fixedHeaderDetail !== undefined
+  const pageHeading =
+    fixedHeaderDetail?.location ?? (scope === 'private' ? 'Private' : 'Photos')
   const handleVisiblePhotoChange = useGalleryHeader(
     scrollElement,
     fixedHeaderDetail,
@@ -59,12 +62,17 @@ export function PhotoGallery({
   }, [scope, photos.length])
 
   useEffect(() => {
-    if (initialPhotoSlug || !('requestIdleCallback' in window)) {
+    if (initialPhotoSlug) {
       return
     }
 
-    const idleId = window.requestIdleCallback(preloadViewer)
-    return () => window.cancelIdleCallback(idleId)
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preloadViewer)
+      return () => window.cancelIdleCallback(idleId)
+    }
+
+    const timeoutId = setTimeout(preloadViewer, VIEWER_PRELOAD_FALLBACK_DELAY)
+    return () => clearTimeout(timeoutId)
   }, [initialPhotoSlug])
 
   useEffect(() => {
@@ -82,12 +90,13 @@ export function PhotoGallery({
 
   return (
     <>
-      <div
+      <main
         ref={galleryRef}
         className="pt-12"
         inert={isViewerMounted}
         tabIndex={-1}
       >
+        <h1 className="sr-only">{pageHeading}</h1>
         <PhotoMasonry
           photos={photos}
           onPhotoOpen={viewer.open}
@@ -95,7 +104,7 @@ export function PhotoGallery({
             hasFixedHeader ? undefined : handleVisiblePhotoChange
           }
         />
-      </div>
+      </main>
 
       {isViewerMounted && (
         <Viewer

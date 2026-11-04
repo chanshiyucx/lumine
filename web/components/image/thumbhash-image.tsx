@@ -22,7 +22,6 @@ export function ThumbHashImage({
       className={className}
       decoding="async"
       fill
-      sizes="100vw"
       unoptimized
     />
   )

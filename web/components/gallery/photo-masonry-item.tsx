@@ -34,16 +34,14 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
   return (
     <button
       type="button"
-      style={{
-        aspectRatio: `${photo.thumbnail.width} / ${photo.thumbnail.height}`,
-      }}
-      className="group bg-surface relative block w-full appearance-none overflow-hidden text-left"
+      style={{ aspectRatio: photo.aspectRatio }}
+      className="group bg-surface relative block w-full scroll-mt-12 appearance-none overflow-hidden text-left"
       data-viewer-trigger={photo.id}
       onClick={(event) => onOpen(index, event.currentTarget)}
       aria-label={`Open ${photo.title}`}
       aria-haspopup="dialog"
     >
-      <span className="pointer-events-none absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100">
+      <span className="absolute inset-0 block transition-transform duration-300 ease-out group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100">
         <ThumbnailImage photo={photo} loading={imageLoading} />
       </span>
 

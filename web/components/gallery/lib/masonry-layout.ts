@@ -1,6 +1,8 @@
 import type { Photo } from '@/lib/photo'
 
 export const MASONRY_GAP = 4
+// Share of the viewport another album must out-cover the current one by.
+const ALBUM_SWITCH_MARGIN = 0.1
 const COLUMN_COUNT_BREAKPOINTS = [
   { minWidth: 2048, columnCount: 8 },
   { minWidth: 1800, columnCount: 7 },
@@ -22,6 +24,21 @@ interface MasonryPosition {
   end: number
 }
 
+interface AlbumCoverage {
+  height: number
+  photo: Photo
+  index: number
+}
+
+interface DominantMasonryPhotoOptions {
+  photos: readonly Photo[]
+  positions: readonly MasonryPosition[]
+  viewportStart: number
+  viewportEnd: number
+  columnCount: number
+  currentAlbumKey?: string
+}
+
 export function getMasonryLayout(containerWidth: number): MasonryLayout {
   const columnCount =
     COLUMN_COUNT_BREAKPOINTS.find(({ minWidth }) => containerWidth >= minWidth)
@@ -34,18 +51,15 @@ export function getMasonryLayout(containerWidth: number): MasonryLayout {
   }
 }
 
-export function getDominantMasonryPhoto(
-  photos: readonly Photo[],
-  positions: readonly MasonryPosition[],
-  viewportStart: number,
-  viewportEnd: number,
-  columnCount: number,
-  currentAlbumKey?: string,
-): Photo | undefined {
-  const albums = new Map<
-    string,
-    { height: number; photo: Photo; index: number }
-  >()
+export function getDominantMasonryPhoto({
+  photos,
+  positions,
+  viewportStart,
+  viewportEnd,
+  columnCount,
+  currentAlbumKey,
+}: DominantMasonryPhotoOptions): Photo | undefined {
+  const albums = new Map<string, AlbumCoverage>()
 
   for (const position of positions) {
     const height = Math.max(
@@ -71,7 +85,7 @@ export function getDominantMasonryPhoto(
     }
   }
 
-  let dominant: { height: number; photo: Photo; index: number } | undefined
+  let dominant: AlbumCoverage | undefined
   for (const album of albums.values()) {
     if (!dominant || album.height > dominant.height) {
       dominant = album
@@ -81,7 +95,7 @@ export function getDominantMasonryPhoto(
   const current = currentAlbumKey ? albums.get(currentAlbumKey) : undefined
   // Equal-width columns let us compare heights instead of pixel areas.
   const switchMargin =
-    Math.max(0, viewportEnd - viewportStart) * columnCount * 0.1
+    Math.max(0, viewportEnd - viewportStart) * columnCount * ALBUM_SWITCH_MARGIN
   if (current && dominant && dominant.height - current.height <= switchMargin) {
     return current.photo
   }

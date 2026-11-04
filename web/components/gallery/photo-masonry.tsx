@@ -26,8 +26,6 @@ import {
 } from './lib/masonry-layout'
 import { PhotoMasonryItem } from './photo-masonry-item'
 
-// Matches the fixed header's `h-12`.
-const HEADER_HEIGHT = 48
 const OVERSCAN_ROWS = 3
 const INITIAL_EAGER_ITEMS_PER_COLUMN = 3
 // Matches the media query Tailwind v4 wraps around hover and group-hover.
@@ -97,11 +95,10 @@ function useMasonryLayout(scrollElement: HTMLElement | null) {
       })
     }
 
-    const initialRect = container.getBoundingClientRect()
-    updateLayout(initialRect.width)
+    updateLayout(container.getBoundingClientRect().width)
 
     const resizeObserver = new ResizeObserver(([entry]) => {
-      if (entry && entry.contentRect.width !== currentWidth) {
+      if (entry) {
         updateLayout(entry.contentRect.width)
       }
     })
@@ -121,7 +118,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
 }: PhotoMasonryProps) {
   const scrollElement = useScrollElement()
   const { containerRef, layout } = useMasonryLayout(scrollElement)
-  const selectedPhotoRef = useRef<Photo | undefined>(undefined)
+  const dominantPhotoRef = useRef<Photo | undefined>(undefined)
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
   const canHover = useMediaQuery(HOVER_QUERY)
   const isLayoutReady = scrollElement !== null && layout !== null
@@ -155,25 +152,26 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   )
   const handleVirtualizerChange = useCallback(
     (virtualizer: Virtualizer<HTMLElement, HTMLLIElement>) => {
-      if (!scrollElement || !onVisiblePhotoChange) {
+      const { scrollOffset, scrollRect } = virtualizer
+      if (!onVisiblePhotoChange || scrollOffset === null || !scrollRect) {
         return
       }
 
-      const scrollOffset = virtualizer.scrollOffset ?? scrollElement.scrollTop
-      const photo = getDominantMasonryPhoto(
+      const photo = getDominantMasonryPhoto({
         photos,
-        virtualizer.getVirtualItems(),
-        scrollOffset + HEADER_HEIGHT,
-        scrollOffset + scrollElement.clientHeight,
+        positions: virtualizer.getVirtualItems(),
+        // The masonry starts right below the fixed header.
+        viewportStart: scrollOffset + scrollMargin,
+        viewportEnd: scrollOffset + scrollRect.height,
         columnCount,
-        selectedPhotoRef.current?.album.key,
-      )
-      if (photo !== selectedPhotoRef.current) {
-        selectedPhotoRef.current = photo
+        currentAlbumKey: dominantPhotoRef.current?.album.key,
+      })
+      if (photo !== dominantPhotoRef.current) {
+        dominantPhotoRef.current = photo
         onVisiblePhotoChange(photo)
       }
     },
-    [photos, scrollElement, columnCount, onVisiblePhotoChange],
+    [photos, scrollMargin, columnCount, onVisiblePhotoChange],
   )
 
   // TanStack Virtual owns its imperative state and cannot be memoized safely.
@@ -195,13 +193,13 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     useFlushSync: false,
   })
 
-  // TanStack caches measurements without tracking estimateSize, so a column
-  // width change within the same column count needs an explicit re-measure.
+  // TanStack caches sizes and column assignments by index without tracking
+  // estimateSize, so new widths or photos need an explicit re-measure.
   useLayoutEffect(() => {
     if (isLayoutReady) {
       virtualizer.measure()
     }
-  }, [columnCount, columnWidth, isLayoutReady, virtualizer])
+  }, [columnCount, columnWidth, photos, isLayoutReady, virtualizer])
 
   useLayoutEffect(() => {
     if (isLayoutReady) {
@@ -210,6 +208,28 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   }, [isLayoutReady, virtualizer, handleVirtualizerChange])
 
   const virtualItems = virtualizer.getVirtualItems()
+  const totalSize = virtualizer.getTotalSize()
+
+  const previousListRef = useRef({ columnWidth, totalSize: 0 })
+
+  // New column widths rescale the masonry's height, so keep the same proportion
+  // scrolled. This waits for the list's new height, which can arrive a commit
+  // after the width, or the browser would clamp the offset.
+  useLayoutEffect(() => {
+    const previous = previousListRef.current
+    if (previous.totalSize === totalSize) {
+      return
+    }
+
+    previousListRef.current = { columnWidth, totalSize }
+
+    if (previous.totalSize > 0 && previous.columnWidth !== columnWidth) {
+      const scrollOffset = virtualizer.scrollOffset ?? 0
+      virtualizer.scrollToOffset(
+        (scrollOffset * totalSize) / previous.totalSize,
+      )
+    }
+  }, [columnWidth, totalSize, virtualizer])
 
   const handleFocus = (event: FocusEvent<HTMLUListElement>) => {
     setFocusedIndex(getFocusedIndex(event.target))
@@ -225,7 +245,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
     <div ref={containerRef}>
       <ul
         className="relative"
-        style={{ height: virtualizer.getTotalSize() }}
+        style={{ height: totalSize }}
         // Preflight's `list-style: none` makes Safari drop the list role.
         role="list"
         aria-label="Photos"
