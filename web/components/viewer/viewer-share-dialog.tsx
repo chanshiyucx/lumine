@@ -17,7 +17,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import { ThumbHashImage } from '@/components/image'
+import { ThumbHashImage } from '@/components/image/thumbhash-image'
 import type { Photo } from '@/lib/photo'
 import { getPhotoShareUrl } from '@/lib/photo/share'
 import { getPhotoOgPath } from '@/lib/route-paths'

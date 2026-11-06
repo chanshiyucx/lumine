@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { ThumbnailImage } from '@/components/image'
+import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import { useMobile } from '@/hooks/use-mobile'
 import { clamp } from '@/lib/math'
 import type { Photo } from '@/lib/photo'

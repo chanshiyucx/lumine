@@ -1,7 +1,7 @@
 import { GithubFill } from '@mingcute/react/github'
 import { PaperFill } from '@mingcute/react/paper'
 import { Suspense } from 'react'
-import { Logo } from '@/components/logo'
+import { Logo } from '@/components/logo/logo'
 import { PhotoCount } from './photo-count'
 
 export function HeaderLeft() {

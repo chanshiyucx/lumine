@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { PhotoGallery } from '@/components/gallery'
+import { PhotoGallery } from '@/components/gallery/photo-gallery'
 import { getAlbumCatalog } from '@/lib/album/catalog'
 import { formatReadableDate } from '@/lib/date'
 import { createPageMetadata } from '@/lib/page-metadata'

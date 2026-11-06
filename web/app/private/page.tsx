@@ -1,5 +1,5 @@
-import { PhotoGallery } from '@/components/gallery'
-import { PrivateUnlock } from '@/components/private'
+import { PhotoGallery } from '@/components/gallery/photo-gallery'
+import { PrivateUnlock } from '@/components/private/private-unlock'
 import { loadPrivatePhotos } from './_data'
 import { unlockPrivateMode } from './actions'
 

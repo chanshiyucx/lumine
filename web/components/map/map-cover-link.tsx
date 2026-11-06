@@ -1,6 +1,6 @@
 import { ExternalLinkLine } from '@mingcute/react/external-link'
 import Link from 'next/link'
-import { ThumbnailImage } from '@/components/image'
+import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import type { MapCover } from '@/lib/map-types'
 import { cn } from '@/lib/style'
 

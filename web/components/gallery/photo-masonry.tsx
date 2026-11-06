@@ -13,7 +13,7 @@ import {
   useState,
   type FocusEvent,
 } from 'react'
-import { useScrollElement } from '@/components/scroll-area'
+import { useScrollElement } from '@/components/scroll-area/scroll-area'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import type { Photo } from '@/lib/photo'
 import { useMasonryScrollRestoration } from './hooks/use-masonry-scroll-restoration'

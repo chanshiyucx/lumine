@@ -1,4 +1,4 @@
-import { PhotoGallery } from '@/components/gallery'
+import { PhotoGallery } from '@/components/gallery/photo-gallery'
 import { getPhotoCollection } from '@/lib/photo/collection'
 
 export default async function Page() {

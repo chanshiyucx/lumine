@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useRef } from 'react'
 import { publishPhotoCount } from '@/components/header/lib/photo-count-store'
-import { useScrollElement } from '@/components/scroll-area'
+import { useScrollElement } from '@/components/scroll-area/scroll-area'
 import { useViewerController } from '@/components/viewer/hooks/use-viewer-controller'
 import type { Photo } from '@/lib/photo'
 import type { PhotoScope } from '@/lib/route-paths'

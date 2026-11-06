@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { PhotoMapLoader } from '@/components/map'
+import { PhotoMapLoader } from '@/components/map/photo-map-loader'
 import { getAlbumMapItems, getPhotoMapItems } from '@/lib/map-items'
 
 export const metadata: Metadata = {

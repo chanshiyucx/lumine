@@ -4,7 +4,7 @@ import {
   FocalLength,
   ShutterSpeed,
   TablerAperture,
-} from '@/components/icons'
+} from '@/components/icons/capture-icons'
 import type { CaptureSetting } from '@/lib/photo/capture-settings'
 import { cn } from '@/lib/style'
 

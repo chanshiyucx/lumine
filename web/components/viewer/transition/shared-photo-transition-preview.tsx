@@ -7,7 +7,7 @@ import {
   useState,
   type RefObject,
 } from 'react'
-import { ThumbnailImage } from '@/components/image'
+import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import type { Photo } from '@/lib/photo'
 import { VIEWER_MOTION } from '../lib/viewer-motion'
 import type { ViewerPhase } from '../lib/viewer-state'

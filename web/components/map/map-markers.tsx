@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
-import { ThumbnailImage } from '@/components/image'
+import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import type {
   AlbumMapItem,
   MapCover,

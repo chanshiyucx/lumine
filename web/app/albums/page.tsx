@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { AlbumsPage } from '@/components/albums'
+import { AlbumsPage } from '@/components/albums/albums-page'
 
 export const metadata: Metadata = {
   title: 'Albums',

@@ -1,6 +1,6 @@
 import { m, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { ThumbnailImage } from '@/components/image'
+import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'

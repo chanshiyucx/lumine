@@ -1,6 +1,6 @@
 import { memo } from 'react'
-import { ThumbnailImage } from '@/components/image'
-import { CaptureSettingChip } from '@/components/photo'
+import { ThumbnailImage } from '@/components/image/thumbnail-image'
+import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
 import type { Photo } from '@/lib/photo'
 import { getCaptureSettings } from '@/lib/photo/capture-settings'
 import { formatBytes } from '@/lib/photo/formatters'

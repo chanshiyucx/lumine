@@ -3,8 +3,8 @@ import { Geist } from 'next/font/google'
 import { socialMetadata } from '@/lib/page-metadata'
 import { siteConfig } from '@/lib/site-config'
 import '@/styles/globals.css'
-import { Header } from '@/components/header'
-import { PageScrollArea } from '@/components/scroll-area'
+import { Header } from '@/components/header/header'
+import { PageScrollArea } from '@/components/scroll-area/scroll-area'
 
 const geist = Geist({
   variable: '--font-geist',
