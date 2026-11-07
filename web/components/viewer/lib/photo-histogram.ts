@@ -68,39 +68,10 @@ async function computeHistogram(key: string): Promise<HistogramBins> {
     throw new Error(`Failed to fetch thumbnail: ${response.status}`)
   }
 
-  const blob = await response.blob()
-  let imageBitmap: ImageBitmap | null = null
-  let imageSource: ImageBitmap | HTMLImageElement
-
-  if (typeof createImageBitmap === 'function') {
-    imageBitmap = await createImageBitmap(blob)
-    imageSource = imageBitmap
-  } else {
-    const objectUrl = URL.createObjectURL(blob)
-    const image = new Image()
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve()
-        image.onerror = () => reject(new Error('Failed to decode image'))
-        image.src = objectUrl
-      })
-    } finally {
-      URL.revokeObjectURL(objectUrl)
-    }
-
-    imageSource = image
-  }
+  const imageBitmap = await createImageBitmap(await response.blob())
 
   try {
-    const sourceWidth =
-      imageSource instanceof HTMLImageElement
-        ? imageSource.naturalWidth
-        : imageSource.width
-    const sourceHeight =
-      imageSource instanceof HTMLImageElement
-        ? imageSource.naturalHeight
-        : imageSource.height
+    const { height: sourceHeight, width: sourceWidth } = imageBitmap
     const maxSize = 240
     const scale = Math.min(1, maxSize / sourceWidth, maxSize / sourceHeight)
     const scaledWidth = Math.max(1, Math.floor(sourceWidth * scale))
@@ -114,12 +85,12 @@ async function computeHistogram(key: string): Promise<HistogramBins> {
       throw new Error('Failed to create histogram canvas context')
     }
 
-    context.drawImage(imageSource, 0, 0, scaledWidth, scaledHeight)
+    context.drawImage(imageBitmap, 0, 0, scaledWidth, scaledHeight)
     return calculateHistogram(
       context.getImageData(0, 0, scaledWidth, scaledHeight),
     )
   } finally {
-    imageBitmap?.close()
+    imageBitmap.close()
   }
 }
 

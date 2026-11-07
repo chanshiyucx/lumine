@@ -35,22 +35,21 @@ export function isPrivatePassword(config: PrivateConfig, input: string) {
 export async function getPrivateSession(
   config: PrivateConfig,
 ): Promise<PrivateSession | null> {
-  const match = SESSION_PATTERN.exec(
-    (await cookies()).get(SESSION_COOKIE)?.value ?? '',
-  )
+  const sessionCookie = (await cookies()).get(SESSION_COOKIE)?.value ?? ''
+  const [, expiry, signature] = SESSION_PATTERN.exec(sessionCookie) ?? []
 
-  if (!match) {
+  if (!expiry || !signature) {
     return null
   }
 
-  const expiresAt = Number(match[1])
+  const expiresAt = Number(expiry)
   const now = nowSeconds()
 
   if (expiresAt <= now || expiresAt > now + SESSION_SECONDS) {
     return null
   }
 
-  const actual = Buffer.from(match[2])
+  const actual = Buffer.from(signature)
   const expected = Buffer.from(signSession(config, expiresAt))
 
   return timingSafeEqual(actual, expected) ? { expiresAt } : null

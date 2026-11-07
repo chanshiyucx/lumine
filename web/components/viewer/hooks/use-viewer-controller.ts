@@ -225,7 +225,7 @@ export function useViewerController({
         return
       }
 
-      const photo = photos[index]
+      const photo = photos[index]!
       const triggerElement = resolveViewerTrigger(
         photo.id,
         current.phase === 'closed' ? null : current.triggerElement,

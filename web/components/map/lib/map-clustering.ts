@@ -166,7 +166,7 @@ export function getMapLayerMarkers(
         )
       }
 
-      const [lng, lat] = feature.geometry.coordinates
+      const [lng, lat] = feature.geometry.coordinates as [number, number]
       const {
         cluster_id: clusterId,
         point_count: count,

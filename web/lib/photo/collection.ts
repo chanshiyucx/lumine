@@ -6,6 +6,7 @@ import {
   type AlbumDescriptor,
 } from '@/lib/album'
 import { getAlbumMapLocations } from '@/lib/album/locations'
+import { fetchJson } from '@/lib/fetch-json'
 import { getPhotoAssetUrl, getPhotoManifestUrl } from '@/lib/media-url'
 import { createPhotoSlug, type PhotoAsset, type PhotoCollection } from '.'
 import { formatCaptureTime, resolveTakenAt } from './capture-time'
@@ -33,25 +34,7 @@ export async function fetchPhotoManifest(
   manifestUrl: string,
   init: RequestInit,
 ) {
-  const response = await fetch(manifestUrl, init)
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch photo manifest from ${manifestUrl} (${response.status} ${response.statusText})`,
-    )
-  }
-
-  let manifestJson: unknown
-
-  try {
-    manifestJson = await response.json()
-  } catch (error) {
-    throw new Error(
-      `Failed to parse photo manifest JSON from ${manifestUrl}: ${String(error)}`,
-    )
-  }
-
-  return manifestSchema.parse(manifestJson)
+  return fetchJson(manifestUrl, manifestSchema, init)
 }
 
 export const getPhotoCollection = cache(async (): Promise<PhotoCollection> => {

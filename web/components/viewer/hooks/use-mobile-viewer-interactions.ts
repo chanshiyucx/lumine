@@ -10,10 +10,14 @@ import {
 } from 'react'
 import { clamp } from '@/lib/math'
 import {
+  getDismissDragX,
   getDismissPresentation,
+  getDismissThrowTarget,
+  getInspectorPresentation,
   getInspectorSettleVelocity,
   getMobileGestureMetrics,
   shouldDismissViewer,
+  shouldOpenInspector,
 } from '../lib/mobile-viewer-gesture'
 import { VIEWER_MOTION } from '../lib/viewer-motion'
 import type { ViewerTransformSnapshot } from '../transition/viewer-frame'
@@ -174,21 +178,21 @@ export function useMobileViewerInteractions({
     [dismissX, dismissY, inspectorProgress],
   )
 
-  const dismissWithThrow = (velocityX: number, velocityY: number) => {
+  const dismissWithThrow = (
+    directionX: number,
+    velocityX: number,
+    velocityY: number,
+  ) => {
     stopAnimations()
     const animationId = animationIdRef.current
-    const currentX = dismissX.get()
-    const currentY = dismissY.get()
-    const targetX = clamp(
-      currentX + velocityX * viewport.width * 0.1,
-      -viewport.width * 0.22,
-      viewport.width * 0.22,
-    )
-    const targetY = clamp(
-      currentY + viewport.height * (0.08 + velocityY * 0.04),
-      currentY + 40,
-      viewport.height * 0.42,
-    )
+    const { x: targetX, y: targetY } = getDismissThrowTarget({
+      currentX: dismissX.get(),
+      currentY: dismissY.get(),
+      directionX,
+      velocityX,
+      velocityY,
+      viewport,
+    })
     updateActivity('dismissing')
     animate(dismissX, targetX, VIEWER_MOTION.dismissThrow.x)
     animate(dismissY, targetY, {
@@ -267,7 +271,7 @@ export function useMobileViewerInteractions({
           stopAnimations()
           updateActivity('vertical')
         }
-        if (gesture.startedWithInspectorOpen) {
+        if (gesture.startedWithInspectorOpen || movementY < 0) {
           inspectorProgress.set(
             clamp(
               gesture.initialInspectorProgress -
@@ -278,25 +282,15 @@ export function useMobileViewerInteractions({
           )
           dismissX.set(0)
           dismissY.set(0)
-        } else if (movementY < 0) {
-          inspectorProgress.set(
-            clamp(-movementY / metrics.inspectorTravel, 0, 1),
-          )
-          dismissX.set(0)
-          dismissY.set(0)
         } else {
-          const ratio = clamp(
-            movementY / Math.max(metrics.dismissTravel, 1),
-            0,
-            1,
-          )
           inspectorProgress.set(0)
           dismissY.set(movementY)
           dismissX.set(
-            clamp(
-              movementX * (0.18 + ratio * 0.1),
-              -viewport.width * 0.2,
-              viewport.width * 0.2,
+            getDismissDragX(
+              movementX,
+              movementY,
+              metrics.dismissTravel,
+              viewport.width,
             ),
           )
         }
@@ -306,10 +300,14 @@ export function useMobileViewerInteractions({
           gesture.startedWithInspectorOpen ||
           inspectorProgress.get() > INSPECTOR_PRESENT_EPSILON
         ) {
-          const shouldOpen =
-            inspectorProgress.get() > 0.42 ||
-            (directionY < 0 && velocityY > 0.2)
-          settleInspector(shouldOpen, -directionY * velocityY)
+          settleInspector(
+            shouldOpenInspector({
+              directionY,
+              progress: inspectorProgress.get(),
+              velocityY,
+            }),
+            -directionY * velocityY,
+          )
         } else if (
           shouldDismissViewer({
             directionY,
@@ -318,10 +316,7 @@ export function useMobileViewerInteractions({
             velocityY,
           })
         ) {
-          dismissWithThrow(
-            velocityX * (directionX === 0 ? 1 : directionX),
-            Math.max(velocityY, 0.72),
-          )
+          dismissWithThrow(directionX, velocityX, velocityY)
         } else {
           settleInspector(false)
         }
@@ -363,15 +358,22 @@ export function useMobileViewerInteractions({
       viewport.width,
     ),
   )
+  const inspectorPresentation = useTransform(() =>
+    getInspectorPresentation(inspectorProgress.get()),
+  )
   const viewerScale = useTransform(
-    () => dismissPresentation.get().scale - inspectorProgress.get() * 0.015,
+    () =>
+      dismissPresentation.get().scale -
+      inspectorPresentation.get().scaleReduction,
   )
   const viewerY = useTransform(
-    () => dismissY.get() - inspectorProgress.get() * 12,
+    () => dismissY.get() - inspectorPresentation.get().stageLift,
   )
   const viewerRotate = useTransform(() => dismissPresentation.get().rotate)
   const viewerBorderRadius = useTransform(
-    () => dismissPresentation.get().borderRadius + inspectorProgress.get() * 14,
+    () =>
+      dismissPresentation.get().borderRadius +
+      inspectorPresentation.get().borderRadius,
   )
   const backdropOpacity = useTransform(
     () => dismissPresentation.get().backdropOpacity,
@@ -379,18 +381,16 @@ export function useMobileViewerInteractions({
   const chromeOpacity = useTransform(
     () =>
       dismissPresentation.get().chromeOpacity *
-      (1 - inspectorProgress.get() * 0.92),
+      inspectorPresentation.get().chromeOpacity,
   )
   const railOpacity = useTransform(
     () =>
-      dismissPresentation.get().chromeOpacity * (1 - inspectorProgress.get()),
+      dismissPresentation.get().chromeOpacity *
+      inspectorPresentation.get().railOpacity,
   )
-  const infoPanelY = useTransform(() => {
-    const hiddenProgress = 1 - inspectorProgress.get()
-    return `calc(${hiddenProgress * 100}% + ${hiddenProgress * 28}px)`
-  })
-  const infoPanelOpacity = useTransform(() =>
-    clamp(inspectorProgress.get() * 1.6, 0, 1),
+  const infoPanelY = useTransform(() => inspectorPresentation.get().panelY)
+  const infoPanelOpacity = useTransform(
+    () => inspectorPresentation.get().panelOpacity,
   )
 
   // Reset after derived MotionValues have re-subscribed in their layout effects.

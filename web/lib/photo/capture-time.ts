@@ -118,6 +118,6 @@ export function formatCaptureTime(
   return {
     date: formatters.date.format(instant),
     dateTime: `${year}/${month}/${day} ${hour}:${minute}:${second}`,
-    timeZone: timeZoneName.replace('GMT', 'UTC').replace(/^UTC[+-]0$/, 'UTC'),
+    timeZone: timeZoneName!.replace('GMT', 'UTC').replace(/^UTC[+-]0$/, 'UTC'),
   }
 }

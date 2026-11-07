@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import { useMobile } from '@/hooks/use-mobile'
+import { useTimeout } from '@/hooks/use-timeout'
 import { clamp } from '@/lib/math'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
@@ -83,7 +84,10 @@ export const ThumbnailRail = memo(function ThumbnailRail({
   const railShellRef = useRef<HTMLDivElement>(null)
   const railViewportRef = useRef<HTMLDivElement>(null)
   const hasCenteredInitialItemRef = useRef(false)
-  const hoverPreviewTimerRef = useRef<number | null>(null)
+  const {
+    cancel: cancelHoverPreviewTimer,
+    schedule: scheduleHoverPreviewTimer,
+  } = useTimeout()
   const isMobile = useMobile()
   const reduceMotion = useReducedMotion()
   const thumbnailHeight = isMobile
@@ -143,15 +147,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     }
   }, [activeIndex, photos.length, reduceMotion, virtualizer])
 
-  const cancelHoverPreviewTimer = () => {
-    if (hoverPreviewTimerRef.current !== null) {
-      window.clearTimeout(hoverPreviewTimerRef.current)
-      hoverPreviewTimerRef.current = null
-    }
-  }
-
   const scheduleHoverPreview = (index: number, button: HTMLButtonElement) => {
-    cancelHoverPreviewTimer()
     if (
       isMobile ||
       !window.matchMedia('(hover: hover) and (pointer: fine)').matches
@@ -159,8 +155,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
       return
     }
 
-    hoverPreviewTimerRef.current = window.setTimeout(() => {
-      hoverPreviewTimerRef.current = null
+    scheduleHoverPreviewTimer(() => {
       if (!button.isConnected || !button.matches(':hover')) {
         return
       }
@@ -196,7 +191,7 @@ export const ThumbnailRail = memo(function ThumbnailRail({
     }
 
     return cancelHoverPreviewTimer
-  }, [isMobile])
+  }, [cancelHoverPreviewTimer, isMobile])
 
   const hoverPreviewPhoto = hoverPreview ? photos[hoverPreview.index] : null
 

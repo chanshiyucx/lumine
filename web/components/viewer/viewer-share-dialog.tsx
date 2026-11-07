@@ -18,6 +18,7 @@ import {
   type RefObject,
 } from 'react'
 import { ThumbHashImage } from '@/components/image/thumbhash-image'
+import { useTimeout } from '@/hooks/use-timeout'
 import type { Photo } from '@/lib/photo'
 import { getPhotoShareUrl } from '@/lib/photo/share'
 import { getPhotoOgPath } from '@/lib/route-paths'
@@ -120,28 +121,12 @@ function getOriginalDownloadName(photo: Photo) {
 }
 
 function useCopyLink(url: string) {
-  const copyStatusTimeoutRef = useRef<number | null>(null)
+  const { schedule: scheduleCopyStatusReset } = useTimeout()
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-
-  useEffect(() => {
-    return () => {
-      if (copyStatusTimeoutRef.current !== null) {
-        window.clearTimeout(copyStatusTimeoutRef.current)
-      }
-    }
-  }, [])
 
   const updateCopyStatus = (status: Exclude<CopyStatus, 'idle'>) => {
     setCopyStatus(status)
-
-    if (copyStatusTimeoutRef.current !== null) {
-      window.clearTimeout(copyStatusTimeoutRef.current)
-    }
-
-    copyStatusTimeoutRef.current = window.setTimeout(() => {
-      setCopyStatus('idle')
-      copyStatusTimeoutRef.current = null
-    }, 1000)
+    scheduleCopyStatusReset(() => setCopyStatus('idle'), 1000)
   }
 
   const copyLink = async () => {

@@ -1,6 +1,7 @@
 import { m, useReducedMotion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { ThumbnailImage } from '@/components/image/thumbnail-image'
+import { useTimeout } from '@/hooks/use-timeout'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { useProgressivePhoto } from './hooks/use-progressive-photo'
@@ -34,7 +35,7 @@ function ActiveProgressivePhoto({
   const [settledSource, setSettledSource] = useState<string | null>(null)
   const [scaleLabel, setScaleLabel] = useState(() => formatScaleLabel(1))
   const [showScaleIndicator, setShowScaleIndicator] = useState(false)
-  const scaleIndicatorTimeoutRef = useRef<number | null>(null)
+  const { schedule: scheduleScaleIndicatorHide } = useTimeout()
   const { markDecoded, markRenderFailed, state } = useProgressivePhoto(
     photo,
     loadDelayMs,
@@ -70,25 +71,11 @@ function ActiveProgressivePhoto({
       current === nextScaleLabel ? current : nextScaleLabel,
     )
     setShowScaleIndicator(true)
-
-    if (scaleIndicatorTimeoutRef.current !== null) {
-      window.clearTimeout(scaleIndicatorTimeoutRef.current)
-    }
-
-    scaleIndicatorTimeoutRef.current = window.setTimeout(() => {
-      setShowScaleIndicator(false)
-      scaleIndicatorTimeoutRef.current = null
-    }, SCALE_INDICATOR_DURATION)
+    scheduleScaleIndicatorHide(
+      () => setShowScaleIndicator(false),
+      SCALE_INDICATOR_DURATION,
+    )
   }
-
-  useEffect(
-    () => () => {
-      if (scaleIndicatorTimeoutRef.current !== null) {
-        window.clearTimeout(scaleIndicatorTimeoutRef.current)
-      }
-    },
-    [],
-  )
 
   return (
     <>

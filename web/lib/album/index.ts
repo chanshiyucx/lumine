@@ -54,13 +54,14 @@ function parseAlbumDate(year: string, month: string, day: string) {
 }
 
 export function parseAlbumDescriptor(albumKey: string): AlbumDescriptor {
-  const match = DATED_ALBUM_PATTERN.exec(albumKey)
+  const [, year, month, day, folderTitle] =
+    DATED_ALBUM_PATTERN.exec(albumKey) ?? []
 
-  if (!match) {
+  if (!year || !month || !day || !folderTitle) {
     throw new Error(`Invalid album folder: ${albumKey}`)
   }
 
-  const title = humanizeAlbumTitle(match[4])
+  const title = humanizeAlbumTitle(folderTitle)
 
   if (!title) {
     throw new Error(`Invalid album title: ${albumKey}`)
@@ -69,6 +70,6 @@ export function parseAlbumDescriptor(albumKey: string): AlbumDescriptor {
   return {
     key: albumKey,
     title,
-    date: parseAlbumDate(match[1], match[2], match[3]),
+    date: parseAlbumDate(year, month, day),
   }
 }

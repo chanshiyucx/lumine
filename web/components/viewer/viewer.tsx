@@ -21,6 +21,7 @@ import type { PhotoScope } from '@/lib/route-paths'
 import { siteConfig } from '@/lib/site-config'
 import { useDialogFocus } from './hooks/use-dialog-focus'
 import { useMobileViewerInteractions } from './hooks/use-mobile-viewer-interactions'
+import { useViewerInfoPanel } from './hooks/use-viewer-info-panel'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'
 import { resolveSharedPhotoTransition } from './lib/shared-photo-transition'
 import { VIEWER_MOTION } from './lib/viewer-motion'
@@ -76,7 +77,6 @@ export function Viewer({
   // Share links and the map page only know public photos.
   const linksToPublicPages = scope === 'public'
   const isMobile = useMobile()
-  const [isDesktopInfoPanelOpen, setIsDesktopInfoPanelOpen] = useState(true)
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [isShareDialogExiting, setIsShareDialogExiting] = useState(false)
   const [dragExitFrame, setDragExitFrame] =
@@ -97,7 +97,7 @@ export function Viewer({
   }, [])
 
   const activeIndex = state.activeIndex
-  const currentPhoto = photos[activeIndex]
+  const currentPhoto = photos[activeIndex]!
   const publicPhotoTitle = linksToPublicPages ? currentPhoto.title : null
   const isInteractionEnabled = state.phase === 'open'
   const isShareDialogPresent = isShareDialogOpen || isShareDialogExiting
@@ -165,13 +165,14 @@ export function Viewer({
     isZoomed: state.isZoomed,
     onDismiss: handleMobileDismiss,
   })
-  const isInfoPanelOpen = isMobile ? mobile.infoOpen : isDesktopInfoPanelOpen
+  const infoPanel = useViewerInfoPanel({
+    dialogRef,
+    isMobile,
+    isZoomed: state.isZoomed,
+    mobile,
+  })
   const canNavigate = canInteract && (!isMobile || !mobile.isStageBlocked)
-  const isMobileInspectorPresent =
-    isMobile && (mobile.infoOpen || mobile.isInspectorPresent)
-  const canUseChrome = canInteract && !isMobileInspectorPresent
-  const canToggleInfoPanel = !isMobile || !state.isZoomed
-  const isInfoPanelInputDisabled = isMobile && mobile.isInspectorInputDisabled
+  const canUseChrome = canInteract && !infoPanel.isMobileSheetPresent
 
   useLayoutEffect(() => {
     if (!canInteract) return
@@ -187,8 +188,8 @@ export function Viewer({
   }, [
     canNavigate,
     canUseChrome,
-    isInfoPanelOpen,
-    isInfoPanelInputDisabled,
+    infoPanel.isOpen,
+    infoPanel.isInputDisabled,
     canInteract,
   ])
 
@@ -243,27 +244,6 @@ export function Viewer({
     onClose: handleClose,
     onGoTo: goToPhoto,
   })
-
-  const toggleInfoPanel = () => {
-    if (!canToggleInfoPanel) return
-    if (isMobile) {
-      dialogRef.current?.focus({ preventScroll: true })
-      mobile.settleInspector(!mobile.infoOpen)
-      return
-    }
-
-    setIsDesktopInfoPanelOpen((current) => !current)
-  }
-
-  const handleInfoPanelClose = () => {
-    if (isMobile) {
-      dialogRef.current?.focus({ preventScroll: true })
-      mobile.settleInspector(false)
-      return
-    }
-
-    setIsDesktopInfoPanelOpen(false)
-  }
 
   const handleViewerAnimationComplete = () => {
     if (state.phase === 'entering' && state.entryMode === 'fade') {
@@ -333,16 +313,16 @@ export function Viewer({
                 >
                   <ViewerToolbar
                     canInteract={canUseChrome}
-                    canToggleInfoPanel={canToggleInfoPanel}
+                    canToggleInfoPanel={infoPanel.canToggle}
                     chromeOpacity={isMobile ? mobile.chromeOpacity : 1}
-                    isInfoPanelOpen={isInfoPanelOpen}
+                    isInfoPanelOpen={infoPanel.isOpen}
                     isShareDialogOpen={isShareDialogOpen}
                     isVisible={isViewerControlsVisible}
                     onClose={handleClose}
                     onOpenShareDialog={
                       linksToPublicPages ? handleOpenShareDialog : undefined
                     }
-                    onToggleInfoPanel={toggleInfoPanel}
+                    onToggleInfoPanel={infoPanel.toggle}
                     phase={state.phase}
                   />
 
@@ -352,7 +332,7 @@ export function Viewer({
                     concealedForSharedTransition={sharedTransition !== null}
                     isMobile={isMobile}
                     isZoomed={state.isZoomed}
-                    isZoomEnabled={!isMobileInspectorPresent}
+                    isZoomEnabled={!infoPanel.isMobileSheetPresent}
                     isSwipeDisabled={isMobile && mobile.isStageBlocked}
                     isInteractionEnabled={isInteractionEnabled}
                     onActiveIndexChange={onActiveIndexChange}
@@ -382,9 +362,9 @@ export function Viewer({
               <ViewerInfoPanel
                 photo={currentPhoto}
                 linksToMap={linksToPublicPages}
-                isOpen={isInfoPanelOpen}
+                isOpen={infoPanel.isOpen}
                 isViewerInteractive={canInteract}
-                isInputDisabled={isInfoPanelInputDisabled}
+                isInputDisabled={infoPanel.isInputDisabled}
                 isViewerVisible={isViewerSurfaceVisible}
                 presentation={
                   isMobile
@@ -397,7 +377,7 @@ export function Viewer({
                       }
                     : { mode: 'desktop' }
                 }
-                onClose={handleInfoPanelClose}
+                onClose={infoPanel.close}
               />
             </div>
 

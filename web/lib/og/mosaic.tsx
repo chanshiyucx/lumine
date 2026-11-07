@@ -25,7 +25,6 @@ interface MosaicCell {
 }
 
 const MOSAIC_GAP = 8
-const LEAD_LAYOUT_MIN_PHOTOS = 3
 const LEAD_WIDTH = 774
 const SIDE_WIDTH = OG_PHOTO_BOUNDS.width - LEAD_WIDTH - MOSAIC_GAP
 const SIDE_HEIGHT = (OG_PHOTO_BOUNDS.height - MOSAIC_GAP) / 2
@@ -34,11 +33,7 @@ export function formatCount(count: number, noun: string) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`
 }
 
-function getLeadCells(photos: Photo[]): MosaicCell[] {
-  const [lead, top, bottom] = [
-    ...photos.filter((photo) => photo.aspectRatio >= 1),
-    ...photos.filter((photo) => photo.aspectRatio < 1),
-  ]
+function getLeadCells(lead: Photo, top: Photo, bottom: Photo): MosaicCell[] {
   const sideLeft = LEAD_WIDTH + MOSAIC_GAP
 
   return [
@@ -100,17 +95,23 @@ function getMosaicCells(photos: Photo[]) {
     return []
   }
 
-  return photos.length < LEAD_LAYOUT_MIN_PHOTOS
-    ? getRowCells(photos)
-    : getLeadCells(photos)
+  const [lead, top, bottom] = [
+    ...photos.filter((photo) => photo.aspectRatio >= 1),
+    ...photos.filter((photo) => photo.aspectRatio < 1),
+  ]
+
+  return lead && top && bottom
+    ? getLeadCells(lead, top, bottom)
+    : getRowCells(photos)
 }
 
 async function getMosaicImages(cells: MosaicCell[]) {
   const sources = await Promise.all(
     cells.map(({ photo }) => fetchOgPhotoSource(photo)),
   )
+  const [backdropSource] = sources
   const [backdropUrl, ...photoUrls] = await Promise.all([
-    sources.length > 0 ? createBackdropUrl(sources[0]) : null,
+    backdropSource ? createBackdropUrl(backdropSource) : null,
     ...cells.map(async ({ height, width }, index) => {
       const jpeg = await sharp(sources[index])
         .resize({ fit: 'cover', height, width })

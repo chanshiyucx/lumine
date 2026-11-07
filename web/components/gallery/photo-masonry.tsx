@@ -128,8 +128,8 @@ export const PhotoMasonry = memo(function PhotoMasonry({
   const getInitialOffset = useMasonryScrollRestoration(scrollElement, layout)
 
   const estimateSize = (index: number) =>
-    getPhotoMasonryHeight(photos[index], columnWidth)
-  const getItemKey = useCallback((index: number) => photos[index].id, [photos])
+    getPhotoMasonryHeight(photos[index]!, columnWidth)
+  const getItemKey = useCallback((index: number) => photos[index]!.id, [photos])
   // Keep the focused card and its neighbors mounted so scrolling away does not
   // drop focus to the body, and Tab / Shift+Tab still reach the adjacent card.
   const rangeExtractor = useCallback(
@@ -253,7 +253,7 @@ export const PhotoMasonry = memo(function PhotoMasonry({
         onBlur={handleBlur}
       >
         {virtualItems.map((virtualItem) => {
-          const photo = photos[virtualItem.index]
+          const photo = photos[virtualItem.index]!
           return (
             <li
               key={virtualItem.key}
