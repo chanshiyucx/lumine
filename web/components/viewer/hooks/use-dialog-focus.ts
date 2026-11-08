@@ -21,11 +21,17 @@ function getFocusableElements(container: HTMLElement) {
   )
 }
 
-export function useDialogFocus(
-  dialogRef: RefObject<HTMLElement | null>,
-  getRestoreFocusElement: () => HTMLElement | null,
-  trapFocus: boolean,
-) {
+interface UseDialogFocusOptions {
+  dialogRef: RefObject<HTMLElement | null>
+  getRestoreFocusElement: () => HTMLElement | null
+  trapFocus: boolean
+}
+
+export function useDialogFocus({
+  dialogRef,
+  getRestoreFocusElement,
+  trapFocus,
+}: UseDialogFocusOptions) {
   const restoreFrameRef = useRef<number | null>(null)
   const getLatestRestoreFocusElement = useEffectEvent(getRestoreFocusElement)
 
@@ -78,13 +84,11 @@ export function useDialogFocus(
     const focusFrame = window.requestAnimationFrame(() => {
       dialogRef.current?.focus({ preventScroll: true })
     })
-    const listener = (event: KeyboardEvent) => handleKeyDown(event)
-
-    document.addEventListener('keydown', listener)
+    document.addEventListener('keydown', handleKeyDown)
 
     return () => {
       window.cancelAnimationFrame(focusFrame)
-      document.removeEventListener('keydown', listener)
+      document.removeEventListener('keydown', handleKeyDown)
 
       restoreFrameRef.current = window.requestAnimationFrame(() => {
         restoreFrameRef.current = null

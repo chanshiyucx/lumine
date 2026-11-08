@@ -208,7 +208,11 @@ export function Viewer({
     setIsShareDialogOpen(false)
   }
 
-  useDialogFocus(dialogRef, getRestoreFocusElement, !isShareDialogPresent)
+  useDialogFocus({
+    dialogRef,
+    getRestoreFocusElement,
+    trapFocus: !isShareDialogPresent,
+  })
 
   // The viewer moves between photos without a route change, so Next won't update
   // the title. Private pages keep their route's title to match the server.

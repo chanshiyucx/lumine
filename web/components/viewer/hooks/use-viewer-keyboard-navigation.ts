@@ -1,5 +1,10 @@
 import { useEffect, useEffectEvent } from 'react'
 
+const NAVIGATION_STEPS: Partial<Record<string, number>> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+}
+
 interface UseViewerKeyboardNavigationOptions {
   activeIndex: number
   canNavigate: boolean
@@ -26,29 +31,18 @@ export function useViewerKeyboardNavigation({
       return
     }
 
-    if (!canNavigate) return
-
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault()
-      onGoTo(activeIndex - 1)
+    const step = NAVIGATION_STEPS[event.key]
+    if (!canNavigate || step === undefined) {
       return
     }
 
-    if (event.key === 'ArrowRight') {
-      event.preventDefault()
-      onGoTo(activeIndex + 1)
-    }
+    event.preventDefault()
+    onGoTo(activeIndex + step)
   })
 
   useEffect(() => {
-    const listener = (event: KeyboardEvent) => {
-      handleKeyDown(event)
-    }
+    document.addEventListener('keydown', handleKeyDown)
 
-    document.addEventListener('keydown', listener)
-
-    return () => {
-      document.removeEventListener('keydown', listener)
-    }
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 }

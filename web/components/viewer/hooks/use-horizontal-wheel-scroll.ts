@@ -5,7 +5,6 @@ export function useHorizontalWheelScroll<T extends HTMLElement>(
 ) {
   useEffect(() => {
     const node = ref.current
-
     if (!node) {
       return
     }
@@ -21,8 +20,6 @@ export function useHorizontalWheelScroll<T extends HTMLElement>(
 
     node.addEventListener('wheel', handleWheel, { passive: false })
 
-    return () => {
-      node.removeEventListener('wheel', handleWheel)
-    }
+    return () => node.removeEventListener('wheel', handleWheel)
   }, [ref])
 }

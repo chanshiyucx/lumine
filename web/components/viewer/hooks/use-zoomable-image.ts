@@ -43,6 +43,10 @@ interface ViewportSize {
   width: number
 }
 
+function getTouchPoint(touch: Pick<Touch, 'clientX' | 'clientY'> | undefined) {
+  return touch ? { x: touch.clientX, y: touch.clientY } : undefined
+}
+
 export function useZoomableImage({
   height,
   isZoomEnabled,
@@ -92,8 +96,8 @@ export function useZoomableImage({
     if (!nextLayout) {
       return
     }
-    const previousLayout = imageLayoutRef.current
 
+    const previousLayout = imageLayoutRef.current
     if (previousLayout && isSameLayout(previousLayout, nextLayout)) {
       return
     }
@@ -143,7 +147,7 @@ export function useZoomableImage({
   const getMetrics = (requestedTransform?: ReactZoomPanPinchRef | null) => {
     const transform = requestedTransform ?? transformRef.current
     const layout = imageLayoutRef.current
-    if (!transform || !layout || layout.source !== src) {
+    if (!transform || layout?.source !== src) {
       return null
     }
 
@@ -186,7 +190,10 @@ export function useZoomableImage({
     requestedScale: number,
     animationTime = 0,
   ) => {
-    if (!isZoomEnabled) return
+    if (!isZoomEnabled) {
+      return
+    }
+
     const transform = transformRef.current
     const wrapper = transform?.instance.wrapperComponent
     const content = transform?.instance.contentComponent
@@ -243,12 +250,11 @@ export function useZoomableImage({
   const performDoubleClickAction = (clientX: number, clientY: number) => {
     const transform = transformRef.current
     const layout = imageLayoutRef.current
-    if (!transform || !layout || layout.source !== src) {
+    if (!transform || layout?.source !== src) {
       return
     }
 
     const targetScale = getDoubleClickTargetScale(layout, transform.state.scale)
-
     setScaleAtPoint(clientX, clientY, targetScale, DOUBLE_CLICK_ANIMATION_TIME)
   }
 
@@ -281,6 +287,7 @@ export function useZoomableImage({
     }
 
     container.addEventListener('wheel', handleWheel, { passive: false })
+
     return () => container.removeEventListener('wheel', handleWheel)
   }, [])
 
@@ -307,34 +314,35 @@ export function useZoomableImage({
   }
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (!isZoomEnabled) return
-    const touch = event.touches[0]
+    if (!isZoomEnabled) {
+      return
+    }
+
     doubleTapRecognizer.start(
       event.touches.length,
-      touch ? { x: touch.clientX, y: touch.clientY } : undefined,
+      getTouchPoint(event.touches[0]),
     )
   }
 
   const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
-    const touch = event.touches[0]
     doubleTapRecognizer.move(
       event.touches.length,
-      touch ? { x: touch.clientX, y: touch.clientY } : undefined,
+      getTouchPoint(event.touches[0]),
     )
   }
 
   const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.changedTouches[0]
-    if (
-      doubleTapRecognizer.end(
-        event.touches.length,
-        touch ? { x: touch.clientX, y: touch.clientY } : undefined,
-      ) &&
-      touch
-    ) {
+    const isDoubleTap = doubleTapRecognizer.end(
+      event.touches.length,
+      getTouchPoint(touch),
+    )
+    if (isDoubleTap && touch) {
       performDoubleClickAction(touch.clientX, touch.clientY)
     }
   }
+
+  const handleTouchCancel = () => doubleTapRecognizer.reset()
 
   return {
     containerRef,
@@ -342,7 +350,7 @@ export function useZoomableImage({
     handleImageLoad,
     handleInit,
     handleMouseDoubleClick,
-    handleTouchCancel: () => doubleTapRecognizer.reset(),
+    handleTouchCancel,
     handleTouchEnd,
     handleTouchMove,
     handleTouchStart,

@@ -258,7 +258,11 @@ export function ViewerShareDialog({
   const canUseNativeShare =
     typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
-  useDialogFocus(dialogRef, () => returnFocusRef.current, true)
+  useDialogFocus({
+    dialogRef,
+    getRestoreFocusElement: () => returnFocusRef.current,
+    trapFocus: true,
+  })
 
   const closeFromEffect = useEffectEvent(onClose)
 

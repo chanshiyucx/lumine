@@ -40,12 +40,7 @@ function getPhotoIndexFromPathname(
   slugToIndex: Map<string, number>,
 ) {
   const photoSlug = getPhotoSlugFromPathname(pathname, scope)
-
-  if (photoSlug === null) {
-    return null
-  }
-
-  return slugToIndex.get(photoSlug) ?? null
+  return photoSlug === null ? null : (slugToIndex.get(photoSlug) ?? null)
 }
 
 function createSessionId() {
@@ -56,8 +51,8 @@ function createSessionId() {
 
 export function useViewerController({
   galleryRef,
-  photos,
   initialPhotoSlug,
+  photos,
   scope,
 }: UseViewerControllerOptions) {
   const router = useRouter()
@@ -84,18 +79,21 @@ export function useViewerController({
   }
 
   const getSessionId = () => {
-    const currentSessionId = sessionIdRef.current
-    if (currentSessionId) {
-      return currentSessionId
-    }
-
-    const sessionId = createSessionId()
-    sessionIdRef.current = sessionId
-    return sessionId
+    sessionIdRef.current ??= createSessionId()
+    return sessionIdRef.current
   }
 
-  const getPhotoUrl = (photo: Photo) => {
-    return `${getPhotoPath(photo.slug, scope)}${window.location.search}${window.location.hash}`
+  const getPhotoUrl = (photo: Photo) =>
+    `${getPhotoPath(photo.slug, scope)}${window.location.search}${window.location.hash}`
+
+  const showPhoto = (index: number, triggerElement: HTMLElement | null) => {
+    restoreFocusElementRef.current = triggerElement
+    applyAction({
+      type: 'open',
+      index,
+      mode: triggerElement ? 'shared' : 'fade',
+      triggerElement,
+    })
   }
 
   const open = (index: number, explicitTrigger?: HTMLElement | null) => {
@@ -104,10 +102,9 @@ export function useViewerController({
       return
     }
 
-    const triggerElement = resolveViewerTrigger(photo.id, explicitTrigger)
-    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
-    if (!isPhotoPathname(window.location.pathname, scope)) {
-      baseUrlRef.current = currentUrl
+    const { pathname, search, hash } = window.location
+    if (!isPhotoPathname(pathname, scope)) {
+      baseUrlRef.current = `${pathname}${search}${hash}`
     }
 
     const marker = {
@@ -115,13 +112,7 @@ export function useViewerController({
       sessionId: getSessionId(),
     }
 
-    restoreFocusElementRef.current = triggerElement
-    applyAction({
-      type: 'open',
-      index,
-      mode: triggerElement ? 'shared' : 'fade',
-      triggerElement,
-    })
+    showPhoto(index, resolveViewerTrigger(photo.id, explicitTrigger))
     window.history.pushState(withHistoryMarker(marker), '', getPhotoUrl(photo))
   }
 
@@ -201,11 +192,7 @@ export function useViewerController({
 
   const getRestoreFocusElement = () => {
     const preferred = restoreFocusElementRef.current
-    if (preferred?.isConnected) {
-      return preferred
-    }
-
-    return galleryRef.current
+    return preferred?.isConnected ? preferred : galleryRef.current
   }
 
   const setPresence = (present: boolean) => {
@@ -218,29 +205,24 @@ export function useViewerController({
       scope,
       slugToIndex,
     )
-
-    if (index !== null) {
-      const current = stateRef.current
-      if (current.phase === 'open' && current.activeIndex === index) {
-        return
-      }
-
-      const photo = photos[index]!
-      const triggerElement = resolveViewerTrigger(
-        photo.id,
-        current.phase === 'closed' ? null : current.triggerElement,
-      )
-      restoreFocusElementRef.current = triggerElement
-      applyAction({
-        type: 'open',
-        index,
-        mode: triggerElement ? 'shared' : 'fade',
-        triggerElement,
-      })
+    if (index === null) {
+      beginClose()
       return
     }
 
-    beginClose()
+    const current = stateRef.current
+    if (current.phase === 'open' && current.activeIndex === index) {
+      return
+    }
+
+    const photo = photos[index]!
+    showPhoto(
+      index,
+      resolveViewerTrigger(
+        photo.id,
+        current.phase === 'closed' ? null : current.triggerElement,
+      ),
+    )
   })
 
   useEffect(() => {
@@ -256,9 +238,7 @@ export function useViewerController({
 
     window.addEventListener('popstate', syncFromLocation)
 
-    return () => {
-      window.removeEventListener('popstate', syncFromLocation)
-    }
+    return () => window.removeEventListener('popstate', syncFromLocation)
   }, [scope])
 
   return {

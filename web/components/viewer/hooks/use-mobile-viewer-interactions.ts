@@ -78,7 +78,10 @@ export function useMobileViewerInteractions({
     () =>
       inspectorProgress.on('change', (progress) => {
         const present = progress > INSPECTOR_PRESENT_EPSILON
-        if (present === inspectorPresentRef.current) return
+        if (present === inspectorPresentRef.current) {
+          return
+        }
+
         inspectorPresentRef.current = present
         setIsInspectorPresent(present)
       }),
@@ -96,11 +99,14 @@ export function useMobileViewerInteractions({
     if (
       optionsRef.current.mode !== 'interactive' ||
       (open && optionsRef.current.isZoomed)
-    )
+    ) {
       return
+    }
+
     stopAnimations()
     setInfoOpen(open)
     updateActivity('idle')
+
     const progress = open ? 1 : 0
     const settleVelocity = getInspectorSettleVelocity(open, velocity)
     if (inspectorProgress.get() !== progress || settleVelocity !== 0) {
@@ -109,6 +115,7 @@ export function useMobileViewerInteractions({
         velocity: settleVelocity,
       })
     }
+
     for (const offset of [dismissX, dismissY]) {
       if (offset.get() !== 0) {
         animate(offset, 0, { ...VIEWER_MOTION.settle, velocity: 0 })
@@ -127,22 +134,27 @@ export function useMobileViewerInteractions({
     cancelCurrentGesture()
     stopAnimations()
     updateActivity('idle')
+
     if (optionsRef.current.mode !== 'exiting') {
       dismissX.jump(0)
       dismissY.jump(0)
       inspectorProgress.jump(infoOpen ? 1 : 0)
     }
   }
+
   const syncOptions = useEffectEvent(() => {
     const previous = optionsRef.current
     optionsRef.current = { activeIndex, mode, isZoomed, onDismiss }
+
     const photoChanged = previous.activeIndex !== activeIndex
     if (
       !photoChanged &&
       previous.mode === mode &&
       previous.isZoomed === isZoomed
-    )
+    ) {
       return
+    }
+
     // Switching photos can remove the touch target before its final touchend.
     if (photoChanged || mode !== 'interactive') {
       resetInteraction()
@@ -153,7 +165,10 @@ export function useMobileViewerInteractions({
   })
 
   useEffect(() => {
-    if (mode !== 'interactive') return
+    if (mode !== 'interactive') {
+      return
+    }
+
     const handleResize = () => {
       const nextViewport = getViewport()
       setViewport((current) =>
@@ -163,8 +178,10 @@ export function useMobileViewerInteractions({
           : nextViewport,
       )
     }
+
     handleResize()
     window.addEventListener('resize', handleResize)
+
     return () => window.removeEventListener('resize', handleResize)
   }, [mode])
 
@@ -185,6 +202,7 @@ export function useMobileViewerInteractions({
   ) => {
     stopAnimations()
     const animationId = animationIdRef.current
+
     const { x: targetX, y: targetY } = getDismissThrowTarget({
       currentX: dismissX.get(),
       currentY: dismissY.get(),
@@ -193,12 +211,16 @@ export function useMobileViewerInteractions({
       velocityY,
       viewport,
     })
+
     updateActivity('dismissing')
     animate(dismissX, targetX, VIEWER_MOTION.dismissThrow.x)
     animate(dismissY, targetY, {
       ...VIEWER_MOTION.dismissThrow.y,
       onComplete: () => {
-        if (animationIdRef.current !== animationId) return
+        if (animationIdRef.current !== animationId) {
+          return
+        }
+
         const presentation = getDismissPresentation(
           targetX,
           targetY,
@@ -238,15 +260,19 @@ export function useMobileViewerInteractions({
           infoOpen || inspectorProgress.get() > INSPECTOR_PRESENT_EPSILON,
       }
       cancelDragRef.current = last ? null : cancel
+
       if (
         canceled ||
         event.type === 'touchcancel' ||
         event.type === 'pointercancel'
       ) {
         gesture.ignore = true
-        if (activityRef.current === 'vertical') settleInspector(infoOpen)
+        if (activityRef.current === 'vertical') {
+          settleInspector(infoOpen)
+        }
         return gesture
       }
+
       if (
         optionsRef.current.mode !== 'interactive' ||
         optionsRef.current.isZoomed ||
@@ -256,15 +282,20 @@ export function useMobileViewerInteractions({
         gesture.ignore = true
         return gesture
       }
+
       if (
         first &&
         event.target instanceof Element &&
         event.target.closest(
           'button, a, input, select, textarea, [role="button"], [data-viewer-interactive]',
         )
-      )
+      ) {
         gesture.ignore = true
-      if (gesture.ignore || axis !== 'y') return gesture
+      }
+
+      if (gesture.ignore || axis !== 'y') {
+        return gesture
+      }
 
       if (active) {
         if (activityRef.current !== 'vertical') {
@@ -295,6 +326,7 @@ export function useMobileViewerInteractions({
           )
         }
       }
+
       if (last) {
         if (
           gesture.startedWithInspectorOpen ||
@@ -321,6 +353,7 @@ export function useMobileViewerInteractions({
           settleInspector(false)
         }
       }
+
       return gesture
     },
     {
@@ -336,15 +369,20 @@ export function useMobileViewerInteractions({
     if (
       optionsRef.current.mode !== 'interactive' ||
       activityRef.current === 'dismissing'
-    )
+    ) {
       return
+    }
+
     if (event.touches.length === 1) {
       ignoreTouchDragRef.current = false
     } else if (!ignoreTouchDragRef.current) {
       cancelCurrentGesture()
-      if (activityRef.current === 'vertical') settleInspector(infoOpen)
+      if (activityRef.current === 'vertical') {
+        settleInspector(infoOpen)
+      }
     }
   }
+
   const bindStage = () => ({
     ...bindDrag(),
     onTouchStartCapture: handleTouchStartCapture,
@@ -398,6 +436,14 @@ export function useMobileViewerInteractions({
     syncOptions()
   }, [activeIndex, mode, isZoomed, onDismiss])
 
+  const isInspectorInputDisabled =
+    activity === 'vertical' || activity === 'dismissing' || isZoomed
+  const isStageBlocked =
+    mode !== 'interactive' ||
+    activity !== 'idle' ||
+    infoOpen ||
+    isInspectorPresent
+
   return {
     backdropOpacity,
     bindStage,
@@ -405,13 +451,8 @@ export function useMobileViewerInteractions({
     dismissX,
     infoOpen,
     isInspectorPresent,
-    isInspectorInputDisabled:
-      activity === 'vertical' || activity === 'dismissing' || isZoomed,
-    isStageBlocked:
-      mode !== 'interactive' ||
-      activity !== 'idle' ||
-      infoOpen ||
-      isInspectorPresent,
+    isInspectorInputDisabled,
+    isStageBlocked,
     infoPanelOpacity,
     infoPanelY,
     railOpacity,
