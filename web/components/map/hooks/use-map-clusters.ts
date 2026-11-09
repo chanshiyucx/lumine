@@ -4,14 +4,12 @@ import type { AlbumMapItem, PhotoMapItem } from '@/lib/map-types'
 import {
   createItemMarkerData,
   createMapClusterLayer,
+  createPinnedPhotoClusterMarkerData,
   getMapLayerMarkers,
   type MapMarkerData,
   type PinnedSelection,
 } from '../lib/map-clustering'
-import {
-  getMapMarkerImageLoading,
-  type MapViewportState,
-} from '../lib/map-viewport'
+import type { MapViewportState } from '../lib/map-viewport'
 
 interface UseMapClustersOptions {
   albumItems: readonly AlbumMapItem[]
@@ -39,7 +37,9 @@ export function useMapClusters({
     [albumItems, pinnedAlbumKey],
   )
   const availablePhotos = useMemo(() => {
-    if (!pinnedPhotoCluster) return photos
+    if (!pinnedPhotoCluster) {
+      return photos
+    }
 
     const pinnedKeys = new Set(pinnedPhotoCluster.items.map((item) => item.key))
     return photos.filter((photo) => !pinnedKeys.has(photo.key))
@@ -60,25 +60,14 @@ export function useMapClusters({
   return useMemo(() => {
     const markers: MapMarkerData[] = [...albumMarkers, ...photoMarkers]
     for (const item of [albumLayer.selectedItem, photoLayer.selectedItem]) {
-      if (item) markers.push(createItemMarkerData(item, true, viewport.bounds))
+      if (item) {
+        markers.push(createItemMarkerData(item, true, viewport.bounds))
+      }
     }
     if (pinnedPhotoCluster) {
-      const { key, items, location } = pinnedPhotoCluster
-      markers.push({
-        type: 'cluster',
-        key,
-        kind: 'photo',
-        items,
-        location,
-        count: items.length,
-        canExpand: false,
-        pinned: true,
-        imageLoading: getMapMarkerImageLoading(
-          location.lng,
-          location.lat,
-          viewport.bounds,
-        ),
-      })
+      markers.push(
+        createPinnedPhotoClusterMarkerData(pinnedPhotoCluster, viewport.bounds),
+      )
     }
     return markers
   }, [

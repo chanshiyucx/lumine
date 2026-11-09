@@ -4,19 +4,21 @@ import { ThumbnailImage } from '@/components/image/thumbnail-image'
 import type { MapCover } from '@/lib/map-types'
 import { cn } from '@/lib/style'
 
+interface MapCoverLinkProps {
+  label: string
+  ariaLabel?: string
+  cover: MapCover
+  caption?: string
+  className?: string
+}
+
 export function MapCoverLink({
   label,
   ariaLabel,
   cover,
   caption,
   className,
-}: {
-  label: string
-  ariaLabel?: string
-  cover: MapCover
-  caption?: string
-  className?: string
-}) {
+}: MapCoverLinkProps) {
   return (
     <Link
       href={cover.href}

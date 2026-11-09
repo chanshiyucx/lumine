@@ -1,7 +1,7 @@
 import * as HoverCard from '@radix-ui/react-hover-card'
 import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 
-export type MapHoverPreviewProps = {
+type MapHoverPreviewProps = {
   trigger: ReactElement
   children: ReactNode
   openDelay: number
@@ -20,41 +20,46 @@ export function MapHoverPreview({
   onPinnedChange,
 }: MapHoverPreviewProps) {
   const [hoverOpen, setHoverOpen] = useState(false)
-  const touchActivated = useRef(false)
+  const touchActivatedRef = useRef(false)
   const togglePinned = () => {
     const nextPinned = !pinned
-    if (!nextPinned) setHoverOpen(false)
+    if (!nextPinned) {
+      setHoverOpen(false)
+    }
     onPinnedChange?.(nextPinned)
   }
 
+  // A pinnable preview is controlled so a pin keeps it open, and pressing the
+  // trigger toggles the pin. Otherwise Radix handles hover on its own.
+  const rootProps: Partial<HoverCard.HoverCardProps> = onPinnedChange
+    ? { open: pinned || hoverOpen, onOpenChange: setHoverOpen }
+    : {}
+  const triggerProps: Partial<HoverCard.HoverCardTriggerProps> = onPinnedChange
+    ? {
+        onPointerDown: (event) => {
+          event.stopPropagation()
+          touchActivatedRef.current = event.pointerType === 'touch'
+          if (touchActivatedRef.current) {
+            togglePinned()
+          }
+        },
+        onClick: (event) => {
+          event.stopPropagation()
+          // A touch already toggled on pointerdown; keyboard clicks have no detail.
+          if (!touchActivatedRef.current || event.detail === 0) {
+            togglePinned()
+          }
+        },
+      }
+    : {}
+
   return (
     <HoverCard.Root
-      open={onPinnedChange ? pinned || hoverOpen : undefined}
-      onOpenChange={onPinnedChange ? setHoverOpen : undefined}
+      {...rootProps}
       openDelay={openDelay}
       closeDelay={closeDelay}
     >
-      <HoverCard.Trigger
-        asChild
-        onPointerDown={
-          onPinnedChange
-            ? (event) => {
-                event.stopPropagation()
-                touchActivated.current = event.pointerType === 'touch'
-                if (touchActivated.current) togglePinned()
-              }
-            : undefined
-        }
-        onClick={
-          onPinnedChange
-            ? (event) => {
-                event.stopPropagation()
-                if (!touchActivated.current || event.detail === 0)
-                  togglePinned()
-              }
-            : undefined
-        }
-      >
+      <HoverCard.Trigger asChild {...triggerProps}>
         {trigger}
       </HoverCard.Trigger>
       <HoverCard.Portal>

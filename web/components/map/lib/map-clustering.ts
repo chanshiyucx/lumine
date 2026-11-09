@@ -14,19 +14,22 @@ import type {
 import {
   clampMapLatitude,
   getMapMarkerImageLoading,
+  type MapCenter,
   type MapViewportState,
+  type MarkerImageLoading,
 } from './map-viewport'
 
 type ClusterItems<T extends MapItem> = readonly [T, ...T[]]
 
+interface PinnedPhotoCluster {
+  kind: 'photo-cluster'
+  key: string
+  items: ClusterItems<PhotoMapItem>
+  location: MapLocation
+}
+
 export type PinnedSelection =
-  | { kind: 'album' | 'photo'; key: string }
-  | {
-      kind: 'photo-cluster'
-      key: string
-      items: ClusterItems<PhotoMapItem>
-      location: MapLocation
-    }
+  { kind: 'album' | 'photo'; key: string } | PinnedPhotoCluster
 
 interface MapPointProperties<T extends MapItem> {
   item: T
@@ -47,7 +50,7 @@ type MapLayer =
 
 interface MarkerDataBase {
   key: string
-  imageLoading: 'eager' | 'lazy'
+  imageLoading: MarkerImageLoading
 }
 
 export interface MapItemMarkerData extends MarkerDataBase {
@@ -151,6 +154,28 @@ export function createItemMarkerData(
   }
 }
 
+// A pinned photo cluster leaves the cluster index, so it is rendered on its own.
+export function createPinnedPhotoClusterMarkerData(
+  { key, items, location }: PinnedPhotoCluster,
+  viewportBounds: MapBounds,
+): TerminalPhotoClusterMarkerData {
+  return {
+    type: 'cluster',
+    key,
+    kind: 'photo',
+    items,
+    location,
+    count: items.length,
+    canExpand: false,
+    pinned: true,
+    imageLoading: getMapMarkerImageLoading(
+      location.lng,
+      location.lat,
+      viewportBounds,
+    ),
+  }
+}
+
 export function getMapLayerMarkers(
   layer: MapLayer,
   viewport: MapViewportState,
@@ -166,7 +191,7 @@ export function getMapLayerMarkers(
         )
       }
 
-      const [lng, lat] = feature.geometry.coordinates as [number, number]
+      const [lng, lat] = feature.geometry.coordinates as MapCenter
       const {
         cluster_id: clusterId,
         point_count: count,

@@ -4,21 +4,25 @@ import type { MapCover } from '@/lib/map-types'
 import { cn } from '@/lib/style'
 import { MapCoverLink } from './map-cover-link'
 
+interface MapPreviewEntry {
+  key: string
+  label: string
+  ariaLabel?: string
+  cover: MapCover
+  caption?: string
+}
+
+interface MapPreviewGridProps {
+  entries: MapPreviewEntry[]
+  count: number
+  moreHref?: string
+}
+
 export function MapPreviewGrid({
   entries,
   count,
   moreHref,
-}: {
-  entries: {
-    key: string
-    label: string
-    ariaLabel?: string
-    cover: MapCover
-    caption?: string
-  }[]
-  count: number
-  moreHref?: string
-}) {
+}: MapPreviewGridProps) {
   const visibleEntries = entries.slice(
     0,
     count > MAP_PREVIEW_CAPACITY

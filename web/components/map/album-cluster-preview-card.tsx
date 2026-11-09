@@ -1,13 +1,15 @@
 import type { AlbumMapItem } from '@/lib/map-types'
 import { MapPreviewGrid } from './map-preview-grid'
 
+interface AlbumClusterPreviewCardProps {
+  count: number
+  items: readonly AlbumMapItem[]
+}
+
 export function AlbumClusterPreviewCard({
   count,
   items,
-}: {
-  count: number
-  items: readonly AlbumMapItem[]
-}) {
+}: AlbumClusterPreviewCardProps) {
   return (
     <section
       className="space-y-3 p-4"

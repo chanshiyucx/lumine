@@ -3,31 +3,28 @@ import { FullscreenLine } from '@mingcute/react/fullscreen'
 import { FullscreenExitLine } from '@mingcute/react/fullscreen-exit'
 import { MinimizeLine } from '@mingcute/react/minimize'
 
+interface MapControlsProps {
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onToggleExtent: () => void
+  showingAll: boolean
+}
+
 export function MapControls({
   onZoomIn,
   onZoomOut,
   onToggleExtent,
   showingAll,
-}: {
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onToggleExtent: () => void
-  showingAll: boolean
-}) {
+}: MapControlsProps) {
   const controls = [
     { label: 'Zoom in', icon: AddLine, action: onZoomIn },
     { label: 'Zoom out', icon: MinimizeLine, action: onZoomOut },
-    showingAll
-      ? {
-          label: 'Return to default view',
-          icon: FullscreenExitLine,
-          action: onToggleExtent,
-        }
-      : {
-          label: 'Show all places',
-          icon: FullscreenLine,
-          action: onToggleExtent,
-        },
+    {
+      ...(showingAll
+        ? { label: 'Return to default view', icon: FullscreenExitLine }
+        : { label: 'Show all places', icon: FullscreenLine }),
+      action: onToggleExtent,
+    },
   ]
 
   return (

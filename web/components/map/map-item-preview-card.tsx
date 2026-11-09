@@ -7,7 +7,11 @@ import { MapCoordinates } from './map-coordinates'
 import { MapCoverLink } from './map-cover-link'
 import { MapPreviewGrid } from './map-preview-grid'
 
-export function MapItemPreviewCard({ item }: { item: MapItem }) {
+interface MapItemPreviewCardProps {
+  item: MapItem
+}
+
+export function MapItemPreviewCard({ item }: MapItemPreviewCardProps) {
   return (
     <section
       className="overflow-hidden"

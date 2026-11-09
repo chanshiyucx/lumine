@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Map, {
+import MapView, {
   type LngLatBoundsLike,
   type MapProps,
   type MapRef,
@@ -19,6 +19,7 @@ import type { PinnedSelection } from './lib/map-clustering'
 import {
   clampMapLatitude,
   expandMapBounds,
+  type MapCenter,
   type MapViewportState,
 } from './lib/map-viewport'
 import { MapAttribution, MapControls } from './map-controls'
@@ -26,10 +27,16 @@ import { MapMarkers } from './map-markers'
 import { MapEmptyState, MapErrorState, MapLoadingState } from './map-states'
 
 const MAP_LOAD_TIMEOUT_MS = 15_000
+const MAP_MIN_ZOOM = 1
 const FOCUSED_PHOTO_ZOOM = 15
 const FIT_MAX_ZOOM = 10
+const WORLD_VIEW = { longitude: 20, latitude: 42, zoom: MAP_MIN_ZOOM }
 
-interface PhotoMapProps {
+const FIT_DURATION_MS = 900
+const CLUSTER_EXPAND_DURATION_MS = 700
+const ZOOM_STEP_DURATION_MS = 250
+
+export interface PhotoMapProps {
   albumItems: AlbumMapItem[]
   photos: PhotoMapItem[]
   photoId?: string
@@ -71,12 +78,14 @@ function getFitPadding(width: number, height: number): PaddingOptions {
 }
 
 function fitMapToItems(map: MapRef, items: readonly MapItem[]) {
-  if (items.length === 0) return
+  if (items.length === 0) {
+    return
+  }
 
   const container = map.getContainer()
   map.fitBounds(getItemsBounds(items), {
     padding: getFitPadding(container.offsetWidth, container.offsetHeight),
-    duration: 900,
+    duration: FIT_DURATION_MS,
     maxZoom: FIT_MAX_ZOOM,
   })
 }
@@ -94,7 +103,7 @@ function getInitialViewState(
   }
 
   if (initialFocusItems.length === 0) {
-    return { longitude: 20, latitude: 42, zoom: 1 }
+    return WORLD_VIEW
   }
 
   // Fitting before the first render lets `load` wait for the target tiles.
@@ -118,7 +127,7 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
   const [viewport, setViewport] = useState<MapViewportState>({
     bounds: WORLD_BOUNDS,
     clusterBounds: WORLD_BOUNDS,
-    zoom: 1,
+    zoom: MAP_MIN_ZOOM,
   })
   const [loadStatus, setLoadStatus] = useState<MapLoadStatus>('loading')
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
@@ -146,7 +155,9 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
   })
 
   useEffect(() => {
-    if (loadStatus !== 'loading' || allItems.length === 0) return
+    if (loadStatus !== 'loading' || allItems.length === 0) {
+      return
+    }
 
     const timeoutId = window.setTimeout(() => {
       setLoadStatus('failed')
@@ -157,7 +168,9 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
 
   const syncMapState = () => {
     const map = mapRef.current
-    if (!map) return
+    if (!map) {
+      return
+    }
 
     const bounds = getMapBounds(map)
     setViewport({
@@ -189,25 +202,26 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
     setMapInstanceKey((currentKey) => currentKey + 1)
   }
 
-  const handleClusterExpand = (
-    zoom: number,
-    center: [longitude: number, latitude: number],
-  ) => {
+  const handleClusterExpand = (zoom: number, center: MapCenter) => {
     setPinnedSelection(null)
 
     const map = mapRef.current
-    if (!map) return
+    if (!map) {
+      return
+    }
 
     map.easeTo({
       center,
       zoom,
-      duration: 700,
+      duration: CLUSTER_EXPAND_DURATION_MS,
     })
   }
 
   const handleToggleExtent = () => {
     const map = mapRef.current
-    if (!map) return
+    if (!map) {
+      return
+    }
 
     setPinnedSelection(null)
 
@@ -223,11 +237,11 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
 
   return (
     <main className="photo-map relative h-svh overflow-hidden">
-      <Map
+      <MapView
         key={mapInstanceKey}
         ref={mapRef}
         initialViewState={getInitialViewState(focusedPhoto, initialFocusItems)}
-        minZoom={1}
+        minZoom={MAP_MIN_ZOOM}
         maxZoom={MAP_MAX_ZOOM}
         mapStyle={MAP_STYLE_URL}
         projection={{ type: 'mercator' }}
@@ -248,15 +262,19 @@ export function PhotoMap({ albumItems, photos, photoId }: PhotoMapProps) {
             onClusterExpand={handleClusterExpand}
           />
         )}
-      </Map>
+      </MapView>
 
       <MapAttribution />
 
       {allItems.length > 0 && (
         <MapControls
           showingAll={showingAll}
-          onZoomIn={() => mapRef.current?.zoomIn({ duration: 250 })}
-          onZoomOut={() => mapRef.current?.zoomOut({ duration: 250 })}
+          onZoomIn={() =>
+            mapRef.current?.zoomIn({ duration: ZOOM_STEP_DURATION_MS })
+          }
+          onZoomOut={() =>
+            mapRef.current?.zoomOut({ duration: ZOOM_STEP_DURATION_MS })
+          }
           onToggleExtent={handleToggleExtent}
         />
       )}

@@ -3,13 +3,10 @@
 import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import type { AlbumMapItem, PhotoMapItem } from '@/lib/map-types'
 import { MapLoadingState } from './map-states'
+import type { PhotoMapProps } from './photo-map'
 
-interface PhotoMapLoaderProps {
-  albumItems: AlbumMapItem[]
-  photos: PhotoMapItem[]
-}
+type PhotoMapLoaderProps = Omit<PhotoMapProps, 'photoId'>
 
 function MapFallback() {
   return (
@@ -19,7 +16,7 @@ function MapFallback() {
   )
 }
 
-const LazyPhotoMap = dynamic<PhotoMapLoaderProps & { photoId?: string }>(
+const LazyPhotoMap = dynamic<PhotoMapProps>(
   () => import('./photo-map').then((module) => module.PhotoMap),
   { ssr: false, loading: MapFallback },
 )

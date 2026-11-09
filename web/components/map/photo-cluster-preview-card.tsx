@@ -1,18 +1,20 @@
 import { CalendarLine } from '@mingcute/react/calendar'
 import { CameraLine } from '@mingcute/react/camera'
 import { MAP_PREVIEW_CAPACITY } from '@/lib/map-config'
-import type { PhotoMapItem } from '@/lib/map-types'
+import type { MapLocation, PhotoMapItem } from '@/lib/map-types'
 import { getPhotoSummary } from '@/lib/photo/summary'
 import { MapCoordinates } from './map-coordinates'
 import { MapPreviewGrid } from './map-preview-grid'
 
+interface PhotoClusterPreviewCardProps {
+  items: readonly PhotoMapItem[]
+  location: MapLocation
+}
+
 export function PhotoClusterPreviewCard({
   items,
   location,
-}: {
-  items: readonly PhotoMapItem[]
-  location: { lat: number; lng: number }
-}) {
+}: PhotoClusterPreviewCardProps) {
   const count = items.length
   const { dateLabel, cameraName } = getPhotoSummary(items)
 

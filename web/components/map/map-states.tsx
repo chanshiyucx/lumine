@@ -1,7 +1,11 @@
 import { LocationLine } from '@mingcute/react/location'
 import { cn } from '@/lib/style'
 
-export function MapLoadingState({ className }: { className?: string }) {
+interface MapLoadingStateProps {
+  className?: string
+}
+
+export function MapLoadingState({ className }: MapLoadingStateProps) {
   return (
     <div
       className={cn(
@@ -24,13 +28,12 @@ export function MapLoadingState({ className }: { className?: string }) {
   )
 }
 
-export function MapErrorState({
-  className,
-  onRetry,
-}: {
+interface MapErrorStateProps {
   className?: string
   onRetry: () => void
-}) {
+}
+
+export function MapErrorState({ className, onRetry }: MapErrorStateProps) {
   return (
     <div
       className={cn('bg-base grid place-items-center', className)}

@@ -1,6 +1,10 @@
 import { MAP_MAX_LATITUDE, type MapBounds } from '@/lib/map-config'
 import { clamp } from '@/lib/math'
 
+export type MarkerImageLoading = 'eager' | 'lazy'
+
+export type MapCenter = [longitude: number, latitude: number]
+
 export interface MapViewportState {
   bounds: MapBounds
   clusterBounds: MapBounds
@@ -17,13 +21,10 @@ function normalizeLongitude(longitude: number) {
   return ((((longitude + 180) % 360) + 360) % 360) - 180
 }
 
-export function expandMapBounds(
-  bounds: MapBounds,
-  ratio = MAP_BOUNDS_OVERSCAN,
-): MapBounds {
+export function expandMapBounds(bounds: MapBounds): MapBounds {
   const [west, south, east, north] = bounds
-  const longitudePadding = (east - west) * ratio
-  const latitudePadding = (north - south) * ratio
+  const longitudePadding = (east - west) * MAP_BOUNDS_OVERSCAN
+  const latitudePadding = (north - south) * MAP_BOUNDS_OVERSCAN
 
   return [
     west - longitudePadding,
@@ -39,8 +40,12 @@ function isPointWithinMapBounds(
   bounds: MapBounds,
 ) {
   const [west, south, east, north] = bounds
-  if (latitude < south || latitude > north) return false
-  if (east - west >= 360) return true
+  if (latitude < south || latitude > north) {
+    return false
+  }
+  if (east - west >= 360) {
+    return true
+  }
 
   const normalizedLongitude = normalizeLongitude(longitude)
   const normalizedWest = normalizeLongitude(west)
@@ -57,7 +62,7 @@ export function getMapMarkerImageLoading(
   longitude: number,
   latitude: number,
   viewportBounds: MapBounds,
-): 'eager' | 'lazy' {
+): MarkerImageLoading {
   return isPointWithinMapBounds(
     longitude,
     clampMapLatitude(latitude),

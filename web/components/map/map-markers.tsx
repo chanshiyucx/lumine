@@ -16,12 +16,20 @@ import type {
   PinnedSelection,
   TerminalPhotoClusterMarkerData,
 } from './lib/map-clustering'
-import { clampMapLatitude } from './lib/map-viewport'
-import { MapHoverPreview, type MapHoverPreviewProps } from './map-hover-preview'
+import {
+  clampMapLatitude,
+  type MapCenter,
+  type MarkerImageLoading,
+} from './lib/map-viewport'
+import { MapHoverPreview } from './map-hover-preview'
 import { MapItemPreviewCard } from './map-item-preview-card'
 import { PhotoClusterPreviewCard } from './photo-cluster-preview-card'
 
 const PINNED_MARKER_CLASS_NAME = 'border-love/80 ring-love/25 ring-2'
+
+// Location markers (single items and terminal photo clusters) share one feel.
+const LOCATION_PREVIEW_DELAYS = { openDelay: 350, closeDelay: 120 }
+const CLUSTER_PREVIEW_DELAYS = { openDelay: 300, closeDelay: 150 }
 
 interface MapMarkerProps {
   longitude: number
@@ -32,9 +40,13 @@ interface MapMarkerProps {
 function MapMarker({ longitude, latitude, children }: MapMarkerProps) {
   const markerRef = useRef<MarkerInstance>(null)
 
+  // MapLibre gives the marker element role="button" and aria-label="Map marker",
+  // which would wrap our own labelled button in a second, generic one.
   useEffect(() => {
     const element = markerRef.current?.getElement()
-    if (!element) return
+    if (!element) {
+      return
+    }
 
     element.removeAttribute('aria-label')
     element.removeAttribute('role')
@@ -52,17 +64,19 @@ function MapMarker({ longitude, latitude, children }: MapMarkerProps) {
   )
 }
 
+interface LocationMarkerTriggerOptions {
+  cover: MapCover
+  imageLoading: MarkerImageLoading
+  pinned: boolean
+  label: string
+}
+
 function renderLocationMarkerTrigger({
   cover,
   imageLoading,
   pinned,
   label,
-}: {
-  cover: MapCover
-  imageLoading: 'eager' | 'lazy'
-  pinned: boolean
-  label: string
-}) {
+}: LocationMarkerTriggerOptions) {
   return (
     <button
       type="button"
@@ -82,20 +96,21 @@ function renderLocationMarkerTrigger({
   )
 }
 
+interface MapItemMarkerProps {
+  item: MapItem
+  imageLoading: MarkerImageLoading
+  pinned: boolean
+  onPinnedChange: (pinned: boolean) => void
+}
+
 function MapItemMarker({
   item,
   imageLoading,
   pinned,
   onPinnedChange,
-}: {
-  item: MapItem
-  imageLoading: 'eager' | 'lazy'
-  pinned: boolean
-  onPinnedChange: (pinned: boolean) => void
-}) {
-  const cover = item.covers[0]
+}: MapItemMarkerProps) {
   const trigger = renderLocationMarkerTrigger({
-    cover,
+    cover: item.covers[0],
     imageLoading,
     pinned,
     label: `${item.label} ${item.kind} location`,
@@ -105,8 +120,7 @@ function MapItemMarker({
     <MapMarker longitude={item.location.lng} latitude={item.location.lat}>
       <MapHoverPreview
         trigger={trigger}
-        openDelay={350}
-        closeDelay={120}
+        {...LOCATION_PREVIEW_DELAYS}
         pinned={pinned}
         onPinnedChange={onPinnedChange}
       >
@@ -128,23 +142,44 @@ type MapClusterMarkerProps =
     })
 
 function MapClusterMarker(props: MapClusterMarkerProps) {
-  const { location, count, items, imageLoading, kind, pinned } = props
-  const terminalPhotoCluster = !props.canExpand
-  const size = clamp(42 + Math.log2(count) * 7, 50, 66)
-  const representativeCover = items[0].covers[0]
-  const trigger = !props.canExpand ? (
-    renderLocationMarkerTrigger({
+  const { location, count, imageLoading } = props
+  const representativeCover = props.items[0].covers[0]
+  const preview =
+    props.kind === 'photo' ? (
+      <PhotoClusterPreviewCard items={props.items} location={location} />
+    ) : (
+      <AlbumClusterPreviewCard count={count} items={props.items} />
+    )
+
+  if (!props.canExpand) {
+    const trigger = renderLocationMarkerTrigger({
       cover: representativeCover,
       imageLoading,
-      pinned,
+      pinned: props.pinned,
       label: `${count} photos at this location`,
     })
-  ) : (
+
+    return (
+      <MapMarker longitude={location.lng} latitude={location.lat}>
+        <MapHoverPreview
+          trigger={trigger}
+          {...LOCATION_PREVIEW_DELAYS}
+          pinned={props.pinned}
+          onPinnedChange={props.onPinnedChange}
+        >
+          {preview}
+        </MapHoverPreview>
+      </MapMarker>
+    )
+  }
+
+  const size = clamp(42 + Math.log2(count) * 7, 50, 66)
+  const trigger = (
     <button
       type="button"
       className="group relative block cursor-pointer rounded-full"
       style={{ width: size, height: size }}
-      aria-label={`Zoom into ${count} ${kind === 'photo' ? 'photos' : 'albums'}`}
+      aria-label={`Zoom into ${count} ${props.kind === 'photo' ? 'photos' : 'albums'}`}
       onClick={(event) => {
         event.stopPropagation()
         props.onExpand()
@@ -162,44 +197,26 @@ function MapClusterMarker(props: MapClusterMarkerProps) {
     </button>
   )
 
-  const previewProps = {
-    trigger,
-    openDelay: terminalPhotoCluster ? 350 : 300,
-    closeDelay: terminalPhotoCluster ? 120 : 150,
-    children:
-      props.kind === 'photo' ? (
-        <PhotoClusterPreviewCard items={props.items} location={location} />
-      ) : (
-        <AlbumClusterPreviewCard count={count} items={props.items} />
-      ),
-  }
-  const hoverProps: MapHoverPreviewProps = props.canExpand
-    ? previewProps
-    : {
-        ...previewProps,
-        pinned: props.pinned,
-        onPinnedChange: props.onPinnedChange,
-      }
-
   return (
     <MapMarker longitude={location.lng} latitude={location.lat}>
-      <MapHoverPreview {...hoverProps} />
+      <MapHoverPreview trigger={trigger} {...CLUSTER_PREVIEW_DELAYS}>
+        {preview}
+      </MapHoverPreview>
     </MapMarker>
   )
+}
+
+interface MapMarkersProps {
+  markers: readonly MapMarkerData[]
+  onPinnedChange: (selection: PinnedSelection | null) => void
+  onClusterExpand: (zoom: number, center: MapCenter) => void
 }
 
 export function MapMarkers({
   markers,
   onPinnedChange,
   onClusterExpand,
-}: {
-  markers: readonly MapMarkerData[]
-  onPinnedChange: (selection: PinnedSelection | null) => void
-  onClusterExpand: (
-    zoom: number,
-    center: [longitude: number, latitude: number],
-  ) => void
-}) {
+}: MapMarkersProps) {
   // Keep every marker in one flat list so pinning preserves its component identity.
   return markers.map((marker) => {
     if (marker.type === 'item') {
