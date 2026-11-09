@@ -28,9 +28,12 @@ const PRIVATE_ENV = {
 
 type PrivateEnvValues = Record<keyof PrivateConfig, string | undefined>
 
-let warnedIncompleteConfig = false
+let hasWarned = false
 
-/** Returns null when private mode is not fully configured, which disables it. */
+/**
+ * Returns null when private mode is not fully or validly configured, which
+ * disables it rather than breaking every page that checks it.
+ */
 export function getPrivateConfig(): PrivateConfig | null {
   const values: PrivateEnvValues = {
     password: process.env[PRIVATE_ENV.password],
@@ -45,11 +48,31 @@ export function getPrivateConfig(): PrivateConfig | null {
     return null
   }
 
-  return { ...values, mediaOrigin: new URL(values.mediaOrigin).origin }
+  const mediaOrigin = parseOrigin(values.mediaOrigin)
+
+  if (!mediaOrigin) {
+    warnOnce(
+      `Private mode is disabled; ${PRIVATE_ENV.mediaOrigin} is not a valid URL.`,
+    )
+    return null
+  }
+
+  return { ...values, mediaOrigin }
 }
 
 function isComplete(values: PrivateEnvValues): values is PrivateConfig {
   return Object.values(values).every(Boolean)
+}
+
+// Without a scheme, a value like `localhost:8787` still parses, but its origin
+// is the string 'null'.
+function parseOrigin(value: string) {
+  try {
+    const { origin } = new URL(value)
+    return origin === 'null' ? null : origin
+  } catch {
+    return null
+  }
 }
 
 // Some but not all variables set is most likely a mistake; none set means the
@@ -58,8 +81,14 @@ function warnIfPartiallyConfigured() {
   const names = Object.values(PRIVATE_ENV)
   const missing = names.filter((name) => !process.env[name])
 
-  if (warnedIncompleteConfig || missing.length === names.length) return
+  if (missing.length < names.length) {
+    warnOnce(`Private mode is disabled; missing ${missing.join(', ')}.`)
+  }
+}
 
-  warnedIncompleteConfig = true
-  console.warn(`Private mode is disabled; missing ${missing.join(', ')}.`)
+function warnOnce(message: string) {
+  if (hasWarned) return
+
+  hasWarned = true
+  console.warn(message)
 }
