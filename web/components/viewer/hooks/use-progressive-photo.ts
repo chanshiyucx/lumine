@@ -51,7 +51,7 @@ function hasSameProgressDisplay(
   )
 }
 
-export function useProgressivePhoto(photo: Photo, loadDelayMs = 0) {
+export function useProgressivePhoto(photo: Photo, loadDelayMs: number) {
   const { bytes, mime, url } = photo.original
   const [state, setState] = useState<PhotoResourceState>(() => ({
     ...getProgress(0, bytes),

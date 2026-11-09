@@ -1,5 +1,10 @@
 import { fitWithinBounds } from '@/lib/math'
 
+interface MediaSize {
+  height: number
+  width: number
+}
+
 interface RectLike {
   height: number
   left: number
@@ -30,10 +35,7 @@ export interface ViewerTransformSnapshot {
   translateY: number
 }
 
-export function fitMediaFrame(
-  media: { height: number; width: number },
-  bounds: RectLike,
-): ViewerFrame {
+export function fitMediaFrame(media: MediaSize, bounds: RectLike): ViewerFrame {
   const aspectRatio =
     media.width > 0 && media.height > 0 ? media.width / media.height : 1
   const { width, height } = fitWithinBounds(aspectRatio, bounds)
@@ -59,13 +61,23 @@ export function getFrameTransform(
   }
 }
 
-export function projectViewerFrame(
-  frame: ViewerFrame,
+// The mobile stage scales and rotates around this point while dragged to dismiss.
+const DISMISS_ORIGIN_PERCENT = { x: 50, y: 18 }
+
+export const DISMISS_TRANSFORM_ORIGIN = `${DISMISS_ORIGIN_PERCENT.x}% ${DISMISS_ORIGIN_PERCENT.y}%`
+
+/** Where the photo sits on screen at the end of a mobile dismiss gesture. */
+export function projectDismissedFrame(
+  media: MediaSize,
+  stage: RectLike,
   viewport: RectLike,
   snapshot: ViewerTransformSnapshot,
 ): ProjectedViewerFrame {
-  const originX = viewport.left + viewport.width * 0.5
-  const originY = viewport.top + viewport.height * 0.18
+  const frame = fitMediaFrame(media, stage)
+  const originX =
+    viewport.left + (viewport.width * DISMISS_ORIGIN_PERCENT.x) / 100
+  const originY =
+    viewport.top + (viewport.height * DISMISS_ORIGIN_PERCENT.y) / 100
 
   return {
     borderRadius: snapshot.borderRadius,

@@ -112,7 +112,7 @@ export function getDismissPresentation(
   viewportWidth: number,
 ) {
   const ratio = clamp(translateY / Math.max(dismissTravel, 1), 0, 1)
-  const eased = 1 - Math.pow(1 - ratio, 2)
+  const eased = 1 - (1 - ratio) ** 2
 
   return {
     backdropOpacity: clamp(1 - eased * 0.86, 0.08, 1),

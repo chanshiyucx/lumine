@@ -25,9 +25,7 @@ export async function loadPhotoBlob(
 
   try {
     while (true) {
-      if (signal.aborted) {
-        throw new DOMException('The operation was aborted.', 'AbortError')
-      }
+      signal.throwIfAborted()
 
       const { done, value } = await reader.read()
 

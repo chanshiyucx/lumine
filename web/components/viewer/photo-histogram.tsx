@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Photo } from '@/lib/photo'
-import { cn } from '@/lib/style'
 import {
   calculateSpringProgress,
   copyHistogram,
@@ -23,23 +22,17 @@ interface DisplayedHistogram {
 }
 
 interface PhotoHistogramProps {
-  className?: string
   isActive: boolean
   photo: Photo
 }
 
-export function PhotoHistogram({
-  className,
-  isActive,
-  photo,
-}: PhotoHistogramProps) {
+export function PhotoHistogram({ isActive, photo }: PhotoHistogramProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const previousHistogramRef = useRef<HistogramBins | null>(null)
   const currentVisualHistogramRef = useRef<HistogramBins | null>(null)
   const animationStartHistogramRef = useRef<HistogramBins | null>(null)
   const interpolationBufferRef = useRef<HistogramBins | null>(null)
-  const animationRef = useRef<number | null>(null)
   const [displayedHistogram, setDisplayedHistogram] =
     useState<DisplayedHistogram | null>(() => {
       const key = photo.thumbnail.url
@@ -148,11 +141,6 @@ export function PhotoHistogram({
       return
     }
 
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
-    }
-
     const currentStartHistogram =
       currentVisualHistogramRef.current ?? previousHistogramRef.current
 
@@ -192,32 +180,23 @@ export function PhotoHistogram({
         elapsedMs >= HISTOGRAM_ANIMATION_DURATION_MS
 
       if (!isCompleted) {
-        animationRef.current = requestAnimationFrame(animate)
+        frame = requestAnimationFrame(animate)
       } else {
         renderHistogram(histogram)
         previousHistogramRef.current = histogram
         currentVisualHistogramRef.current = histogram
-        animationRef.current = null
       }
     }
 
-    animationRef.current = requestAnimationFrame(animate)
+    let frame = requestAnimationFrame(animate)
 
-    return () => {
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current)
-        animationRef.current = null
-      }
-    }
+    return () => cancelAnimationFrame(frame)
   }, [dimensions, histogram, isActive])
 
   return (
     <div
       ref={containerRef}
-      className={cn(
-        'bg-text/10 relative h-32 w-full min-w-0 overflow-hidden rounded-md',
-        className,
-      )}
+      className="bg-text/10 relative h-32 w-full min-w-0 overflow-hidden rounded-md"
       role="img"
       aria-label="Photo RGB and luminance histogram"
     >

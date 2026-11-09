@@ -171,15 +171,12 @@ export function SharedPhotoTransitionPreview({
     return () => window.clearTimeout(timer)
   }, [frames, operationId, phase, reduceMotion])
 
-  const transform = frames
-    ? getFrameTransform(frames.source, frames.target)
-    : null
-
-  if (!frames || !transform) {
+  if (!frames) {
     return null
   }
 
   const isEntering = phase === 'entering'
+  const transform = getFrameTransform(frames.source, frames.target)
   const sourcePresentation = {
     borderRadius: frames.source.borderRadius,
     rotate: 0,
@@ -197,13 +194,44 @@ export function SharedPhotoTransitionPreview({
     x: 0,
     y: 0,
   }
-  const reducedInitialPresentation = {
-    ...targetPresentation,
-    opacity: isEntering ? 0 : 1,
-  }
-  const reducedTargetPresentation = {
-    ...targetPresentation,
-    opacity: isEntering ? 1 : 0,
+  // Reduced motion fades in place instead of moving between the two frames.
+  const animation = reduceMotion
+    ? {
+        from: { ...targetPresentation, opacity: isEntering ? 0 : 1 },
+        to: { ...targetPresentation, opacity: isEntering ? 1 : 0 },
+        transition: VIEWER_MOTION.contentFade,
+      }
+    : isEntering
+      ? {
+          from: sourcePresentation,
+          to: targetPresentation,
+          transition: VIEWER_MOTION.sharedEnter,
+        }
+      : {
+          from: targetPresentation,
+          to: sourcePresentation,
+          transition: VIEWER_MOTION.sharedExit,
+        }
+
+  const handleAnimationComplete = () => {
+    if (!isPresent) {
+      if (!completedPresenceExitRef.current) {
+        completedPresenceExitRef.current = true
+        onPresenceExitComplete(operationId)
+      }
+      return
+    }
+
+    if (completedOperationRef.current === operationId) {
+      return
+    }
+
+    completedOperationRef.current = operationId
+    if (isEntering) {
+      onEntryComplete(operationId)
+    } else {
+      onExitComplete(operationId)
+    }
   }
 
   return (
@@ -217,51 +245,14 @@ export function SharedPhotoTransitionPreview({
         transformOrigin: '0 0',
         width: frames.target.width,
       }}
-      initial={
-        reduceMotion
-          ? reducedInitialPresentation
-          : isEntering
-            ? sourcePresentation
-            : targetPresentation
-      }
-      animate={
-        reduceMotion
-          ? reducedTargetPresentation
-          : isEntering
-            ? targetPresentation
-            : sourcePresentation
-      }
+      initial={animation.from}
+      animate={animation.to}
       exit={{
         opacity: 0,
         transition: VIEWER_MOTION.contentFade,
       }}
-      transition={
-        reduceMotion
-          ? VIEWER_MOTION.contentFade
-          : isEntering
-            ? VIEWER_MOTION.sharedEnter
-            : VIEWER_MOTION.sharedExit
-      }
-      onAnimationComplete={() => {
-        if (!isPresent) {
-          if (!completedPresenceExitRef.current) {
-            completedPresenceExitRef.current = true
-            onPresenceExitComplete(operationId)
-          }
-          return
-        }
-
-        if (completedOperationRef.current === operationId) {
-          return
-        }
-
-        completedOperationRef.current = operationId
-        if (isEntering) {
-          onEntryComplete(operationId)
-        } else {
-          onExitComplete(operationId)
-        }
-      }}
+      transition={animation.transition}
+      onAnimationComplete={handleAnimationComplete}
     >
       <ThumbnailImage photo={photo} loading="eager" showPlaceholder={false} />
     </m.div>

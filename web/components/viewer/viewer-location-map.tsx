@@ -13,11 +13,13 @@ interface ViewerLocationMapProps {
   isActive: boolean
 }
 
+const LOCATION_ZOOM = 15
+
 const subscribeToHydration = () => () => {}
 const getClientSnapshot = () => true
 const getServerSnapshot = () => false
 
-const Map = dynamic(() => import('react-map-gl/maplibre'), { ssr: false })
+const MapView = dynamic(() => import('react-map-gl/maplibre'), { ssr: false })
 
 export function ViewerLocationMap({
   location,
@@ -49,7 +51,9 @@ export function ViewerLocationMap({
   useEffect(() => {
     const map = mapRef.current
     const container = containerRef.current
-    if (!map || !container || !isMapActive || !isLoaded) return
+    if (!map || !container || !isMapActive || !isLoaded) {
+      return
+    }
 
     // Keep the map sized during panel transitions and breakpoint changes.
     const observer = new ResizeObserver(() => map.resize())
@@ -65,14 +69,17 @@ export function ViewerLocationMap({
       !isLoaded ||
       latitude === undefined ||
       longitude === undefined
-    )
+    ) {
       return
+    }
 
     map.resize()
-    map.jumpTo({ center: [longitude, latitude], zoom: 15 })
+    map.jumpTo({ center: [longitude, latitude], zoom: LOCATION_ZOOM })
   }, [isLoaded, isMapActive, latitude, longitude])
 
-  if (initialLocation === null) return null
+  if (initialLocation === null) {
+    return null
+  }
 
   return (
     <div
@@ -83,12 +90,12 @@ export function ViewerLocationMap({
       role="group"
       aria-label="Photo location map"
     >
-      <Map
+      <MapView
         ref={mapRef}
         initialViewState={{
           latitude: initialLocation.lat,
           longitude: initialLocation.lng,
-          zoom: 15,
+          zoom: LOCATION_ZOOM,
         }}
         mapStyle={MAP_STYLE_URL}
         interactive={false}

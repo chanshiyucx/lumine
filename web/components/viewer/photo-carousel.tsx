@@ -9,6 +9,8 @@ import { cn } from '@/lib/style'
 import { useSwiperResize } from './hooks/use-swiper-resize'
 import { ProgressivePhoto } from './progressive-photo'
 
+const SLIDE_SPEED_MS = 300
+
 interface PhotoCarouselProps {
   photos: Photo[]
   activeIndex: number
@@ -43,10 +45,11 @@ export function PhotoCarousel({
   useEffect(() => {
     const swiper = swiperRef.current
     if (swiper && swiper.activeIndex !== activeIndex) {
-      swiper.slideTo(activeIndex, 300)
+      swiper.slideTo(activeIndex, SLIDE_SPEED_MS)
     }
   }, [activeIndex])
 
+  // Swiper reads the allowTouchMove prop only on init, so updates go to the instance.
   useEffect(() => {
     if (swiperRef.current) {
       swiperRef.current.allowTouchMove = allowTouchMove
@@ -62,7 +65,7 @@ export function PhotoCarousel({
       )}
       initialSlide={activeIndex}
       slidesPerView={1}
-      speed={300}
+      speed={SLIDE_SPEED_MS}
       threshold={10}
       simulateTouch={isMobile}
       allowTouchMove={allowTouchMove}
@@ -78,7 +81,6 @@ export function PhotoCarousel({
       }}
       onSwiper={(swiper) => {
         swiperRef.current = swiper
-        swiper.allowTouchMove = allowTouchMove
       }}
       onSlideChange={(swiper) => {
         if (swiper.activeIndex !== activeIndex) {

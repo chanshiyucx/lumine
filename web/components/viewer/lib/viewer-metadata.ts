@@ -1,6 +1,10 @@
 import { formatCoordinates } from '@/lib/coordinates'
 import type { Photo } from '@/lib/photo'
 import {
+  getCaptureSettings,
+  type CaptureSetting,
+} from '@/lib/photo/capture-settings'
+import {
   formatBytes,
   formatExposureBiasValue,
   formatFNumber,
@@ -10,7 +14,7 @@ import {
   NOT_AVAILABLE_LABEL,
 } from '@/lib/photo/formatters'
 
-interface InfoRowData {
+export interface InfoRowData {
   label: string
   value: string
 }
@@ -68,7 +72,9 @@ export function getCreativeLookRows(
   photo: Pick<Photo, 'camera'>,
 ): InfoRowData[] {
   const look = photo.camera.creativeLook
-  if (!look) return []
+  if (!look) {
+    return []
+  }
 
   const settings = [
     ['Contrast', look.contrast, true],
@@ -92,31 +98,25 @@ export function getCreativeLookRows(
 }
 
 export function getLocationInfoRows(photo: Photo): InfoRowData[] {
-  const rows = [{ label: 'Location', value: photo.album.title }]
-  const location = photo.location
-  if (!location) return []
-  const { latitude, longitude } = formatCoordinates(location)
-
-  rows.push(
-    {
-      label: 'Latitude',
-      value: latitude,
-    },
-    {
-      label: 'Longitude',
-      value: longitude,
-    },
-  )
-
-  if (location.alt !== undefined) {
-    rows.push({ label: 'Altitude', value: `${Math.round(location.alt)}m` })
+  const { location } = photo
+  if (!location) {
+    return []
   }
 
-  return rows
+  const { latitude, longitude } = formatCoordinates(location)
+
+  return [
+    { label: 'Location', value: photo.album.title },
+    { label: 'Latitude', value: latitude },
+    { label: 'Longitude', value: longitude },
+    ...(location.alt === undefined
+      ? []
+      : [{ label: 'Altitude', value: `${Math.round(location.alt)}m` }]),
+  ]
 }
 
 export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
-  const rows: InfoRowData[] = [
+  return [
     { label: 'Filename', value: photo.fileName },
     { label: 'Format', value: photo.format },
     {
@@ -128,31 +128,27 @@ export function getPhotoInfoRows(photo: Photo): InfoRowData[] {
       label: 'Megapixels',
       value: formatMegapixels(photo.original.width, photo.original.height),
     },
+    ...(photo.image.colorSpace
+      ? [{ label: 'Color Space', value: photo.image.colorSpace }]
+      : []),
+    { label: 'Capture Time', value: photo.captureTime.dateTime },
+    { label: 'Time Zone', value: photo.captureTime.timeZone },
+    // Photos with GPS list the album in the Location section instead.
+    ...(photo.location
+      ? []
+      : [{ label: 'Location', value: photo.album.title }]),
   ]
+}
 
-  if (photo.image.colorSpace) {
-    rows.push({
-      label: 'Color Space',
-      value: photo.image.colorSpace,
-    })
-  }
+// The chip shows the actual focal length; Equipment lists the 35mm equivalent.
+export function getViewerCaptureSettings(photo: Photo): CaptureSetting[] {
+  const { focalLength } = photo.camera
 
-  rows.push(
-    {
-      label: 'Capture Time',
-      value: photo.captureTime.dateTime,
-    },
-    {
-      label: 'Time Zone',
-      value: photo.captureTime.timeZone,
-    },
+  return getCaptureSettings(photo).map((setting) =>
+    setting.key === 'focal' && focalLength !== undefined
+      ? { ...setting, value: formatFocalLength(focalLength) }
+      : setting,
   )
-
-  if (!photo.location) {
-    rows.push({ label: 'Location', value: photo.album.title })
-  }
-
-  return rows
 }
 
 export function getDeviceInfoRows(photo: Photo): InfoRowData[] {

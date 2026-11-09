@@ -229,7 +229,9 @@ export const ThumbnailRail = memo(function ThumbnailRail({
         >
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const photo = photos[virtualItem.index]
-            if (!photo) return null
+            if (!photo) {
+              return null
+            }
 
             const index = virtualItem.index
             const isActive = index === activeIndex

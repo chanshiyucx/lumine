@@ -3,8 +3,6 @@ import type { ReactNode } from 'react'
 import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
 import { ScrollArea } from '@/components/scroll-area/scroll-area'
 import type { Photo } from '@/lib/photo'
-import { getCaptureSettings } from '@/lib/photo/capture-settings'
-import { formatFocalLength } from '@/lib/photo/formatters'
 import { cn } from '@/lib/style'
 import {
   getCreativeLookRows,
@@ -12,6 +10,8 @@ import {
   getLocationInfoRows,
   getPhotoInfoRows,
   getShootingSettingsRows,
+  getViewerCaptureSettings,
+  type InfoRowData,
 } from './lib/viewer-metadata'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 import { PhotoHistogram } from './photo-histogram'
@@ -32,16 +32,31 @@ function InfoRow({ className, label, value }: InfoRowProps) {
   )
 }
 
+interface InfoRowsProps {
+  rows: InfoRowData[]
+}
+
+function InfoRows({ rows }: InfoRowsProps) {
+  return (
+    <dl className="flex flex-col gap-1">
+      {rows.map((row) => (
+        <InfoRow key={row.label} label={row.label} value={row.value} />
+      ))}
+    </dl>
+  )
+}
+
 interface InfoSectionProps {
   title: string
+  hidden?: boolean
   children: ReactNode
 }
 
-function InfoSection({ title, children }: InfoSectionProps) {
+function InfoSection({ title, hidden, children }: InfoSectionProps) {
   return (
-    <section className="flex flex-col gap-2">
+    <section hidden={hidden} className="flex flex-col gap-2">
       <h3 className="text-sm font-medium uppercase">{title}</h3>
-      <dl className="flex flex-col gap-1">{children}</dl>
+      {children}
     </section>
   )
 }
@@ -61,46 +76,35 @@ const DESKTOP_PANEL_WIDTH_CLASS = 'lg:w-80'
 const DESKTOP_PANEL_MOTION_CLASS =
   'motion-reduce:transition-none lg:transition-[width] lg:duration-200 lg:ease-out'
 
+interface ViewerInfoPanelContentProps {
+  photo: Photo
+  linksToMap: boolean
+  isActive: boolean
+}
+
 function ViewerInfoPanelContent({
   photo,
   linksToMap,
   isActive,
-}: {
-  photo: Photo
-  linksToMap: boolean
-  isActive: boolean
-}) {
-  const photoInfoRows = getPhotoInfoRows(photo)
-  const locationInfoRows = getLocationInfoRows(photo)
-  const captureSettings = getCaptureSettings(photo).map((setting) =>
-    setting.key === 'focal' && photo.camera.focalLength !== undefined
-      ? { ...setting, value: formatFocalLength(photo.camera.focalLength) }
-      : setting,
-  )
+}: ViewerInfoPanelContentProps) {
   const creativeLookRows = getCreativeLookRows(photo)
-  const deviceInfoRows = getDeviceInfoRows(photo)
-  const shootingSettingsRows = getShootingSettingsRows(photo)
 
   return (
     <div className="space-y-6 p-4">
       <InfoSection title="Photo Information">
-        {photoInfoRows.map((row) => (
-          <InfoRow key={row.label} label={row.label} value={row.value} />
-        ))}
+        <InfoRows rows={getPhotoInfoRows(photo)} />
       </InfoSection>
 
-      <section className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium uppercase">Capture Parameters</h3>
+      <InfoSection title="Capture Parameters">
         <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
-          {captureSettings.map((setting) => (
+          {getViewerCaptureSettings(photo).map((setting) => (
             <CaptureSettingChip key={setting.key} setting={setting} />
           ))}
         </div>
-      </section>
+      </InfoSection>
 
-      {creativeLookRows.length > 0 ? (
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium uppercase">Creative Look</h3>
+      {creativeLookRows.length > 0 && (
+        <InfoSection title="Creative Look">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
             {creativeLookRows.map((row) => (
               <InfoRow
@@ -111,43 +115,31 @@ function ViewerInfoPanelContent({
               />
             ))}
           </dl>
-        </section>
-      ) : null}
+        </InfoSection>
+      )}
 
-      <section className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium uppercase">Histogram</h3>
+      <InfoSection title="Histogram">
         <PhotoHistogram photo={photo} isActive={isActive} />
-      </section>
+      </InfoSection>
 
       <InfoSection title="Equipment">
-        {deviceInfoRows.map((row) => (
-          <InfoRow key={row.label} label={row.label} value={row.value} />
-        ))}
+        <InfoRows rows={getDeviceInfoRows(photo)} />
       </InfoSection>
 
       <InfoSection title="Shooting Settings">
-        {shootingSettingsRows.map((row) => (
-          <InfoRow key={row.label} label={row.label} value={row.value} />
-        ))}
+        <InfoRows rows={getShootingSettingsRows(photo)} />
       </InfoSection>
 
-      <section
-        hidden={photo.location === undefined}
-        className="flex flex-col gap-2"
-      >
-        <h3 className="text-sm font-medium uppercase">Location</h3>
-        <dl className="flex flex-col gap-1">
-          {locationInfoRows.map((row) => (
-            <InfoRow key={row.label} label={row.label} value={row.value} />
-          ))}
-        </dl>
+      {/* Hidden rather than unmounted, so the map instance survives photos without GPS. */}
+      <InfoSection title="Location" hidden={photo.location === undefined}>
+        <InfoRows rows={getLocationInfoRows(photo)} />
         <ViewerLocationMap
           location={photo.location}
           photoId={photo.slug}
           linksToMap={linksToMap}
           isActive={isActive}
         />
-      </section>
+      </InfoSection>
     </div>
   )
 }
@@ -169,6 +161,8 @@ export function ViewerInfoPanel({
   const panelMotionStyle: MotionStyle = isMobilePresentation
     ? presentation.style
     : { opacity: 1, y: 0 }
+  // The mobile sheet rises from below; the desktop panel slides in from the side.
+  const hiddenOffset = isMobilePresentation ? { x: 0, y: 24 } : { x: 32, y: 0 }
 
   return (
     <aside
@@ -183,23 +177,11 @@ export function ViewerInfoPanel({
       <m.div
         data-viewer-chrome="info-panel"
         className="h-full"
-        initial={
-          isMobilePresentation
-            ? { opacity: 0, x: 0, y: 24 }
-            : { opacity: 0, x: 32, y: 0 }
-        }
+        initial={{ opacity: 0, ...hiddenOffset }}
         animate={
-          isMobilePresentation
-            ? {
-                opacity: isViewerVisible ? 1 : 0,
-                x: 0,
-                y: isViewerVisible ? 0 : 24,
-              }
-            : {
-                opacity: isViewerVisible ? 1 : 0,
-                x: isViewerVisible ? 0 : 32,
-                y: 0,
-              }
+          isViewerVisible
+            ? { opacity: 1, x: 0, y: 0 }
+            : { opacity: 0, ...hiddenOffset }
         }
         transition={
           isViewerVisible

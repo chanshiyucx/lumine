@@ -25,14 +25,14 @@ export type ViewerAction =
       type: 'open'
       index: number
       mode: ViewerEntryMode
-      triggerElement?: HTMLElement | null
+      triggerElement: HTMLElement | null
     }
   | { type: 'select'; index: number }
   | { type: 'set-zoomed'; isZoomed: boolean }
   | {
       type: 'close'
       mode: ViewerExitMode
-      triggerElement?: HTMLElement | null
+      triggerElement: HTMLElement | null
     }
   | { type: 'entry-complete'; operationId: number }
   | { type: 'exit-complete'; operationId: number }
@@ -72,7 +72,7 @@ export function reduceViewerState(
         isZoomed: false,
         operationId,
         phase: action.mode === 'none' ? 'open' : 'entering',
-        triggerElement: action.triggerElement ?? null,
+        triggerElement: action.triggerElement,
       }
     }
 
@@ -113,7 +113,7 @@ export function reduceViewerState(
         exitMode: action.mode,
         operationId: state.operationId + 1,
         phase: 'exiting',
-        triggerElement: action.triggerElement ?? null,
+        triggerElement: action.triggerElement,
       }
     }
 

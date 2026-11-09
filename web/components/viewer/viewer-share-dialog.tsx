@@ -39,7 +39,7 @@ interface ShareActionButtonProps {
 function ShareActionButton({
   icon,
   label,
-  disabled = false,
+  disabled,
   onClick,
 }: ShareActionButtonProps) {
   return (
@@ -136,7 +136,7 @@ function useCopyLink(url: string) {
 interface ShareLinkProps {
   url: string
   copyStatus: CopyStatus
-  onCopy: () => Promise<void>
+  onCopy: () => void
 }
 
 function ShareLink({ url, copyStatus, onCopy }: ShareLinkProps) {
@@ -201,7 +201,12 @@ function SharePreview({ src, alt, thumbHash }: SharePreviewProps) {
         className="bg-overlay/35 ring-text/5 relative w-full overflow-hidden rounded-lg ring-1"
         style={{ aspectRatio: '1200 / 628' }}
       >
-        {!hasFailed && (
+        {hasFailed ? (
+          <div className="text-subtle absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs">
+            <PicLine className="size-5" aria-hidden="true" />
+            Preview unavailable
+          </div>
+        ) : (
           <>
             <ThumbHashImage thumbHash={thumbHash} className="object-cover" />
             <div className="bg-base/70 absolute inset-0" />
@@ -220,12 +225,6 @@ function SharePreview({ src, alt, thumbHash }: SharePreviewProps) {
               unoptimized
             />
           </>
-        )}
-        {hasFailed && (
-          <div className="text-subtle absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs">
-            <PicLine className="size-5" aria-hidden="true" />
-            Preview unavailable
-          </div>
         )}
       </div>
     </div>
@@ -344,7 +343,11 @@ export function ViewerShareDialog({
           <CloseLine className="size-4" aria-hidden="true" />
         </button>
 
-        <ShareLink url={shareUrl} copyStatus={copyStatus} onCopy={copyLink} />
+        <ShareLink
+          url={shareUrl}
+          copyStatus={copyStatus}
+          onCopy={() => void copyLink()}
+        />
         <SharePreview
           src={ogPreviewUrl}
           alt={photo.title}
@@ -361,7 +364,7 @@ export function ViewerShareDialog({
             <ShareActionButton
               icon={<Share2Line className="size-4.5" aria-hidden="true" />}
               label="System"
-              onClick={handleNativeShare}
+              onClick={() => void handleNativeShare()}
             />
           )}
           <ShareActionButton

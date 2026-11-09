@@ -13,10 +13,12 @@ interface ProgressivePhotoProps {
   photo: Photo
   isActive: boolean
   isZoomEnabled: boolean
-  loadDelayMs?: number
+  loadDelayMs: number
   onZoomStateChange?: (isZoomed: boolean) => void
-  shouldMountInteractiveImage?: boolean
+  shouldMountInteractiveImage: boolean
 }
+
+type ActiveProgressivePhotoProps = Omit<ProgressivePhotoProps, 'isActive'>
 
 const SCALE_INDICATOR_DURATION = 1000
 
@@ -24,13 +26,28 @@ function formatScaleLabel(scale: number) {
   return `${scale < 1 ? scale.toFixed(2) : scale.toFixed(1)}x`
 }
 
+interface PhotoThumbnailProps {
+  photo: Photo
+}
+
+function PhotoThumbnail({ photo }: PhotoThumbnailProps) {
+  return (
+    <ThumbnailImage
+      photo={photo}
+      fit="contain"
+      loading="eager"
+      showPlaceholder={false}
+    />
+  )
+}
+
 function ActiveProgressivePhoto({
   photo,
   isZoomEnabled,
-  loadDelayMs = 0,
+  loadDelayMs,
   onZoomStateChange,
-  shouldMountInteractiveImage = true,
-}: Omit<ProgressivePhotoProps, 'isActive'>) {
+  shouldMountInteractiveImage,
+}: ActiveProgressivePhotoProps) {
   const reduceMotion = useReducedMotion()
   const [settledSource, setSettledSource] = useState<string | null>(null)
   const [scaleLabel, setScaleLabel] = useState(() => formatScaleLabel(1))
@@ -66,10 +83,7 @@ function ActiveProgressivePhoto({
   }
 
   const handleZoomChange = (scale: number) => {
-    const nextScaleLabel = formatScaleLabel(scale)
-    setScaleLabel((current) =>
-      current === nextScaleLabel ? current : nextScaleLabel,
-    )
+    setScaleLabel(formatScaleLabel(scale))
     setShowScaleIndicator(true)
     scheduleScaleIndicatorHide(
       () => setShowScaleIndicator(false),
@@ -79,14 +93,7 @@ function ActiveProgressivePhoto({
 
   return (
     <>
-      {!isOriginalDisplayed && (
-        <ThumbnailImage
-          photo={photo}
-          fit="contain"
-          loading="eager"
-          showPlaceholder={false}
-        />
-      )}
+      {!isOriginalDisplayed && <PhotoThumbnail photo={photo} />}
 
       {hasHighResolutionPhoto && shouldMountInteractiveImage && (
         <m.div
@@ -131,27 +138,12 @@ function ActiveProgressivePhoto({
 }
 
 export function ProgressivePhoto({
-  photo,
   isActive,
-  isZoomEnabled,
-  loadDelayMs = 0,
-  onZoomStateChange,
-  shouldMountInteractiveImage = true,
+  ...props
 }: ProgressivePhotoProps) {
   return isActive ? (
-    <ActiveProgressivePhoto
-      photo={photo}
-      isZoomEnabled={isZoomEnabled}
-      loadDelayMs={loadDelayMs}
-      onZoomStateChange={onZoomStateChange}
-      shouldMountInteractiveImage={shouldMountInteractiveImage}
-    />
+    <ActiveProgressivePhoto {...props} />
   ) : (
-    <ThumbnailImage
-      photo={photo}
-      fit="contain"
-      loading="eager"
-      showPlaceholder={false}
-    />
+    <PhotoThumbnail photo={props.photo} />
   )
 }

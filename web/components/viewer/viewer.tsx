@@ -29,8 +29,8 @@ import type { MountedViewerState } from './lib/viewer-state'
 import { PhotoCarousel } from './photo-carousel'
 import { SharedPhotoTransition } from './transition/shared-photo-transition'
 import {
-  fitMediaFrame,
-  projectViewerFrame,
+  DISMISS_TRANSFORM_ORIGIN,
+  projectDismissedFrame,
   type ProjectedViewerFrame,
   type ViewerTransformSnapshot,
 } from './transition/viewer-frame'
@@ -48,6 +48,8 @@ import {
 } from './viewer-controls'
 import { ViewerInfoPanel } from './viewer-info-panel'
 import { ViewerShareDialog } from './viewer-share-dialog'
+
+type ShareDialogState = 'closed' | 'open' | 'exiting'
 
 interface ViewerProps {
   photos: Photo[]
@@ -77,8 +79,8 @@ export function Viewer({
   // Share links and the map page only know public photos.
   const linksToPublicPages = scope === 'public'
   const isMobile = useMobile()
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
-  const [isShareDialogExiting, setIsShareDialogExiting] = useState(false)
+  const [shareDialogState, setShareDialogState] =
+    useState<ShareDialogState>('closed')
   const [dragExitFrame, setDragExitFrame] =
     useState<ProjectedViewerFrame | null>(null)
   const [revealState, setRevealState] = useState(() =>
@@ -100,7 +102,8 @@ export function Viewer({
   const currentPhoto = photos[activeIndex]!
   const publicPhotoTitle = linksToPublicPages ? currentPhoto.title : null
   const isInteractionEnabled = state.phase === 'open'
-  const isShareDialogPresent = isShareDialogOpen || isShareDialogExiting
+  const isShareDialogOpen = shareDialogState === 'open'
+  const isShareDialogPresent = shareDialogState !== 'closed'
   const canInteract = isInteractionEnabled && !isShareDialogPresent
   const canRevealWithoutSharedTransition = state.triggerElement === null
   const isViewerSurfaceVisible =
@@ -125,21 +128,15 @@ export function Viewer({
   const handleMobileDismiss = (snapshot: ViewerTransformSnapshot) => {
     const stage = mediaStageRef.current
     if (stage) {
-      const fittedFrame = fitMediaFrame(
-        {
-          height: currentPhoto.original.height,
-          width: currentPhoto.original.width,
-        },
-        {
-          height: stage.offsetHeight,
-          left: stage.offsetLeft,
-          top: stage.offsetTop,
-          width: stage.offsetWidth,
-        },
-      )
       setDragExitFrame(
-        projectViewerFrame(
-          fittedFrame,
+        projectDismissedFrame(
+          currentPhoto.original,
+          {
+            height: stage.offsetHeight,
+            left: stage.offsetLeft,
+            top: stage.offsetTop,
+            width: stage.offsetWidth,
+          },
           {
             height: window.innerHeight,
             left: 0,
@@ -174,8 +171,13 @@ export function Viewer({
   const canNavigate = canInteract && (!isMobile || !mobile.isStageBlocked)
   const canUseChrome = canInteract && !infoPanel.isMobileSheetPresent
 
+  // Move focus off a control that just became inert. Layout changes (not only
+  // clicks) toggle inert, so the dependencies list every input to those flags.
   useLayoutEffect(() => {
-    if (!canInteract) return
+    if (!canInteract) {
+      return
+    }
+
     const dialog = dialogRef.current
     const active = document.activeElement
     if (
@@ -198,15 +200,15 @@ export function Viewer({
     onClose()
   }
 
-  const handleOpenShareDialog = () => {
-    setIsShareDialogExiting(false)
-    setIsShareDialogOpen(true)
-  }
+  const handleOpenShareDialog = () => setShareDialogState('open')
 
-  const handleCloseShareDialog = () => {
-    setIsShareDialogExiting(true)
-    setIsShareDialogOpen(false)
-  }
+  const handleCloseShareDialog = () => setShareDialogState('exiting')
+
+  // Reopening during the exit animation cancels it, so only an exit may close.
+  const handleShareDialogExitComplete = () =>
+    setShareDialogState((current) =>
+      current === 'exiting' ? 'closed' : current,
+    )
 
   useDialogFocus({
     dialogRef,
@@ -299,7 +301,7 @@ export function Viewer({
                         borderRadius: mobile.viewerBorderRadius,
                         rotate: mobile.viewerRotate,
                         scale: mobile.viewerScale,
-                        transformOrigin: '50% 18%',
+                        transformOrigin: DISMISS_TRANSFORM_ORIGIN,
                         x: mobile.dismissX,
                         y: mobile.viewerY,
                       }
@@ -385,9 +387,7 @@ export function Viewer({
               />
             </div>
 
-            <AnimatePresence
-              onExitComplete={() => setIsShareDialogExiting(false)}
-            >
+            <AnimatePresence onExitComplete={handleShareDialogExitComplete}>
               {isShareDialogOpen && (
                 <ViewerShareDialog
                   key={currentPhoto.slug}
