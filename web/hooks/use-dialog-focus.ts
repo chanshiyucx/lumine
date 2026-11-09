@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useEffectEvent, useRef, type RefObject } from 'react'
 
 const FOCUSABLE_SELECTOR = [
@@ -24,19 +26,32 @@ function getFocusableElements(container: HTMLElement) {
 interface UseDialogFocusOptions {
   dialogRef: RefObject<HTMLElement | null>
   getRestoreFocusElement: () => HTMLElement | null
+  /** Called on Escape, whether or not focus is trapped. */
+  onEscape?: () => void
   trapFocus: boolean
 }
 
 export function useDialogFocus({
   dialogRef,
   getRestoreFocusElement,
+  onEscape,
   trapFocus,
 }: UseDialogFocusOptions) {
   const restoreFrameRef = useRef<number | null>(null)
   const getLatestRestoreFocusElement = useEffectEvent(getRestoreFocusElement)
 
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (!trapFocus || event.key !== 'Tab' || event.defaultPrevented) {
+    if (event.defaultPrevented) {
+      return
+    }
+
+    if (event.key === 'Escape' && onEscape) {
+      event.preventDefault()
+      onEscape()
+      return
+    }
+
+    if (!trapFocus || event.key !== 'Tab') {
       return
     }
 

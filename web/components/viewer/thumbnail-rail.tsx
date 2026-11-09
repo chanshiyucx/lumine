@@ -9,12 +9,12 @@ import {
   useState,
 } from 'react'
 import { ThumbnailImage } from '@/components/image/thumbnail-image'
+import { useHorizontalWheelScroll } from '@/hooks/use-horizontal-wheel-scroll'
 import { useMobile } from '@/hooks/use-mobile'
 import { useTimeout } from '@/hooks/use-timeout'
 import { clamp } from '@/lib/math'
 import type { Photo } from '@/lib/photo'
 import { cn } from '@/lib/style'
-import { useHorizontalWheelScroll } from './hooks/use-horizontal-wheel-scroll'
 
 const MOBILE_THUMBNAIL_HEIGHT = 48
 const DESKTOP_THUMBNAIL_HEIGHT = 64

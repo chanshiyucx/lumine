@@ -8,23 +8,15 @@ import { TelegramFill } from '@mingcute/react/telegram'
 import { TwitterFill } from '@mingcute/react/twitter'
 import { m } from 'motion/react'
 import Image from 'next/image'
-import {
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from 'react'
+import { useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { ThumbHashImage } from '@/components/image/thumbhash-image'
+import { useDialogFocus } from '@/hooks/use-dialog-focus'
 import { useTimeout } from '@/hooks/use-timeout'
 import type { Photo } from '@/lib/photo'
 import { getPhotoShareUrl } from '@/lib/photo/share'
 import { getPhotoOgPath } from '@/lib/route-paths'
 import { siteConfig } from '@/lib/site-config'
 import { cn } from '@/lib/style'
-import { useDialogFocus } from './hooks/use-dialog-focus'
 import { VIEWER_MOTION } from './lib/viewer-motion'
 
 interface ViewerShareDialogProps {
@@ -258,29 +250,13 @@ export function ViewerShareDialog({
   const canUseNativeShare =
     typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
+  // The Viewer's keyboard listener is disabled while this dialog is present.
   useDialogFocus({
     dialogRef,
     getRestoreFocusElement: () => returnFocusRef.current,
+    onEscape: onClose,
     trapFocus: true,
   })
-
-  const closeFromEffect = useEffectEvent(onClose)
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-
-      // The Viewer's keyboard listener is disabled while this dialog is present.
-      event.preventDefault()
-      closeFromEffect()
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [])
 
   const handleNativeShare = async () => {
     const shareData: ShareData = {

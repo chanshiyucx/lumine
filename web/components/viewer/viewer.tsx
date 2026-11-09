@@ -15,11 +15,11 @@ import {
   useState,
 } from 'react'
 import { RemoveScroll } from 'react-remove-scroll'
+import { useDialogFocus } from '@/hooks/use-dialog-focus'
 import { useMobile } from '@/hooks/use-mobile'
 import type { Photo } from '@/lib/photo'
 import type { PhotoScope } from '@/lib/route-paths'
 import { siteConfig } from '@/lib/site-config'
-import { useDialogFocus } from './hooks/use-dialog-focus'
 import { useMobileViewerInteractions } from './hooks/use-mobile-viewer-interactions'
 import { useViewerInfoPanel } from './hooks/use-viewer-info-panel'
 import { useViewerKeyboardNavigation } from './hooks/use-viewer-keyboard-navigation'

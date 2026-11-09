@@ -185,15 +185,9 @@ export function useMobileViewerInteractions({
     return () => window.removeEventListener('resize', handleResize)
   }, [mode])
 
-  useEffect(
-    () => () => {
-      animationIdRef.current += 1
-      dismissX.stop()
-      dismissY.stop()
-      inspectorProgress.stop()
-    },
-    [dismissX, dismissY, inspectorProgress],
-  )
+  const stopAnimationsFromEffect = useEffectEvent(stopAnimations)
+
+  useEffect(() => () => stopAnimationsFromEffect(), [])
 
   const dismissWithThrow = (
     directionX: number,
