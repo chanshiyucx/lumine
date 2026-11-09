@@ -33,9 +33,26 @@ interface PrivateUnlockProps {
   action: (state: UnlockState, formData: FormData) => Promise<UnlockState>
 }
 
-const initialState: UnlockState = { error: null }
+type FieldStatus = 'locked' | 'error' | 'idle'
 
-const shakeKeyframes: Keyframe[] = [
+const INITIAL_STATE: UnlockState = { error: null }
+
+const LOCK_ICON_CLASS_NAMES: Record<FieldStatus, string> = {
+  locked: 'text-muted',
+  error: 'text-love',
+  idle: 'text-iris',
+}
+
+const FIELD_CLASS_NAMES: Record<FieldStatus, string> = {
+  locked: 'border-overlay',
+  error:
+    'border-love has-[input:focus-visible]:ring-love/20 has-[input:focus-visible]:ring-4',
+  idle: 'border-overlay hover:border-muted/60 has-[input:focus-visible]:border-iris has-[input:focus-visible]:ring-iris/20 has-[input:focus-visible]:ring-4',
+}
+
+const SHAKE_DURATION_MS = 320
+
+const SHAKE_KEYFRAMES: Keyframe[] = [
   { transform: 'translateX(0)' },
   { transform: 'translateX(-6px)' },
   { transform: 'translateX(5px)' },
@@ -73,10 +90,11 @@ export function PrivateUnlock({ action }: PrivateUnlockProps) {
 
       return next
     },
-    initialState,
+    INITIAL_STATE,
   )
   const error = isPending || dismissedState === state ? null : state.error
   const isLocked = lockout !== null
+  const status: FieldStatus = isLocked ? 'locked' : error ? 'error' : 'idle'
 
   // Reaching this form means the server rejected the session, so the icon must show locked.
   useEffect(() => {
@@ -87,20 +105,24 @@ export function PrivateUnlock({ action }: PrivateUnlockProps) {
 
   // A new state object per attempt, so this runs once per failure.
   useEffect(() => {
-    if (!state.error) return
+    if (!state.error) {
+      return
+    }
 
     inputRef.current?.focus()
 
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      fieldRef.current?.animate(shakeKeyframes, {
-        duration: 320,
+      fieldRef.current?.animate(SHAKE_KEYFRAMES, {
+        duration: SHAKE_DURATION_MS,
         easing: 'ease-out',
       })
     }
   }, [state])
 
   useEffect(() => {
-    if (!lockout) return
+    if (!lockout) {
+      return
+    }
 
     const remainingMs = Math.max(0, lockout.lockedUntil - Date.now())
     // A negative delay resumes the ring partway through after a reload.
@@ -113,14 +135,14 @@ export function PrivateUnlock({ action }: PrivateUnlockProps) {
         fill: 'forwards',
       },
     )
-    const timeout = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       endPrivateLockout()
       inputRef.current?.focus()
     }, remainingMs)
 
     return () => {
       animation?.cancel()
-      window.clearTimeout(timeout)
+      window.clearTimeout(timeoutId)
     }
   }, [lockout])
 
@@ -141,7 +163,7 @@ export function PrivateUnlock({ action }: PrivateUnlockProps) {
         <span
           className={cn(
             'transition-colors duration-200',
-            isLocked ? 'text-muted' : error ? 'text-love' : 'text-iris',
+            LOCK_ICON_CLASS_NAMES[status],
           )}
         >
           <LockLine className="size-7" aria-hidden="true" />
@@ -150,11 +172,7 @@ export function PrivateUnlock({ action }: PrivateUnlockProps) {
           ref={fieldRef}
           className={cn(
             'bg-surface/80 mt-5 flex h-11 w-full items-center gap-1 rounded-full border py-1 pr-1 pl-4 backdrop-blur-md transition-[border-color,box-shadow] duration-150',
-            isLocked
-              ? 'border-overlay'
-              : error
-                ? 'border-love has-[input:focus-visible]:ring-love/20 has-[input:focus-visible]:ring-4'
-                : 'border-overlay hover:border-muted/60 has-[input:focus-visible]:border-iris has-[input:focus-visible]:ring-iris/20 has-[input:focus-visible]:ring-4',
+            FIELD_CLASS_NAMES[status],
           )}
         >
           <label htmlFor={inputId} className="sr-only">

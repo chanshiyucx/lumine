@@ -68,7 +68,10 @@ export async function getAlbumMapItems(): Promise<AlbumMapItem[]> {
       (photo) => !photo.location,
     )
     const [firstPhoto, ...remainingPhotos] = photosWithoutLocation
-    if (!firstPhoto) return []
+    if (!firstPhoto) {
+      return []
+    }
+
     const summary = getPhotoSummary(photosWithoutLocation)
 
     return [

@@ -1,7 +1,6 @@
+import type { ImageLoading } from '@/components/image/thumbnail-image'
 import { MAP_MAX_LATITUDE, type MapBounds } from '@/lib/map-config'
 import { clamp } from '@/lib/math'
-
-export type MarkerImageLoading = 'eager' | 'lazy'
 
 export type MapCenter = [longitude: number, latitude: number]
 
@@ -62,7 +61,7 @@ export function getMapMarkerImageLoading(
   longitude: number,
   latitude: number,
   viewportBounds: MapBounds,
-): MarkerImageLoading {
+): ImageLoading {
   return isPointWithinMapBounds(
     longitude,
     clampMapLatitude(latitude),

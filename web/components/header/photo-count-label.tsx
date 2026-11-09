@@ -4,6 +4,7 @@ import { useSelectedLayoutSegment } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
 import { PRIVATE_PATH } from '@/lib/route-paths'
 import { isHeaderNavItemActive } from './lib/header-nav-state'
+import { PHOTO_COUNT_CLASS_NAME } from './lib/header-styles'
 import {
   getPublishedPhotoCount,
   getPublishedPhotoCountOnServer,
@@ -28,11 +29,7 @@ export function PhotoCountLabel({ publicCount }: PhotoCountLabelProps) {
   const title = count === null ? undefined : `${count} photos`
 
   return (
-    <span
-      className="text-subtle min-w-[3ch] text-xs font-semibold tabular-nums lg:text-sm"
-      aria-label={title}
-      title={title}
-    >
+    <span className={PHOTO_COUNT_CLASS_NAME} aria-label={title} title={title}>
       {count}
     </span>
   )

@@ -1,5 +1,8 @@
 import { memo } from 'react'
-import { ThumbnailImage } from '@/components/image/thumbnail-image'
+import {
+  ThumbnailImage,
+  type ImageLoading,
+} from '@/components/image/thumbnail-image'
 import { CaptureSettingChip } from '@/components/photo/capture-setting-chip'
 import type { Photo } from '@/lib/photo'
 import { getCaptureSettings } from '@/lib/photo/capture-settings'
@@ -14,7 +17,7 @@ interface PhotoMasonryItemProps {
   photo: Photo
   index: number
   cardHeight: number
-  imageLoading: 'eager' | 'lazy'
+  imageLoading: ImageLoading
   showHoverInfo: boolean
   onOpen: (index: number, triggerElement: HTMLElement) => void
 }
@@ -45,7 +48,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
         <ThumbnailImage photo={photo} loading={imageLoading} />
       </span>
 
-      {showHoverInfo ? (
+      {showHoverInfo && (
         <span className="pointer-events-none">
           <span
             className={cn(
@@ -71,7 +74,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
               <span>•</span>
               <span>{formatBytes(photo.original.bytes)}</span>
             </span>
-            {showExpandedInfo ? (
+            {showExpandedInfo && (
               <span className="block">
                 <span
                   className={cn(
@@ -81,7 +84,7 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
                 >
                   {photo.album.title}
                 </span>
-                {captureSettings.length > 0 ? (
+                {captureSettings.length > 0 && (
                   <span className="grid grid-cols-2 gap-2 text-xs">
                     {captureSettings.map((setting) => (
                       <CaptureSettingChip
@@ -94,12 +97,12 @@ export const PhotoMasonryItem = memo(function PhotoMasonryItem({
                       />
                     ))}
                   </span>
-                ) : null}
+                )}
               </span>
-            ) : null}
+            )}
           </span>
         </span>
-      ) : null}
+      )}
     </button>
   )
 })

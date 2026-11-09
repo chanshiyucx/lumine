@@ -1,12 +1,13 @@
 import Link from 'next/link'
+import type { ImageLoading } from '@/components/image/thumbnail-image'
 import type { Album } from '@/lib/album'
 import { getPhotoSummary } from '@/lib/photo/summary'
 import { getAlbumPath } from '@/lib/route-paths'
-import { AlbumImageStack, type AlbumCoverLoading } from './album-image-stack'
+import { AlbumImageStack } from './album-image-stack'
 
 interface AlbumCardProps {
   album: Album
-  coverLoading: AlbumCoverLoading
+  coverLoading: ImageLoading
 }
 
 export function AlbumCard({ album, coverLoading }: AlbumCardProps) {

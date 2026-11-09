@@ -18,7 +18,7 @@ const Viewer = dynamic(() =>
 )
 
 const preloadViewer = () => import('@/components/viewer/viewer').catch(() => {})
-const VIEWER_PRELOAD_FALLBACK_DELAY = 1000
+const VIEWER_PRELOAD_FALLBACK_DELAY_MS = 1000
 
 interface PhotoGalleryProps {
   photos: Photo[]
@@ -41,6 +41,7 @@ export function PhotoGallery({
     galleryRef,
     scope,
   })
+  // A local const lets `isViewerMounted` narrow the state passed to <Viewer>.
   const viewerState = viewer.state
   const isViewerMounted = viewerState.phase !== 'closed'
   const hasFixedHeader = fixedHeaderDetail !== undefined
@@ -71,7 +72,10 @@ export function PhotoGallery({
       return () => window.cancelIdleCallback(idleId)
     }
 
-    const timeoutId = setTimeout(preloadViewer, VIEWER_PRELOAD_FALLBACK_DELAY)
+    const timeoutId = setTimeout(
+      preloadViewer,
+      VIEWER_PRELOAD_FALLBACK_DELAY_MS,
+    )
     return () => clearTimeout(timeoutId)
   }, [initialPhotoSlug])
 

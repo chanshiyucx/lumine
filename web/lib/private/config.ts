@@ -87,7 +87,9 @@ function warnIfPartiallyConfigured() {
 }
 
 function warnOnce(message: string) {
-  if (hasWarned) return
+  if (hasWarned) {
+    return
+  }
 
   hasWarned = true
   console.warn(message)

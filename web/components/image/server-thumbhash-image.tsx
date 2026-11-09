@@ -21,7 +21,6 @@ export async function ServerThumbHashImage({
 
   return (
     <ThumbHashImage
-      thumbHash={thumbHash}
       placeholderSrc={`data:image/png;base64,${png.toString('base64')}`}
       className={className}
     />

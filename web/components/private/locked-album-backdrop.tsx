@@ -1,7 +1,7 @@
 import { cn } from '@/lib/style'
 
 // Matches the gallery's column-count breakpoints (see getMasonryLayout).
-const columnClassNames = [
+const COLUMN_CLASS_NAMES = [
   'flex',
   'hidden @min-[320px]:flex',
   'hidden @min-[640px]:flex',
@@ -11,8 +11,8 @@ const columnClassNames = [
   'hidden @min-[1800px]:flex',
   'hidden @min-[2048px]:flex',
 ]
-const tilesPerColumn = 14
-const tileTones = [
+const TILES_PER_COLUMN = 14
+const TILE_TONES = [
   'bg-surface',
   'bg-love/10',
   'bg-gold/10',
@@ -22,11 +22,11 @@ const tileTones = [
   'bg-iris/10',
 ]
 
-const columns = columnClassNames.map((className, column) => ({
+const COLUMNS = COLUMN_CLASS_NAMES.map((className, column) => ({
   className,
-  tiles: Array.from({ length: tilesPerColumn }, (_, index) => ({
+  tiles: Array.from({ length: TILES_PER_COLUMN }, (_, index) => ({
     isPortrait: (column + index) % 2 === 1,
-    tone: tileTones[(column * 3 + index) % tileTones.length],
+    tone: TILE_TONES[(column * 3 + index) % TILE_TONES.length],
   })),
 }))
 
@@ -34,7 +34,7 @@ export function LockedAlbumBackdrop() {
   return (
     <div className="@container absolute inset-0" aria-hidden="true">
       <div className="flex gap-1">
-        {columns.map((column, columnIndex) => (
+        {COLUMNS.map((column, columnIndex) => (
           <div
             key={columnIndex}
             className={cn('min-w-0 flex-1 flex-col gap-1', column.className)}

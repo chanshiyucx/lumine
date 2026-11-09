@@ -4,23 +4,27 @@ import { useLayoutEffect, useRef } from 'react'
 import { cn } from '@/lib/style'
 import { Signature } from './signature'
 
-type SignatureBoxProps = {
+const PATH_STAGGER_SECONDS = 0.1
+
+interface SignatureBoxProps {
   animate?: boolean
   className?: string
 }
 
-const SignatureBox = ({ animate, className }: SignatureBoxProps) => {
+function SignatureBox({ animate, className }: SignatureBoxProps) {
   const svgRef = useRef<SVGSVGElement>(null)
 
   useLayoutEffect(() => {
     const svg = svgRef.current
-    if (!svg || !animate) return
+    if (!svg || !animate) {
+      return
+    }
 
     const paths = svg.querySelectorAll<SVGPathElement>('path')
-    paths.forEach((path, i) => {
+    paths.forEach((path, index) => {
       const length = path.getTotalLength()
       path.style.setProperty('--path-length', `${length}px`)
-      path.style.setProperty('--delay', `${i * 0.1}s`)
+      path.style.setProperty('--delay', `${index * PATH_STAGGER_SECONDS}s`)
       path.classList.add('logo-path')
     })
 

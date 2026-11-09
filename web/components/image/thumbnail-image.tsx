@@ -3,6 +3,8 @@ import type { PhotoAsset } from '@/lib/photo'
 import { cn } from '@/lib/style'
 import { ThumbHashImage } from './thumbhash-image'
 
+export type ImageLoading = 'eager' | 'lazy'
+
 export interface ThumbnailImagePhoto {
   thumbHash: string
   thumbnail: Pick<PhotoAsset, 'height' | 'url' | 'width'>
@@ -11,7 +13,7 @@ export interface ThumbnailImagePhoto {
 interface ThumbnailImageProps {
   photo: ThumbnailImagePhoto
   fit?: 'contain' | 'cover'
-  loading?: 'eager' | 'lazy'
+  loading?: ImageLoading
   showPlaceholder?: boolean
 }
 
@@ -37,7 +39,7 @@ export function ThumbnailImage({
       <Image
         src={photo.thumbnail.url}
         alt=""
-        aria-hidden
+        aria-hidden="true"
         width={photo.thumbnail.width}
         height={photo.thumbnail.height}
         className={cn('absolute inset-0 size-full', imageFitClassName)}

@@ -36,7 +36,7 @@ export function CaptureSettingChip({
         className,
       )}
     >
-      <Icon />
+      <Icon aria-hidden="true" />
       <span>{setting.value}</span>
     </span>
   )

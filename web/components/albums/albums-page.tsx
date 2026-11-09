@@ -43,7 +43,7 @@ export async function AlbumsPage() {
     <main className="px-6 pt-36 pb-20 sm:px-8 lg:px-10">
       <div className="relative mx-auto max-w-92 md:max-w-5xl">
         <div
-          aria-hidden
+          aria-hidden="true"
           className="bg-overlay absolute top-4 bottom-0 left-1.75 w-0.5 md:top-0 md:left-1/2 md:-ml-px"
         />
 
@@ -51,7 +51,7 @@ export async function AlbumsPage() {
           <section key={year} className="relative not-first-of-type:mt-16">
             <h2 className="mb-8 flex items-center gap-3 md:mb-16 md:justify-center">
               <span
-                aria-hidden
+                aria-hidden="true"
                 className="bg-muted size-4 shrink-0 rounded-full md:hidden"
               />
               <span className="md:bg-surface md:border-overlay text-text text-2xl font-bold tracking-tight md:rounded-full md:border md:px-6 md:py-2.5 md:text-3xl">
@@ -70,11 +70,11 @@ export async function AlbumsPage() {
                   >
                     {/* --marker-y is the cover's vertical center: a 3:2 cover at most 20rem wide (18rem on desktop). */}
                     <span
-                      aria-hidden
+                      aria-hidden="true"
                       className="border-muted bg-base absolute top-(--marker-y) left-2 z-10 size-3.5 -translate-1/2 rounded-full border-3 md:left-1/2"
                     />
                     <span
-                      aria-hidden
+                      aria-hidden="true"
                       className={cn(
                         'bg-overlay absolute top-(--marker-y) left-4 h-px w-6 md:w-14',
                         isLeft
@@ -85,7 +85,7 @@ export async function AlbumsPage() {
                     {index === lastIndex && (
                       // Hides the spine below the final marker.
                       <span
-                        aria-hidden
+                        aria-hidden="true"
                         className="bg-base absolute top-(--marker-y) bottom-0 left-1.75 w-0.5 md:left-1/2 md:-ml-px"
                       />
                     )}

@@ -1,4 +1,5 @@
 import Supercluster from 'supercluster'
+import type { ImageLoading } from '@/components/image/thumbnail-image'
 import {
   CLUSTER_RADIUS,
   MAP_MAX_ZOOM,
@@ -16,7 +17,6 @@ import {
   getMapMarkerImageLoading,
   type MapCenter,
   type MapViewportState,
-  type MarkerImageLoading,
 } from './map-viewport'
 
 type ClusterItems<T extends MapItem> = readonly [T, ...T[]]
@@ -50,7 +50,7 @@ type MapLayer =
 
 interface MarkerDataBase {
   key: string
-  imageLoading: MarkerImageLoading
+  imageLoading: ImageLoading
 }
 
 export interface MapItemMarkerData extends MarkerDataBase {

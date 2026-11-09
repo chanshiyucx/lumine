@@ -19,7 +19,7 @@ interface PrivateLockout {
   durationMs: number
 }
 
-const emptyRecord: LockoutRecord = {
+const EMPTY_RECORD: LockoutRecord = {
   failedAttempts: 0,
   lockoutCount: 0,
   lockedUntil: 0,
@@ -39,12 +39,14 @@ function readRaw() {
 }
 
 function readRecord(raw = readRaw()): LockoutRecord {
-  if (!raw) return emptyRecord
+  if (!raw) {
+    return EMPTY_RECORD
+  }
 
   try {
-    return { ...emptyRecord, ...(JSON.parse(raw) as Partial<LockoutRecord>) }
+    return { ...EMPTY_RECORD, ...(JSON.parse(raw) as Partial<LockoutRecord>) }
   } catch {
-    return emptyRecord
+    return EMPTY_RECORD
   }
 }
 

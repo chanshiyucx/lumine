@@ -1,6 +1,9 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Marker, type MarkerInstance } from 'react-map-gl/maplibre'
-import { ThumbnailImage } from '@/components/image/thumbnail-image'
+import {
+  ThumbnailImage,
+  type ImageLoading,
+} from '@/components/image/thumbnail-image'
 import type {
   AlbumMapItem,
   MapCover,
@@ -16,11 +19,7 @@ import type {
   PinnedSelection,
   TerminalPhotoClusterMarkerData,
 } from './lib/map-clustering'
-import {
-  clampMapLatitude,
-  type MapCenter,
-  type MarkerImageLoading,
-} from './lib/map-viewport'
+import { clampMapLatitude, type MapCenter } from './lib/map-viewport'
 import { MapHoverPreview } from './map-hover-preview'
 import { MapItemPreviewCard } from './map-item-preview-card'
 import { PhotoClusterPreviewCard } from './photo-cluster-preview-card'
@@ -66,7 +65,7 @@ function MapMarker({ longitude, latitude, children }: MapMarkerProps) {
 
 interface LocationMarkerTriggerOptions {
   cover: MapCover
-  imageLoading: MarkerImageLoading
+  imageLoading: ImageLoading
   pinned: boolean
   label: string
 }
@@ -98,7 +97,7 @@ function renderLocationMarkerTrigger({
 
 interface MapItemMarkerProps {
   item: MapItem
-  imageLoading: MarkerImageLoading
+  imageLoading: ImageLoading
   pinned: boolean
   onPinnedChange: (pinned: boolean) => void
 }

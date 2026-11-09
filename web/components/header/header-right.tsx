@@ -16,28 +16,19 @@ import {
 import { PRIVATE_PATH } from '@/lib/route-paths'
 import { cn } from '@/lib/style'
 import { isHeaderNavItemActive } from './lib/header-nav-state'
+import { HEADER_ICON_LINK_CLASS_NAME } from './lib/header-styles'
 
-const navLinkClassName =
-  'text-subtle hover:bg-text/10 hover:text-text inline-flex size-8 items-center justify-center rounded-lg transition-colors'
-const activeNavLinkClassName = 'bg-text/10 text-text backdrop-blur-md'
+const ACTIVE_NAV_LINK_CLASS_NAME = 'bg-text/10 text-text backdrop-blur-md'
 
-const navItems = [
-  {
-    href: '/',
-    label: 'Home',
-    icon: GridLine,
-  },
-  {
-    href: '/albums',
-    label: 'Albums',
-    icon: Album2Line,
-  },
-  {
-    href: '/map',
-    label: 'Map',
-    icon: MapLine,
-  },
+const NAV_ITEMS = [
+  { href: '/', label: 'Home', icon: GridLine },
+  { href: '/albums', label: 'Albums', icon: Album2Line },
+  { href: '/map', label: 'Map', icon: MapLine },
 ]
+
+function getNavLinkClassName(isActive: boolean) {
+  return cn(HEADER_ICON_LINK_CLASS_NAME, isActive && ACTIVE_NAV_LINK_CLASS_NAME)
+}
 
 interface HeaderRightProps {
   isPrivateModeAvailable: boolean
@@ -48,16 +39,15 @@ export function HeaderRight({ isPrivateModeAvailable }: HeaderRightProps) {
 
   return (
     <nav aria-label="Primary" className="flex shrink-0 items-center gap-1">
-      {navItems.map((item) => {
-        const isActive = isHeaderNavItemActive(segment, item.href)
-        const Icon = item.icon
+      {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        const isActive = isHeaderNavItemActive(segment, href)
 
         return (
           <Link
-            key={item.href}
-            href={item.href}
-            className={cn(navLinkClassName, isActive && activeNavLinkClassName)}
-            aria-label={item.label}
+            key={href}
+            href={href}
+            className={getNavLinkClassName(isActive)}
+            aria-label={label}
             aria-current={isActive ? 'page' : undefined}
           >
             <Icon className="size-4" aria-hidden="true" />
@@ -73,7 +63,11 @@ export function HeaderRight({ isPrivateModeAvailable }: HeaderRightProps) {
   )
 }
 
-function PrivateModeLink({ isActive }: { isActive: boolean }) {
+interface PrivateModeLinkProps {
+  isActive: boolean
+}
+
+function PrivateModeLink({ isActive }: PrivateModeLinkProps) {
   const isUnlocked = useSyncExternalStore(
     subscribePrivateModeHint,
     getPrivateModeHint,
@@ -85,7 +79,7 @@ function PrivateModeLink({ isActive }: { isActive: boolean }) {
     <Link
       href={PRIVATE_PATH}
       prefetch={false}
-      className={cn(navLinkClassName, isActive && activeNavLinkClassName)}
+      className={getNavLinkClassName(isActive)}
       aria-label={
         isUnlocked ? 'Private photos (unlocked)' : 'Private photos (locked)'
       }
